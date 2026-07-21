@@ -1,0 +1,11 @@
+node_modules
+.env
+.opencode
+.specify
+.agents
+specs
+prisma/*
+
+plan.md
+init_schema.txt
+package-lock.json
