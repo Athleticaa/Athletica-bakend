@@ -1,11 +1,15 @@
 import { Request, Response } from "express";
-import { injectable, inject } from "tsyringe";
+import { injectable, container } from "tsyringe";
 import { AuthService, ServiceError } from "./auth.service";
 import * as validation from "./auth.validation";
 
 @injectable()
 export class AuthController {
-  constructor(@inject(AuthService) private authService: AuthService) {}
+  private authService: AuthService;
+
+  constructor() {
+    this.authService = container.resolve(AuthService);
+  }
 
   private handleError(res: Response, err: unknown) {
     if (err instanceof ServiceError) {

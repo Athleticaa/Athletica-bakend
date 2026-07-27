@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { PrismaClient } from "@prisma/client";
-import { injectable, inject } from "tsyringe";
+import { injectable, container } from "tsyringe";
 import { JwtService } from "../../lib/jwt";
 import { EmailService } from "../../services/email";
 import { PrismaClientToken } from "../../di/tokens";
@@ -21,11 +21,15 @@ export class ServiceError extends Error {
 
 @injectable()
 export class AuthService {
-  constructor(
-    @inject(PrismaClientToken) private prisma: PrismaClient,
-    @inject(JwtService) private jwtService: JwtService,
-    @inject(EmailService) private emailService: EmailService,
-  ) {}
+  private prisma: PrismaClient;
+  private jwtService: JwtService;
+  private emailService: EmailService;
+
+  constructor() {
+    this.prisma = container.resolve(PrismaClientToken);
+    this.jwtService = container.resolve(JwtService);
+    this.emailService = container.resolve(EmailService);
+  }
 
   private hashPassword(password: string): Promise<string> {
     return bcrypt.hash(password, SALT_ROUNDS);
