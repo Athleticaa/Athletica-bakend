@@ -4,7 +4,7 @@ node_modules
 .specify
 .agents
 specs
-prisma/*
+# prisma/*
 
 plan.md
 init_schema.txt
