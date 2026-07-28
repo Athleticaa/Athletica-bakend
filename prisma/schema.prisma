@@ -1,0 +1,343 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model users {
+  id             String   @id @default(uuid()) @db.Uuid
+  first_name     String   @db.VarChar
+  last_name      String   @db.VarChar
+  email          String   @unique @db.VarChar
+  password       String   @db.VarChar
+  role           String   @db.VarChar
+  provider       String   @db.VarChar
+  profile_image  String?  @db.VarChar
+  email_verified Boolean  @default(false)
+  created_at     DateTime @default(now())
+
+  coach_profiles        coach_profiles[]
+  client_profiles       client_profiles[]
+  password_reset_tokens password_reset_tokens[]
+  verification_codes    verification_codes[]
+  refresh_tokens        refresh_tokens[]
+}
+
+model verification_codes {
+  id         String   @id @default(uuid()) @db.Uuid
+  user_id    String   @db.Uuid
+  code_hash  String   @db.VarChar
+  expires_at DateTime
+  used       Boolean  @default(false)
+  created_at DateTime @default(now())
+
+  user users @relation(fields: [user_id], references: [id])
+
+  @@index([code_hash])
+}
+
+model password_reset_tokens {
+  id         String   @id @default(uuid()) @db.Uuid
+  user_id    String   @db.Uuid
+  token_hash String   @db.VarChar
+  expires_at DateTime
+  used       Boolean  @default(false)
+  created_at DateTime @default(now())
+
+  user users @relation(fields: [user_id], references: [id])
+
+  @@index([token_hash])
+}
+
+model refresh_tokens {
+  id         String   @id @default(uuid()) @db.Uuid
+  user_id    String   @db.Uuid
+  token_hash String   @db.VarChar
+  expires_at DateTime
+  created_at DateTime @default(now())
+
+  user users @relation(fields: [user_id], references: [id])
+
+  @@index([token_hash])
+}
+
+model coach_profiles {
+  id             String @id @default(uuid()) @db.Uuid
+  user_id        String @db.Uuid
+  bio            String
+  specialization String @db.VarChar
+
+  user                users                 @relation(fields: [user_id], references: [id])
+  coach_requests      coach_requests[]      @relation("coach_requests_coach_id")
+  coach_clients       coach_clients[]       @relation("coach_clients_coach_id")
+  workout_templates   workout_templates[]
+  nutrition_templates nutrition_templates[]
+}
+
+model client_profiles {
+  id         String    @id @default(uuid()) @db.Uuid
+  user_id    String    @db.Uuid
+  gender     String    @db.VarChar
+  birth_date DateTime? @db.Date
+  height     Float?
+  weight     Float?
+  goal       String    @db.VarChar
+
+  user           users            @relation(fields: [user_id], references: [id])
+  coach_requests coach_requests[] @relation("coach_requests_client_id")
+  coach_clients  coach_clients[]  @relation("coach_clients_client_id")
+  workout_logs   workout_logs[]
+  nutrition_logs nutrition_logs[]
+  client_answers client_answers[]
+}
+
+model coach_requests {
+  id         String   @id @default(uuid()) @db.Uuid
+  coach_id   String   @db.Uuid
+  client_id  String   @db.Uuid
+  status     String   @db.VarChar
+  created_at DateTime @default(now())
+
+  coach  coach_profiles  @relation("coach_requests_coach_id", fields: [coach_id], references: [id])
+  client client_profiles @relation("coach_requests_client_id", fields: [client_id], references: [id])
+
+  @@unique([coach_id, client_id])
+}
+
+model coach_clients {
+  id         String   @id @default(uuid()) @db.Uuid
+  coach_id   String   @db.Uuid
+  client_id  String   @db.Uuid
+  created_at DateTime @default(now())
+
+  coach  coach_profiles  @relation("coach_clients_coach_id", fields: [coach_id], references: [id])
+  client client_profiles @relation("coach_clients_client_id", fields: [client_id], references: [id])
+
+  workout_plans   workout_plans[]
+  nutrition_plans nutrition_plans[]
+
+  @@unique([coach_id, client_id])
+}
+
+model exercises {
+  id          String @id @default(uuid()) @db.Uuid
+  name        String @db.VarChar
+  description String
+  image       String @db.VarChar
+  video       String @db.VarChar
+  muscle      String @db.VarChar
+
+  workout_template_exercises workout_template_exercises[]
+  workout_day_exercises      workout_day_exercises[]
+}
+
+model workout_templates {
+  id          String   @id @default(uuid()) @db.Uuid
+  coach_id    String   @db.Uuid
+  title       String   @db.VarChar
+  description String
+  created_at  DateTime @default(now())
+
+  coach                 coach_profiles          @relation(fields: [coach_id], references: [id])
+  workout_template_days workout_template_days[]
+}
+
+model workout_template_days {
+  id                  String  @id @default(uuid()) @db.Uuid
+  workout_template_id String  @db.Uuid
+  day_number          Int
+  title               String  @db.VarChar
+  is_rest             Boolean
+
+  workout_template           workout_templates            @relation(fields: [workout_template_id], references: [id])
+  workout_template_exercises workout_template_exercises[]
+}
+
+model workout_template_exercises {
+  id                      String @id @default(uuid()) @db.Uuid
+  workout_template_day_id String @db.Uuid
+  exercise_id             String @db.Uuid
+  exercise_order          Int
+  sets                    Int
+  reps                    Int
+  notes                   String
+
+  workout_template_day workout_template_days @relation(fields: [workout_template_day_id], references: [id])
+  exercise             exercises             @relation(fields: [exercise_id], references: [id])
+}
+
+model workout_plans {
+  id              String   @id @default(uuid()) @db.Uuid
+  coach_client_id String   @db.Uuid
+  title           String   @db.VarChar
+  description     String
+  start_date      DateTime @db.Date
+  cycle_days      Int
+  created_at      DateTime @default(now())
+
+  coach_client coach_clients  @relation(fields: [coach_client_id], references: [id])
+  workout_days workout_days[]
+  workout_logs workout_logs[]
+}
+
+model workout_days {
+  id              String  @id @default(uuid()) @db.Uuid
+  workout_plan_id String  @db.Uuid
+  day_number      Int
+  title           String  @db.VarChar
+  is_rest         Boolean
+
+  workout_plan          workout_plans           @relation(fields: [workout_plan_id], references: [id])
+  workout_day_exercises workout_day_exercises[]
+  workout_logs          workout_logs[]
+}
+
+model workout_day_exercises {
+  id             String @id @default(uuid()) @db.Uuid
+  workout_day_id String @db.Uuid
+  exercise_id    String @db.Uuid
+  order_number   Int
+  sets           Int
+  reps           Int
+  notes          String
+
+  workout_day workout_days @relation(fields: [workout_day_id], references: [id])
+  exercise    exercises    @relation(fields: [exercise_id], references: [id])
+}
+
+model workout_logs {
+  id              String    @id @default(uuid()) @db.Uuid
+  workout_plan_id String    @db.Uuid
+  workout_day_id  String    @db.Uuid
+  client_id       String    @db.Uuid
+  workout_date    DateTime  @db.Date
+  completed       Boolean
+  completed_at    DateTime?
+  notes           String?
+
+  workout_plan workout_plans   @relation(fields: [workout_plan_id], references: [id])
+  workout_day  workout_days    @relation(fields: [workout_day_id], references: [id])
+  client       client_profiles @relation(fields: [client_id], references: [id])
+}
+
+model foods {
+  id         String   @id @default(uuid()) @db.Uuid
+  name       String   @db.VarChar
+  calories   Float
+  protein    Float
+  carbs      Float
+  fat        Float
+  created_at DateTime @default(now())
+
+  nutrition_template_foods nutrition_template_foods[]
+  nutrition_meal_foods     nutrition_meal_foods[]
+}
+
+model nutrition_templates {
+  id          String   @id @default(uuid()) @db.Uuid
+  coach_id    String   @db.Uuid
+  title       String   @db.VarChar
+  description String
+  created_at  DateTime @default(now())
+
+  coach                    coach_profiles             @relation(fields: [coach_id], references: [id])
+  nutrition_template_meals nutrition_template_meals[]
+}
+
+model nutrition_template_meals {
+  id                    String @id @default(uuid()) @db.Uuid
+  nutrition_template_id String @db.Uuid
+  meal_type             String @db.VarChar
+  notes                 String
+  meal_order            Int
+
+  nutrition_template       nutrition_templates        @relation(fields: [nutrition_template_id], references: [id])
+  nutrition_template_foods nutrition_template_foods[]
+}
+
+model nutrition_template_foods {
+  id                         String @id @default(uuid()) @db.Uuid
+  nutrition_template_meal_id String @db.Uuid
+  food_id                    String @db.Uuid
+  quantity                   Float
+
+  nutrition_template_meal nutrition_template_meals @relation(fields: [nutrition_template_meal_id], references: [id])
+  food                    foods                    @relation(fields: [food_id], references: [id])
+}
+
+model nutrition_plans {
+  id              String   @id @default(uuid()) @db.Uuid
+  coach_client_id String   @db.Uuid
+  title           String   @db.VarChar
+  description     String
+  start_date      DateTime @db.Date
+  end_date        DateTime @db.Date
+  created_at      DateTime @default(now())
+
+  coach_client    coach_clients     @relation(fields: [coach_client_id], references: [id])
+  nutrition_meals nutrition_meals[]
+  nutrition_logs  nutrition_logs[]
+}
+
+model nutrition_meals {
+  id                String @id @default(uuid()) @db.Uuid
+  nutrition_plan_id String @db.Uuid
+  meal_type         String @db.VarChar
+  notes             String
+  meal_order        Int
+
+  nutrition_plan       nutrition_plans        @relation(fields: [nutrition_plan_id], references: [id])
+  nutrition_meal_foods nutrition_meal_foods[]
+}
+
+model nutrition_meal_foods {
+  id                String @id @default(uuid()) @db.Uuid
+  nutrition_meal_id String @db.Uuid
+  food_id           String @db.Uuid
+  quantity          Float
+
+  nutrition_meal nutrition_meals @relation(fields: [nutrition_meal_id], references: [id])
+  food           foods           @relation(fields: [food_id], references: [id])
+}
+
+model nutrition_logs {
+  id                String    @id @default(uuid()) @db.Uuid
+  nutrition_plan_id String    @db.Uuid
+  client_id         String    @db.Uuid
+  date              DateTime  @db.Date
+  completed         Boolean
+  completed_at      DateTime?
+  notes             String?
+
+  nutrition_plan nutrition_plans @relation(fields: [nutrition_plan_id], references: [id])
+  client         client_profiles @relation(fields: [client_id], references: [id])
+}
+
+model client_questions {
+  id         String           @id @default(uuid()) @db.Uuid
+  group_key  String           @db.Uuid
+  question   String           @db.VarChar
+  choices    String[]
+  language   String           @db.VarChar
+  created_at DateTime         @default(now())
+
+  client_answers client_answers[]
+
+  @@unique([question, language])
+  @@index([group_key])
+}
+
+model client_answers {
+  id          String   @id @default(uuid()) @db.Uuid
+  client_id   String   @db.Uuid
+  question_id String   @db.Uuid
+  answer      Int
+  created_at  DateTime @default(now())
+
+  client   client_profiles  @relation(fields: [client_id], references: [id])
+  question client_questions @relation(fields: [question_id], references: [id])
+
+  @@unique([client_id, question_id])
+}
