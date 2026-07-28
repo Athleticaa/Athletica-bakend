@@ -7,6 +7,8 @@ import { JwtService } from "./lib/jwt";
 import { EmailService } from "./services/email";
 import { AuthService } from "./modules/auth/auth.service";
 import { AuthController } from "./modules/auth/auth.controller";
+import { ClientQuestionsService } from "./modules/client-questions/client-questions.service";
+import { ClientQuestionsController } from "./modules/client-questions/client-questions.controller";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
 const prisma = new PrismaClient({ adapter });
@@ -16,5 +18,7 @@ container.registerSingleton(JwtService);
 container.registerSingleton(EmailService);
 container.registerSingleton(AuthService);
 container.registerSingleton(AuthController);
+container.registerSingleton(ClientQuestionsService);
+container.registerSingleton(ClientQuestionsController);
 
 export { container };
