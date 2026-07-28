@@ -63,6 +63,24 @@ export class AuthService {
       },
     });
 
+    if (input.role === "client") {
+      await this.prisma.client_profiles.create({
+        data: {
+          user_id: user.id,
+          gender: input.gender || "unspecified",
+          goal: input.goal || "not_set",
+        },
+      });
+    } else if (input.role === "coach") {
+      await this.prisma.coach_profiles.create({
+        data: {
+          user_id: user.id,
+          bio: input.bio || "",
+          specialization: input.specialization || "general",
+        },
+      });
+    }
+
     const code = this.generateCode();
     const codeHash = this.hashToken(code);
     await this.prisma.verification_codes.create({
