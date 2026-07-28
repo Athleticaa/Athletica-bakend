@@ -6,6 +6,10 @@ export interface SignupInput {
   email: string;
   password: string;
   role: string;
+  gender?: string;
+  goal?: string;
+  bio?: string;
+  specialization?: string;
 }
 
 export interface LoginInput {
