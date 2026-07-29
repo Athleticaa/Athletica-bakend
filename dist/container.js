@@ -1,0 +1,25 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.container = void 0;
+require("reflect-metadata");
+const tsyringe_1 = require("tsyringe");
+Object.defineProperty(exports, "container", { enumerable: true, get: function () { return tsyringe_1.container; } });
+const client_1 = require("@prisma/client");
+const adapter_pg_1 = require("@prisma/adapter-pg");
+const tokens_1 = require("./di/tokens");
+const jwt_1 = require("./lib/jwt");
+const email_1 = require("./services/email");
+const auth_service_1 = require("./modules/auth/auth.service");
+const auth_controller_1 = require("./modules/auth/auth.controller");
+const client_questions_service_1 = require("./modules/client-questions/client-questions.service");
+const client_questions_controller_1 = require("./modules/client-questions/client-questions.controller");
+const adapter = new adapter_pg_1.PrismaPg({ connectionString: process.env.DATABASE_URL });
+const prisma = new client_1.PrismaClient({ adapter });
+tsyringe_1.container.registerInstance(tokens_1.PrismaClientToken, prisma);
+tsyringe_1.container.registerSingleton(jwt_1.JwtService);
+tsyringe_1.container.registerSingleton(email_1.EmailService);
+tsyringe_1.container.registerSingleton(auth_service_1.AuthService);
+tsyringe_1.container.registerSingleton(auth_controller_1.AuthController);
+tsyringe_1.container.registerSingleton(client_questions_service_1.ClientQuestionsService);
+tsyringe_1.container.registerSingleton(client_questions_controller_1.ClientQuestionsController);
+//# sourceMappingURL=container.js.map

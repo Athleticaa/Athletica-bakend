@@ -9,7 +9,7 @@ specs
 plan.md
 init_schema.txt
 package-lock.json
-dist/
+
 *.log
 auth.postman_collection.json
 .aider*
