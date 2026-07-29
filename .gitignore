@@ -12,3 +12,4 @@ package-lock.json
 dist/
 *.log
 auth.postman_collection.json
+.aider*
