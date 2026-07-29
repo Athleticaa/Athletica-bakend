@@ -13,3 +13,4 @@ dist/
 *.log
 auth.postman_collection.json
 .aider*
+.vercel
