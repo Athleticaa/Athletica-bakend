@@ -4,6 +4,7 @@ node_modules
 .specify
 .agents
 specs
+dist
 # prisma/*
 
 plan.md

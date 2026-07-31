@@ -1,5 +1,7 @@
 {
   "version": 2,
+  "installCommand": "npm install",
+  "buildCommand": "npx prisma generate && npx tsc",
   "builds": [
     {
       "src": "api/index.js",
