@@ -9,6 +9,8 @@ import { AuthService } from "./modules/auth/auth.service";
 import { AuthController } from "./modules/auth/auth.controller";
 import { ClientQuestionsService } from "./modules/client-questions/client-questions.service";
 import { ClientQuestionsController } from "./modules/client-questions/client-questions.controller";
+import { CoachAssignmentService } from "./modules/coach-assignment/coach-assignment.service";
+import { CoachAssignmentController } from "./modules/coach-assignment/coach-assignment.controller";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
 const prisma = new PrismaClient({ adapter });
@@ -20,5 +22,7 @@ container.registerSingleton(AuthService);
 container.registerSingleton(AuthController);
 container.registerSingleton(ClientQuestionsService);
 container.registerSingleton(ClientQuestionsController);
+container.registerSingleton(CoachAssignmentService);
+container.registerSingleton(CoachAssignmentController);
 
 export { container };
