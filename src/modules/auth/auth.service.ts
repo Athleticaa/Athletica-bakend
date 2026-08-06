@@ -195,14 +195,14 @@ export class AuthService {
 
   async confirmPasswordReset(email: string, code: string, newPassword: string) {
     const user = await this.prisma.users.findUnique({ where: { email } });
-    if (!user) throw new ServiceError("invalid_or_expired_token", 400);
+    if (!user) throw new ServiceError("invalid_or_expired_reset_token", 400);
 
     const codeHash = this.hashToken(code);
     const record = await this.prisma.password_reset_tokens.findFirst({
       where: { user_id: user.id, token_hash: codeHash, used: false, expires_at: { gt: new Date() } },
     });
 
-    if (!record) throw new ServiceError("invalid_or_expired_token", 400);
+    if (!record) throw new ServiceError("invalid_or_expired_reset_token", 400);
 
     const hashedPassword = await this.hashPassword(newPassword);
 
