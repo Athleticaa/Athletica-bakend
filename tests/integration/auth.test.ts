@@ -9,12 +9,15 @@ const prisma = new PrismaClient({ adapter });
 const TEST_EMAILS = ["coach-test@example.com", "client-test@example.com", "invalid-role@example.com"];
 
 beforeAll(async () => {
-  await prisma.refresh_tokens.deleteMany({});
-  await prisma.verification_codes.deleteMany({});
-  await prisma.password_reset_tokens.deleteMany({});
-  await prisma.client_profiles.deleteMany({});
-  await prisma.coach_profiles.deleteMany({});
-  await prisma.users.deleteMany({ where: { email: { in: TEST_EMAILS } } });
+  const scoped = { email: { in: TEST_EMAILS } };
+  await prisma.refresh_tokens.deleteMany({ where: { user: scoped } });
+  await prisma.verification_codes.deleteMany({ where: { user: scoped } });
+  await prisma.password_reset_tokens.deleteMany({ where: { user: scoped } });
+  await prisma.coach_requests.deleteMany({ where: { client: { user: scoped } } });
+  await prisma.coach_clients.deleteMany({ where: { client: { user: scoped } } });
+  await prisma.client_profiles.deleteMany({ where: { user: scoped } });
+  await prisma.coach_profiles.deleteMany({ where: { user: scoped } });
+  await prisma.users.deleteMany({ where: scoped });
 });
 
 describe("POST /auth/signup", () => {
