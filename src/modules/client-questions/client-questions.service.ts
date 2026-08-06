@@ -1,17 +1,10 @@
 import { PrismaClient } from "@prisma/client";
 import { injectable, container } from "tsyringe";
 import { PrismaClientToken } from "../../di/tokens";
+import { ServiceError } from "../../lib/service-error";
 import type { AnswerItem } from "./client-questions.validation";
 
-export class ServiceError extends Error {
-  statusCode: number;
-  messageKey: string;
-  constructor(messageKey: string, statusCode: number) {
-    super(messageKey);
-    this.messageKey = messageKey;
-    this.statusCode = statusCode;
-  }
-}
+export { ServiceError };
 
 @injectable()
 export class ClientQuestionsService {
