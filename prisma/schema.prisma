@@ -127,12 +127,24 @@ model coach_clients {
 }
 
 model exercises {
-  id          String @id @default(uuid()) @db.Uuid
-  name        String @db.VarChar
-  description String
-  image       String @db.VarChar
-  video       String @db.VarChar
-  muscle      String @db.VarChar
+  id                String   @id @default(uuid()) @db.Uuid
+  name_en           String   @db.VarChar
+  name_ar           String   @db.VarChar
+  primary_muscle    String   @db.VarChar
+  secondary_muscles String[]
+  equipment         String   @db.VarChar
+  difficulty        String   @db.VarChar
+  exercise_type     String   @db.VarChar
+  classification    String[]
+  movement_pattern  String   @db.VarChar
+  fitness_goals     String[]
+  workout_location  String   @db.VarChar
+  media_type        String   @db.VarChar
+  media_url         String   @db.VarChar
+  video_url         String   @db.VarChar
+  tags              String[]
+  is_default        Boolean  @default(false)
+  priority          String   @db.VarChar
 
   workout_template_exercises workout_template_exercises[]
   workout_day_exercises      workout_day_exercises[]
@@ -227,15 +239,26 @@ model workout_logs {
   client       client_profiles @relation(fields: [client_id], references: [id])
 }
 
-model foods {
-  id         String   @id @default(uuid()) @db.Uuid
-  name       String   @db.VarChar
-  calories   Float
-  protein    Float
-  carbs      Float
-  fat        Float
-  created_at DateTime @default(now())
+model food_categories {
+  id    String @id @default(uuid()) @db.Uuid
+  name  String @db.VarChar
 
+  foods foods[]
+}
+
+model foods {
+  id          String   @id @default(uuid()) @db.Uuid
+  category_id String   @db.Uuid
+  name        String   @db.VarChar
+  base_grams  Float
+  calories    Float
+  protein     Float
+  carbs       Float
+  fat         Float
+  is_archived Boolean  @default(false)
+  created_at  DateTime @default(now())
+
+  category                food_categories           @relation(fields: [category_id], references: [id])
   nutrition_template_foods nutrition_template_foods[]
   nutrition_meal_foods     nutrition_meal_foods[]
 }

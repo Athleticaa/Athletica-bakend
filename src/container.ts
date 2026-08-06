@@ -11,6 +11,10 @@ import { ClientQuestionsService } from "./modules/client-questions/client-questi
 import { ClientQuestionsController } from "./modules/client-questions/client-questions.controller";
 import { CoachAssignmentService } from "./modules/coach-assignment/coach-assignment.service";
 import { CoachAssignmentController } from "./modules/coach-assignment/coach-assignment.controller";
+import { WorkoutService } from "./modules/workout/workout.service";
+import { WorkoutController } from "./modules/workout/workout.controller";
+import { NutritionService } from "./modules/nutrition/nutrition.service";
+import { NutritionController } from "./modules/nutrition/nutrition.controller";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
 const prisma = new PrismaClient({ adapter });
@@ -24,5 +28,9 @@ container.registerSingleton(ClientQuestionsService);
 container.registerSingleton(ClientQuestionsController);
 container.registerSingleton(CoachAssignmentService);
 container.registerSingleton(CoachAssignmentController);
+container.registerSingleton(WorkoutService);
+container.registerSingleton(WorkoutController);
+container.registerSingleton(NutritionService);
+container.registerSingleton(NutritionController);
 
 export { container };

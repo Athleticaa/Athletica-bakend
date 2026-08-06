@@ -43,5 +43,13 @@
   "coach_profile_not_found": "ملف المدرب غير موجود",
   "client_profile_not_found": "ملف العميل غير موجود",
   "client_not_assigned": "العميل غير معين لهذا المدرب",
-  "validation_token_required": "الرمز مطلوب"
+  "validation_token_required": "الرمز مطلوب",
+  "exercise_not_found": "التمرين غير موجود",
+  "food_not_found": "الطعام غير موجود",
+  "invalid_page": "يجب أن تكون الصفحة عدداً صحيحاً موجباً",
+  "invalid_page_size": "يجب أن يكون حجم الصفحة عدداً صحيحاً موجباً لا يتجاوز 100",
+  "invalid_is_default": "يجب أن تكون قيمة isDefault 'true' أو 'false'",
+  "invalid_is_archived": "يجب أن تكون قيمة isArchived 'true' أو 'false'",
+  "invalid_range_value": "يجب أن تكون قيمة {{field}} رقماً غير سالب",
+  "invalid_range": "لا يمكن أن تكون القيمة الدنيا أكبر من القيمة القصوى"
 }

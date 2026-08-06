@@ -6,7 +6,7 @@ const SUPPORTED = ["en", "ar"];
 declare global {
   namespace Express {
     interface Request {
-      t: (key: string) => string;
+      t: (key: string, options?: Record<string, unknown>) => string;
       language: string;
     }
   }
@@ -17,7 +17,7 @@ export function i18nMiddleware(req: Request, _res: Response, next: NextFunction)
   const lang = SUPPORTED.find((l) => header.startsWith(l)) || "en";
 
   req.language = lang;
-  req.t = (key: string) => i18next.t(key, { lng: lang });
+  req.t = (key: string, options?: Record<string, unknown>) => i18next.t(key, { lng: lang, ...options });
 
   next();
 }
