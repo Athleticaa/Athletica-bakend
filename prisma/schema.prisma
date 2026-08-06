@@ -64,10 +64,12 @@ model refresh_tokens {
 }
 
 model coach_profiles {
-  id             String @id @default(uuid()) @db.Uuid
-  user_id        String @db.Uuid
-  bio            String
-  specialization String @db.VarChar
+  id                          String      @id @default(uuid()) @db.Uuid
+  user_id                     String      @db.Uuid
+  bio                         String
+  specialization              String      @db.VarChar
+  active_invite_token         String?     @db.VarChar
+  active_invite_token_expires_at DateTime?
 
   user                users                 @relation(fields: [user_id], references: [id])
   coach_requests      coach_requests[]      @relation("coach_requests_coach_id")
@@ -94,11 +96,13 @@ model client_profiles {
 }
 
 model coach_requests {
-  id         String   @id @default(uuid()) @db.Uuid
-  coach_id   String   @db.Uuid
-  client_id  String   @db.Uuid
-  status     String   @db.VarChar
-  created_at DateTime @default(now())
+  id          String    @id @default(uuid()) @db.Uuid
+  coach_id    String    @db.Uuid
+  client_id   String    @db.Uuid
+  status      String    @db.VarChar
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+  rejected_at DateTime?
 
   coach  coach_profiles  @relation("coach_requests_coach_id", fields: [coach_id], references: [id])
   client client_profiles @relation("coach_requests_client_id", fields: [client_id], references: [id])
@@ -118,7 +122,8 @@ model coach_clients {
   workout_plans   workout_plans[]
   nutrition_plans nutrition_plans[]
 
-  @@unique([coach_id, client_id])
+  @@unique([client_id])
+  @@index([coach_id])
 }
 
 model exercises {
