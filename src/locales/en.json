@@ -43,5 +43,13 @@
   "coach_profile_not_found": "Coach profile not found",
   "client_profile_not_found": "Client profile not found",
   "client_not_assigned": "Client not assigned to this coach",
-  "validation_token_required": "token is required"
+  "validation_token_required": "token is required",
+  "exercise_not_found": "Exercise not found",
+  "food_not_found": "Food not found",
+  "invalid_page": "page must be a positive integer",
+  "invalid_page_size": "pageSize must be a positive integer not greater than 100",
+  "invalid_is_default": "isDefault must be 'true' or 'false'",
+  "invalid_is_archived": "isArchived must be 'true' or 'false'",
+  "invalid_range_value": "{{field}} must be a non-negative number",
+  "invalid_range": "min value cannot be greater than max value"
 }
