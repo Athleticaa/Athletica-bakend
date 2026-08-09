@@ -17,7 +17,11 @@ export class NutritionService {
     const where: Prisma.foodsWhereInput = {};
 
     if (filters.search) {
-      where.name = { contains: filters.search, mode: "insensitive" };
+      where.OR = [
+        { name: { contains: filters.search, mode: "insensitive" } },
+        { name_en: { contains: filters.search, mode: "insensitive" } },
+        { name_ar: { contains: filters.search, mode: "insensitive" } },
+      ];
     }
     if (filters.categoryId) where.category_id = filters.categoryId;
     if (filters.isArchived !== undefined) where.is_archived = filters.isArchived;

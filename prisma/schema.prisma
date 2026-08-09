@@ -240,23 +240,30 @@ model workout_logs {
 }
 
 model food_categories {
-  id    String @id @default(uuid()) @db.Uuid
-  name  String @db.VarChar
+  id      String @id @default(uuid()) @db.Uuid
+  name    String @db.VarChar
+  name_en String @db.VarChar
+  name_ar String @db.VarChar
 
   foods foods[]
 }
 
 model foods {
-  id          String   @id @default(uuid()) @db.Uuid
-  category_id String   @db.Uuid
-  name        String   @db.VarChar
-  base_grams  Float
-  calories    Float
-  protein     Float
-  carbs       Float
-  fat         Float
-  is_archived Boolean  @default(false)
-  created_at  DateTime @default(now())
+  id              String   @id @default(uuid()) @db.Uuid
+  category_id     String   @db.Uuid
+  name            String   @db.VarChar
+  name_en         String   @db.VarChar
+  name_ar         String   @db.VarChar
+  serving_unit    String   @db.VarChar
+  serving_unit_en String   @db.VarChar
+  serving_unit_ar String   @db.VarChar
+  base_grams      Float
+  calories        Float
+  protein         Float
+  carbs           Float
+  fat             Float
+  is_archived     Boolean  @default(false)
+  created_at      DateTime @default(now())
 
   category                food_categories           @relation(fields: [category_id], references: [id])
   nutrition_template_foods nutrition_template_foods[]
