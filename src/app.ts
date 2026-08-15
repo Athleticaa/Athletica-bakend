@@ -8,7 +8,7 @@ import "./lib/i18n";
 import { i18nMiddleware } from "./middleware/i18n";
 import authRoutes from "./modules/auth/auth.routes";
 import clientQuestionsRoutes from "./modules/client-questions/client-questions.routes";
-import coachAssignmentRoutes from "./modules/coach-assignment/coach-assignment.routes";
+import { coachRouter, clientCoachRouter, requestsRouter } from "./modules/coach-assignment/coach-assignment.routes";
 import workoutRoutes from "./modules/workout/workout.routes";
 import nutritionRoutes from "./modules/nutrition/nutrition.routes";
 
@@ -19,13 +19,15 @@ app.use(cors());
 app.use(express.json());
 app.use(i18nMiddleware);
 
-app.use("/auth", authRoutes);
-app.use("/client", clientQuestionsRoutes);
-app.use("/", coachAssignmentRoutes);
-app.use("/workout", workoutRoutes);
-app.use("/nutrition", nutritionRoutes);
+app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1", requestsRouter);
+app.use("/api/v1/coach", coachRouter);
+app.use("/api/v1/client", clientQuestionsRoutes);
+app.use("/api/v1/client", clientCoachRouter);
+app.use("/api/v1/workout", workoutRoutes);
+app.use("/api/v1/nutrition", nutritionRoutes);
 
-app.get("/health", (_req, res) => {
+app.get("/api/v1/health", (_req, res) => {
   res.json({ status: "ok" });
 });
 
