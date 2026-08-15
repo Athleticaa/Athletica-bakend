@@ -257,9 +257,6 @@ export function validateUpdateTemplate(
 // Template Meal DTOs & validation (US2)
 // ============================================================================
 
-export const MEAL_TYPES = ["breakfast", "lunch", "snack", "dinner", "snack2"] as const;
-export type MealType = (typeof MEAL_TYPES)[number];
-
 export interface CreateMealInput {
   meal_type: string;
   meal_order?: number;
@@ -285,8 +282,6 @@ export function validateCreateMeal(
 
   if (!meal_type || typeof meal_type !== "string" || meal_type.trim().length === 0) {
     errors.push(t("meal_type_required"));
-  } else if (!MEAL_TYPES.includes(meal_type as MealType)) {
-    errors.push(t("meal_type_invalid", { types: MEAL_TYPES.join(", ") }));
   }
 
   if (meal_order !== undefined && (typeof meal_order !== "number" || !Number.isInteger(meal_order) || meal_order < 1)) {
@@ -318,8 +313,6 @@ export function validateUpdateMeal(
   if (meal_type !== undefined) {
     if (typeof meal_type !== "string" || meal_type.trim().length === 0) {
       errors.push(t("meal_type_required"));
-    } else if (!MEAL_TYPES.includes(meal_type as MealType)) {
-      errors.push(t("meal_type_invalid", { types: MEAL_TYPES.join(", ") }));
     }
   }
 
