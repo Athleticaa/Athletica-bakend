@@ -117,6 +117,10 @@ export interface INutritionTemplateService {
 
 @injectable()
 export class NutritionTemplateService extends NutritionBaseService implements INutritionTemplateService {
+  constructor(@inject(PrismaClientToken) prisma: PrismaClient) {
+    super(prisma);
+  }
+
   // ==========================================================================
   // Template CRUD (US1)
   // ==========================================================================

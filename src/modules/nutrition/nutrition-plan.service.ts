@@ -82,6 +82,10 @@ export interface INutritionPlanService {
 
 @injectable()
 export class NutritionPlanService extends NutritionBaseService implements INutritionPlanService {
+  constructor(@inject(PrismaClientToken) prisma: PrismaClient) {
+    super(prisma);
+  }
+
   private toPlanMealResponse(m: {
     id: string;
     meal_type: string;
