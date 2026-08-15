@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { injectable } from "tsyringe";
+import { injectable, inject } from "tsyringe";
 import { CoachAssignmentService } from "./coach-assignment.service";
 import { ServiceError } from "../../lib/service-error";
 import { validateSubmitRequest, isValidUuid } from "./coach-assignment.validation";
@@ -29,7 +29,7 @@ function mapRequestRecord(record: any) {
 
 @injectable()
 export class CoachAssignmentController {
-  constructor(private service: CoachAssignmentService) {}
+  constructor(@inject(CoachAssignmentService) private service: CoachAssignmentService) {}
 
   private handleError(res: Response, err: unknown) {
     if (err instanceof ServiceError) {
