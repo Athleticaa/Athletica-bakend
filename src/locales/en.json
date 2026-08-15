@@ -62,7 +62,7 @@
   "template_has_active_plans": "Cannot delete template with active plans",
   "template_deleted": "Template deleted successfully",
   "meal_type_required": "Meal type is required",
-  "meal_type_invalid": "Meal type must be one of: breakfast, lunch, snack, dinner, snack2",
+  "meal_type_invalid": "Meal type must be one of: {{types}}",
   "meal_order_invalid": "Meal order must be a positive integer",
   "meal_not_found": "Meal not found",
   "meal_notes_too_long": "Meal notes must be 500 characters or less",

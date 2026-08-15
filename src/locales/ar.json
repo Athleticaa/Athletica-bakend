@@ -62,7 +62,7 @@
   "template_has_active_plans": "لا يمكن حذف القالب لأنه يحتوي على خطط نشطة",
   "template_deleted": "تم حذف القالب بنجاح",
   "meal_type_required": "نوع الوجبة مطلوب",
-  "meal_type_invalid": "يجب أن يكون نوع الوجبة أحد: breakfast, lunch, snack, dinner, snack2",
+  "meal_type_invalid": "يجب أن يكون نوع الوجبة أحد: {{types}}",
   "meal_order_invalid": "يجب أن يكون ترتيب الوجبة عدداً صحيحاً موجباً",
   "meal_not_found": "الوجبة غير موجودة",
   "meal_notes_too_long": "يجب ألا تتجاوز ملاحظات الوجبة 500 حرف",
