@@ -1,9 +1,9 @@
 import { Request, Response } from "express";
-import { injectable, container } from "tsyringe";
-import { CoachAssignmentService, ServiceError } from "./coach-assignment.service";
+import { injectable } from "tsyringe";
+import { CoachAssignmentService } from "./coach-assignment.service";
+import { ServiceError } from "../../lib/service-error";
 import { validateSubmitRequest, isValidUuid } from "./coach-assignment.validation";
-
-const APP_URL = process.env.APP_URL || "http://localhost:3000";
+import { config } from "../../config";
 
 function mapClientProfile(client: any) {
   return {
@@ -29,11 +29,7 @@ function mapRequestRecord(record: any) {
 
 @injectable()
 export class CoachAssignmentController {
-  private service: CoachAssignmentService;
-
-  constructor() {
-    this.service = container.resolve(CoachAssignmentService);
-  }
+  constructor(private service: CoachAssignmentService) {}
 
   private handleError(res: Response, err: unknown) {
     if (err instanceof ServiceError) {
@@ -51,7 +47,7 @@ export class CoachAssignmentController {
       const { token, expires_at, reused } = await this.service.generateInvite(req.user!.sub);
       res.status(reused ? 200 : 201).json({
         token,
-        invite_url: `${APP_URL}/invite/${token}`,
+        invite_url: `${config.appUrl}/invite/${token}`,
         expires_at,
       });
     } catch (err) {

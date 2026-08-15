@@ -1,30 +1,16 @@
 import { Prisma, PrismaClient } from "@prisma/client";
-import { injectable, container } from "tsyringe";
-import { PrismaClientToken } from "../../di/tokens";
+import { injectable, inject } from "tsyringe";
+import { PrismaClientToken, JwtServiceToken } from "../../di/tokens";
 import { JwtService } from "../../lib/jwt";
-
-const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
-const REJECTION_COOLDOWN_MS = 5 * 60 * 1000;
-
-export class ServiceError extends Error {
-  statusCode: number;
-  messageKey: string;
-  constructor(messageKey: string, statusCode: number) {
-    super(messageKey);
-    this.messageKey = messageKey;
-    this.statusCode = statusCode;
-  }
-}
+import { ServiceError } from "../../lib/service-error";
+import { config } from "../../config";
 
 @injectable()
 export class CoachAssignmentService {
-  private prisma: PrismaClient;
-  private jwtService: JwtService;
-
-  constructor() {
-    this.prisma = container.resolve(PrismaClientToken);
-    this.jwtService = container.resolve(JwtService);
-  }
+  constructor(
+    @inject(PrismaClientToken) private prisma: PrismaClient,
+    @inject(JwtServiceToken) private jwtService: JwtService,
+  ) {}
 
   async getCoachProfileId(userId: string): Promise<string> {
     const profile = await this.prisma.coach_profiles.findFirst({ where: { user_id: userId } });
@@ -65,7 +51,7 @@ export class CoachAssignmentService {
     }
 
     const token = this.jwtService.signInviteToken(profile.id);
-    const expiresAt = new Date(now.getTime() + INVITE_TTL_MS);
+    const expiresAt = new Date(now.getTime() + config.invite.ttlMs);
     await this.prisma.coach_profiles.update({
       where: { id: profile.id },
       data: { active_invite_token: token, active_invite_token_expires_at: expiresAt },
@@ -135,7 +121,7 @@ export class CoachAssignmentService {
 
       if (existingRequest.status === "rejected") {
         const rejectedAt = existingRequest.rejected_at;
-        if (rejectedAt && Date.now() - rejectedAt.getTime() < REJECTION_COOLDOWN_MS) {
+        if (rejectedAt && Date.now() - rejectedAt.getTime() < config.invite.rejectionCooldownMs) {
           throw new ServiceError("wait_before_resubmit", 400);
         }
       }
@@ -271,21 +257,74 @@ export class CoachAssignmentService {
     return { coach: assignment.coach, assigned_at: assignment.created_at };
   }
 
+  private async deleteCoachClientCascade(tx: any, coachClientId: string) {
+    // Nutrition chain: meal_logs → meal_foods → meals → plans
+    const nutritionPlanIds = (
+      await tx.nutrition_plans.findMany({
+        where: { coach_client_id: coachClientId },
+        select: { id: true },
+      })
+    ).map((p: any) => p.id);
+
+    if (nutritionPlanIds.length > 0) {
+      await tx.nutrition_meal_logs.deleteMany({ where: { nutrition_plan_id: { in: nutritionPlanIds } } });
+      await tx.nutrition_meal_foods.deleteMany({
+        where: { nutrition_meal: { nutrition_plan_id: { in: nutritionPlanIds } } },
+      });
+      await tx.nutrition_meals.deleteMany({ where: { nutrition_plan_id: { in: nutritionPlanIds } } });
+      await tx.nutrition_plans.deleteMany({ where: { id: { in: nutritionPlanIds } } });
+    }
+
+    // Workout chain: day_exercises + logs → days → plans
+    const workoutPlanIds = (
+      await tx.workout_plans.findMany({
+        where: { coach_client_id: coachClientId },
+        select: { id: true },
+      })
+    ).map((p: any) => p.id);
+
+    if (workoutPlanIds.length > 0) {
+      const workoutDayIds = (
+        await tx.workout_days.findMany({
+          where: { workout_plan_id: { in: workoutPlanIds } },
+          select: { id: true },
+        })
+      ).map((d: any) => d.id);
+
+      if (workoutDayIds.length > 0) {
+        await tx.workout_day_exercises.deleteMany({ where: { workout_day_id: { in: workoutDayIds } } });
+        await tx.workout_logs.deleteMany({ where: { workout_day_id: { in: workoutDayIds } } });
+      }
+      await tx.workout_days.deleteMany({ where: { workout_plan_id: { in: workoutPlanIds } } });
+      await tx.workout_plans.deleteMany({ where: { id: { in: workoutPlanIds } } });
+    }
+
+    await tx.coach_clients.delete({ where: { id: coachClientId } });
+  }
+
   async leaveCoach(userId: string) {
     const clientProfileId = await this.getClientProfileId(userId);
-    const result = await this.prisma.coach_clients.deleteMany({
-      where: { client_id: clientProfileId },
+    await this.prisma.$transaction(async (tx) => {
+      const cc = await tx.coach_clients.findFirst({
+        where: { client_id: clientProfileId },
+        select: { id: true },
+      });
+      if (!cc) throw new ServiceError("no_coach_assigned", 404);
+      await this.deleteCoachClientCascade(tx, cc.id);
     });
-    if (result.count === 0) throw new ServiceError("no_coach_assigned", 404);
     return { message: "Successfully left coach" };
   }
 
   async removeClient(userId: string, clientId: string) {
     const coachProfileId = await this.getCoachProfileId(userId);
-    const result = await this.prisma.coach_clients.deleteMany({
-      where: { coach_id: coachProfileId, client_id: clientId },
+    await this.prisma.$transaction(async (tx) => {
+      const cc = await tx.coach_clients.findFirst({
+        where: { coach_id: coachProfileId, client_id: clientId },
+        select: { id: true },
+      });
+      if (!cc) throw new ServiceError("client_not_assigned", 404);
+      await this.deleteCoachClientCascade(tx, cc.id);
     });
-    if (result.count === 0) throw new ServiceError("client_not_assigned", 404);
     return { message: "Client removed from roster" };
   }
 }
