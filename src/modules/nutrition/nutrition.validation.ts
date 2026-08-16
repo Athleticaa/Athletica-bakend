@@ -537,13 +537,14 @@ export function validateHistoryQuery(
   if (from && to && /^\d{4}-\d{2}-\d{2}$/.test(from) && /^\d{4}-\d{2}-\d{2}$/.test(to)) {
     const f = parseDateOnly(from);
     const t2 = parseDateOnly(to);
-    if (f && t2 && f > t2) {
-      errors.push(t("end_date_before_start_date"));
-    }
     if (f && t2) {
-      const days = Math.round((t2.getTime() - f.getTime()) / 86_400_000);
-      if (days > MAX_HISTORY_DAYS) {
-        errors.push(t("history_range_too_long", { max_days: MAX_HISTORY_DAYS }));
+      if (f > t2) {
+        errors.push(t("end_date_before_start_date"));
+      } else {
+        const inclusiveDays = Math.round((t2.getTime() - f.getTime()) / 86_400_000) + 1;
+        if (inclusiveDays > MAX_HISTORY_DAYS) {
+          errors.push(t("history_range_too_long", { max_days: MAX_HISTORY_DAYS }));
+        }
       }
     }
   }
