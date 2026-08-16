@@ -79,7 +79,7 @@ export type FoodWithData = {
  */
 export function toFoodPayload(f: FoodWithData, lang?: string) {
   if (f.food.base_grams <= 0) {
-    throw new ServiceError("food_not_found", 500);
+    throw new ServiceError("internal_server_error", 500);
   }
   const scale = f.quantity / f.food.base_grams;
   const foodName = lang === "ar" ? f.food.name_ar : lang === "en" ? f.food.name_en : f.food.name;

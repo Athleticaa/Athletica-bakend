@@ -1,4 +1,4 @@
-import { Prisma, PrismaClient } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 import { injectable, inject } from "tsyringe";
 import { PrismaClientToken } from "../../di/tokens";
 import { ServiceError } from "../../lib/service-error";
@@ -141,20 +141,17 @@ export class NutritionClientService implements INutritionClientService {
     });
     if (survivors.length === 0) return;
 
-    // Create meal logs for each surviving meal (ignore P2002: concurrent request created them first)
-    try {
-      await this.prisma.nutrition_meal_logs.createMany({
-        data: survivors.map((meal) => ({
-          nutrition_plan_id: planId,
-          nutrition_meal_id: meal.id,
-          client_id: clientId,
-          date: dateOnly,
-          completed: false,
-        })),
-      });
-    } catch (err) {
-      if (!(err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002")) throw err;
-    }
+    // Create meal logs for each surviving meal (ignore duplicates created concurrently)
+    await this.prisma.nutrition_meal_logs.createMany({
+      data: survivors.map((meal) => ({
+        nutrition_plan_id: planId,
+        nutrition_meal_id: meal.id,
+        client_id: clientId,
+        date: dateOnly,
+        completed: false,
+      })),
+      skipDuplicates: true,
+    });
   }
 
   private toMealLogResponse(

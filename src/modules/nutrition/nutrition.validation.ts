@@ -462,9 +462,13 @@ export function validateAssignPlan(
     errors.push(t("plan_title_too_long"));
   }
 
-  if (description !== undefined && typeof description !== "string") {
+  if (description === undefined || description === null) {
+    errors.push(t("plan_description_required"));
+  } else if (typeof description !== "string") {
     errors.push(t("plan_description_invalid"));
-  } else if (description && typeof description === "string" && description.trim().length > 500) {
+  } else if (description.trim().length === 0) {
+    errors.push(t("plan_description_required"));
+  } else if (description.trim().length > 500) {
     errors.push(t("plan_description_too_long"));
   }
 

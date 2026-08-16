@@ -257,14 +257,14 @@ export class CoachAssignmentService {
     return { coach: assignment.coach, assigned_at: assignment.created_at };
   }
 
-  private async deleteCoachClientCascade(tx: any, coachClientId: string) {
+  private async deleteCoachClientCascade(tx: Prisma.TransactionClient, coachClientId: string) {
     // Nutrition chain: meal_logs → meal_foods → meals → plans
     const nutritionPlanIds = (
       await tx.nutrition_plans.findMany({
         where: { coach_client_id: coachClientId },
         select: { id: true },
       })
-    ).map((p: any) => p.id);
+    ).map((p: { id: string }) => p.id);
 
     if (nutritionPlanIds.length > 0) {
       await tx.nutrition_meal_logs.deleteMany({ where: { nutrition_plan_id: { in: nutritionPlanIds } } });
@@ -281,7 +281,7 @@ export class CoachAssignmentService {
         where: { coach_client_id: coachClientId },
         select: { id: true },
       })
-    ).map((p: any) => p.id);
+    ).map((p: { id: string }) => p.id);
 
     if (workoutPlanIds.length > 0) {
       const workoutDayIds = (
@@ -289,7 +289,7 @@ export class CoachAssignmentService {
           where: { workout_plan_id: { in: workoutPlanIds } },
           select: { id: true },
         })
-      ).map((d: any) => d.id);
+      ).map((d: { id: string }) => d.id);
 
       if (workoutDayIds.length > 0) {
         await tx.workout_day_exercises.deleteMany({ where: { workout_day_id: { in: workoutDayIds } } });
