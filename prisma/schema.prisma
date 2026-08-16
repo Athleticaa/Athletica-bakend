@@ -87,11 +87,11 @@ model client_profiles {
   weight     Float?
   goal       String    @db.VarChar
 
-  user           users            @relation(fields: [user_id], references: [id])
-  coach_requests coach_requests[] @relation("coach_requests_client_id")
-  coach_clients  coach_clients[]  @relation("coach_clients_client_id")
+  user           users              @relation(fields: [user_id], references: [id])
+  coach_requests coach_requests[]   @relation("coach_requests_client_id")
+  coach_clients  coach_clients[]    @relation("coach_clients_client_id")
   workout_logs   workout_logs[]
-  nutrition_logs nutrition_logs[]
+  nutrition_meal_logs nutrition_meal_logs[]
   client_answers client_answers[]
 }
 
@@ -240,23 +240,30 @@ model workout_logs {
 }
 
 model food_categories {
-  id    String @id @default(uuid()) @db.Uuid
-  name  String @db.VarChar
+  id      String @id @default(uuid()) @db.Uuid
+  name    String @db.VarChar
+  name_en String @db.VarChar
+  name_ar String @db.VarChar
 
   foods foods[]
 }
 
 model foods {
-  id          String   @id @default(uuid()) @db.Uuid
-  category_id String   @db.Uuid
-  name        String   @db.VarChar
-  base_grams  Float
-  calories    Float
-  protein     Float
-  carbs       Float
-  fat         Float
-  is_archived Boolean  @default(false)
-  created_at  DateTime @default(now())
+  id              String   @id @default(uuid()) @db.Uuid
+  category_id     String   @db.Uuid
+  name            String   @db.VarChar
+  name_en         String   @db.VarChar
+  name_ar         String   @db.VarChar
+  serving_unit    String   @db.VarChar
+  serving_unit_en String   @db.VarChar
+  serving_unit_ar String   @db.VarChar
+  base_grams      Float
+  calories        Float
+  protein         Float
+  carbs           Float
+  fat             Float
+  is_archived     Boolean  @default(false)
+  created_at      DateTime @default(now())
 
   category                food_categories           @relation(fields: [category_id], references: [id])
   nutrition_template_foods nutrition_template_foods[]
@@ -268,10 +275,12 @@ model nutrition_templates {
   coach_id    String   @db.Uuid
   title       String   @db.VarChar
   description String
+  is_deleted  Boolean  @default(false)
   created_at  DateTime @default(now())
 
   coach                    coach_profiles             @relation(fields: [coach_id], references: [id])
   nutrition_template_meals nutrition_template_meals[]
+  nutrition_plans          nutrition_plans[]
 }
 
 model nutrition_template_meals {
@@ -283,6 +292,9 @@ model nutrition_template_meals {
 
   nutrition_template       nutrition_templates        @relation(fields: [nutrition_template_id], references: [id])
   nutrition_template_foods nutrition_template_foods[]
+
+  @@index([nutrition_template_id])
+  @@unique([nutrition_template_id, meal_order])
 }
 
 model nutrition_template_foods {
@@ -293,20 +305,26 @@ model nutrition_template_foods {
 
   nutrition_template_meal nutrition_template_meals @relation(fields: [nutrition_template_meal_id], references: [id])
   food                    foods                    @relation(fields: [food_id], references: [id])
+
+  @@index([nutrition_template_meal_id])
+  @@unique([nutrition_template_meal_id, food_id])
 }
 
 model nutrition_plans {
-  id              String   @id @default(uuid()) @db.Uuid
-  coach_client_id String   @db.Uuid
-  title           String   @db.VarChar
-  description     String
-  start_date      DateTime @db.Date
-  end_date        DateTime @db.Date
-  created_at      DateTime @default(now())
+  id                    String    @id @default(uuid()) @db.Uuid
+  coach_client_id       String    @db.Uuid
+  nutrition_template_id String?   @db.Uuid
+  title                 String    @db.VarChar
+  description           String
+  is_active             Boolean   @default(true)
+  created_at            DateTime  @default(now())
 
-  coach_client    coach_clients     @relation(fields: [coach_client_id], references: [id])
-  nutrition_meals nutrition_meals[]
-  nutrition_logs  nutrition_logs[]
+  coach_client       coach_clients        @relation(fields: [coach_client_id], references: [id])
+  nutrition_template nutrition_templates? @relation(fields: [nutrition_template_id], references: [id])
+  nutrition_meals    nutrition_meals[]
+  nutrition_meal_logs nutrition_meal_logs[]
+
+  @@index([coach_client_id])
 }
 
 model nutrition_meals {
@@ -318,6 +336,10 @@ model nutrition_meals {
 
   nutrition_plan       nutrition_plans        @relation(fields: [nutrition_plan_id], references: [id])
   nutrition_meal_foods nutrition_meal_foods[]
+  nutrition_meal_logs  nutrition_meal_logs[]
+
+  @@index([nutrition_plan_id])
+  @@unique([nutrition_plan_id, meal_order])
 }
 
 model nutrition_meal_foods {
@@ -328,19 +350,28 @@ model nutrition_meal_foods {
 
   nutrition_meal nutrition_meals @relation(fields: [nutrition_meal_id], references: [id])
   food           foods           @relation(fields: [food_id], references: [id])
+
+  @@index([nutrition_meal_id])
+  @@unique([nutrition_meal_id, food_id])
 }
 
-model nutrition_logs {
-  id                String    @id @default(uuid()) @db.Uuid
-  nutrition_plan_id String    @db.Uuid
-  client_id         String    @db.Uuid
-  date              DateTime  @db.Date
-  completed         Boolean
+model nutrition_meal_logs {
+  id                String   @id @default(uuid()) @db.Uuid
+  nutrition_plan_id String   @db.Uuid
+  nutrition_meal_id String   @db.Uuid
+  client_id         String   @db.Uuid
+  date              DateTime @db.Date
+  completed         Boolean  @default(false)
   completed_at      DateTime?
-  notes             String?
+  created_at        DateTime @default(now())
 
   nutrition_plan nutrition_plans @relation(fields: [nutrition_plan_id], references: [id])
+  nutrition_meal nutrition_meals @relation(fields: [nutrition_meal_id], references: [id])
   client         client_profiles @relation(fields: [client_id], references: [id])
+
+  @@unique([nutrition_meal_id, client_id, date])
+  @@index([client_id, date])
+  @@index([nutrition_plan_id])
 }
 
 model client_questions {

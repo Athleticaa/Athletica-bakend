@@ -2,7 +2,7 @@ import "reflect-metadata";
 import { container } from "tsyringe";
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClientToken } from "./di/tokens";
+import { PrismaClientToken, JwtServiceToken } from "./di/tokens";
 import { JwtService } from "./lib/jwt";
 import { EmailService } from "./services/email";
 import { AuthService } from "./modules/auth/auth.service";
@@ -13,14 +13,17 @@ import { CoachAssignmentService } from "./modules/coach-assignment/coach-assignm
 import { CoachAssignmentController } from "./modules/coach-assignment/coach-assignment.controller";
 import { WorkoutService } from "./modules/workout/workout.service";
 import { WorkoutController } from "./modules/workout/workout.controller";
-import { NutritionService } from "./modules/nutrition/nutrition.service";
+import { NutritionTemplateService } from "./modules/nutrition/nutrition-template.service";
+import { FoodService } from "./modules/nutrition/food.service";
+import { NutritionPlanService } from "./modules/nutrition/nutrition-plan.service";
+import { NutritionClientService } from "./modules/nutrition/nutrition-client.service";
 import { NutritionController } from "./modules/nutrition/nutrition.controller";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
 const prisma = new PrismaClient({ adapter });
 
 container.registerInstance(PrismaClientToken, prisma);
-container.registerSingleton(JwtService);
+container.registerSingleton(JwtServiceToken, JwtService);
 container.registerSingleton(EmailService);
 container.registerSingleton(AuthService);
 container.registerSingleton(AuthController);
@@ -30,7 +33,10 @@ container.registerSingleton(CoachAssignmentService);
 container.registerSingleton(CoachAssignmentController);
 container.registerSingleton(WorkoutService);
 container.registerSingleton(WorkoutController);
-container.registerSingleton(NutritionService);
+container.registerSingleton(NutritionTemplateService);
+container.registerSingleton(FoodService);
+container.registerSingleton(NutritionPlanService);
+container.registerSingleton(NutritionClientService);
 container.registerSingleton(NutritionController);
 
 export { container };

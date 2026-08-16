@@ -12,7 +12,7 @@ let emailCounter = 0;
 async function signupAndLogin(role: "coach" | "client", email?: string) {
   const usedEmail = email || `${EMAIL_PREFIX}${role}-${Date.now()}-${emailCounter++}@example.com`;
   const signupRes = await request(app)
-    .post("/auth/signup")
+    .post("/api/v1/auth/signup")
     .send({
       first_name: "Test",
       last_name: role === "coach" ? "Coach" : "Client",
@@ -30,7 +30,7 @@ async function signupAndLogin(role: "coach" | "client", email?: string) {
   });
 
   const loginRes = await request(app)
-    .post("/auth/login")
+    .post("/api/v1/auth/login")
     .send({ email: usedEmail, password: "password123" });
   if (loginRes.status !== 200) {
     throw new Error(`login failed for ${usedEmail}: ${JSON.stringify(loginRes.body)}`);
@@ -71,7 +71,7 @@ describe("POST /coach/invite", () => {
 
   it("returns 201 with token, invite_url, and expires_at", async () => {
     const res = await request(app)
-      .post("/coach/invite")
+      .post("/api/v1/coach/invite")
       .set("Authorization", `Bearer ${coach.token}`);
 
     expect(res.status).toBe(201);
@@ -84,10 +84,10 @@ describe("POST /coach/invite", () => {
   it("returns 200 with the SAME token when called again", async () => {
     const fresh = await signupAndLogin("coach");
     const first = await request(app)
-      .post("/coach/invite")
+      .post("/api/v1/coach/invite")
       .set("Authorization", `Bearer ${fresh.token}`);
     const second = await request(app)
-      .post("/coach/invite")
+      .post("/api/v1/coach/invite")
       .set("Authorization", `Bearer ${fresh.token}`);
 
     expect(first.status).toBe(201);
@@ -97,14 +97,14 @@ describe("POST /coach/invite", () => {
 
   it("returns 403 for a client token", async () => {
     const res = await request(app)
-      .post("/coach/invite")
+      .post("/api/v1/coach/invite")
       .set("Authorization", `Bearer ${client.token}`);
 
     expect(res.status).toBe(403);
   });
 
   it("returns 401 unauthenticated", async () => {
-    const res = await request(app).post("/coach/invite");
+    const res = await request(app).post("/api/v1/coach/invite");
 
     expect(res.status).toBe(401);
   });
@@ -119,12 +119,12 @@ describe("DELETE /coach/invite", () => {
 
   it("revokes the active invite and returns 200", async () => {
     const createRes = await request(app)
-      .post("/coach/invite")
+      .post("/api/v1/coach/invite")
       .set("Authorization", `Bearer ${coach.token}`);
     expect(createRes.status).toBe(201);
 
     const revokeRes = await request(app)
-      .delete("/coach/invite")
+      .delete("/api/v1/coach/invite")
       .set("Authorization", `Bearer ${coach.token}`);
 
     expect(revokeRes.status).toBe(200);
@@ -140,7 +140,7 @@ describe("DELETE /coach/invite", () => {
   it("returns 404 when no active invite exists", async () => {
     const coach2 = await signupAndLogin("coach");
     const res = await request(app)
-      .delete("/coach/invite")
+      .delete("/api/v1/coach/invite")
       .set("Authorization", `Bearer ${coach2.token}`);
 
     expect(res.status).toBe(404);
@@ -149,7 +149,7 @@ describe("DELETE /coach/invite", () => {
   it("returns 403 for a client token", async () => {
     const client = await signupAndLogin("client");
     const res = await request(app)
-      .delete("/coach/invite")
+      .delete("/api/v1/coach/invite")
       .set("Authorization", `Bearer ${client.token}`);
 
     expect(res.status).toBe(403);
@@ -164,7 +164,7 @@ describe("POST /coach-requests", () => {
 
   async function createInvite(token: string) {
     const res = await request(app)
-      .post("/coach/invite")
+      .post("/api/v1/coach/invite")
       .set("Authorization", `Bearer ${token}`);
     return res.body.token;
   }
@@ -184,7 +184,7 @@ describe("POST /coach-requests", () => {
 
   it("returns 201 with pending status for a valid token", async () => {
     const res = await request(app)
-      .post("/coach-requests")
+      .post("/api/v1/coach-requests")
       .set("Authorization", `Bearer ${client.token}`)
       .send({ token: inviteToken });
 
@@ -202,7 +202,7 @@ describe("POST /coach-requests", () => {
 
   it("returns 400 for an invalid token", async () => {
     const res = await request(app)
-      .post("/coach-requests")
+      .post("/api/v1/coach-requests")
       .set("Authorization", `Bearer ${client.token}`)
       .send({ token: "not-a-real-token" });
 
@@ -215,12 +215,12 @@ describe("POST /coach-requests", () => {
     const token = await createInvite(revokeCoach.token);
 
     const revoked = await request(app)
-      .delete("/coach/invite")
+      .delete("/api/v1/coach/invite")
       .set("Authorization", `Bearer ${revokeCoach.token}`);
     expect(revoked.status).toBe(200);
 
     const res = await request(app)
-      .post("/coach-requests")
+      .post("/api/v1/coach-requests")
       .set("Authorization", `Bearer ${revokeClient.token}`)
       .send({ token });
 
@@ -229,7 +229,7 @@ describe("POST /coach-requests", () => {
 
   it("returns 403 for a coach token (client role required)", async () => {
     const res = await request(app)
-      .post("/coach-requests")
+      .post("/api/v1/coach-requests")
       .set("Authorization", `Bearer ${coach.token}`)
       .send({ token: inviteToken });
 
@@ -238,7 +238,7 @@ describe("POST /coach-requests", () => {
 
   it("returns 401 unauthenticated", async () => {
     const res = await request(app)
-      .post("/coach-requests")
+      .post("/api/v1/coach-requests")
       .send({ token: inviteToken });
 
     expect(res.status).toBe(401);
@@ -246,7 +246,7 @@ describe("POST /coach-requests", () => {
 
   it("returns 409 for a duplicate pending request", async () => {
     const res = await request(app)
-      .post("/coach-requests")
+      .post("/api/v1/coach-requests")
       .set("Authorization", `Bearer ${client.token}`)
       .send({ token: inviteToken });
 
@@ -255,7 +255,7 @@ describe("POST /coach-requests", () => {
 
   it("allows two different clients to use the same link (both 201)", async () => {
     const res2 = await request(app)
-      .post("/coach-requests")
+      .post("/api/v1/coach-requests")
       .set("Authorization", `Bearer ${client2.token}`)
       .send({ token: inviteToken });
 
@@ -269,7 +269,7 @@ describe("POST /coach-requests", () => {
     const token = await createInvite(cooldownCoach.token);
 
     const firstRes = await request(app)
-      .post("/coach-requests")
+      .post("/api/v1/coach-requests")
       .set("Authorization", `Bearer ${cooldownClient.token}`)
       .send({ token });
     expect(firstRes.status).toBe(201);
@@ -288,7 +288,7 @@ describe("POST /coach-requests", () => {
     });
 
     const resubmit = await request(app)
-      .post("/coach-requests")
+      .post("/api/v1/coach-requests")
       .set("Authorization", `Bearer ${cooldownClient.token}`)
       .send({ token });
 
@@ -301,7 +301,7 @@ describe("POST /coach-requests", () => {
     const token = await createInvite(resetCoach.token);
 
     const firstRes = await request(app)
-      .post("/coach-requests")
+      .post("/api/v1/coach-requests")
       .set("Authorization", `Bearer ${resetClient.token}`)
       .send({ token });
     expect(firstRes.status).toBe(201);
@@ -320,7 +320,7 @@ describe("POST /coach-requests", () => {
     });
 
     const resubmit = await request(app)
-      .post("/coach-requests")
+      .post("/api/v1/coach-requests")
       .set("Authorization", `Bearer ${resetClient.token}`)
       .send({ token });
 
@@ -335,7 +335,7 @@ describe("POST /coach-requests", () => {
     const token = await createInvite(rejoinCoach.token);
 
     const submitRes = await request(app)
-      .post("/coach-requests")
+      .post("/api/v1/coach-requests")
       .set("Authorization", `Bearer ${rejoinClient.token}`)
       .send({ token });
     expect(submitRes.status).toBe(201);
@@ -349,17 +349,17 @@ describe("POST /coach-requests", () => {
     const requestId = submitRes.body.id;
 
     const acceptRes = await request(app)
-      .post(`/coach-requests/${requestId}/accept`)
+      .post(`/api/v1/coach/requests/${requestId}/accept`)
       .set("Authorization", `Bearer ${rejoinCoach.token}`);
     expect(acceptRes.status).toBe(200);
 
     const leaveRes = await request(app)
-      .post("/client/leave-coach")
+      .post("/api/v1/client/leave-coach")
       .set("Authorization", `Bearer ${rejoinClient.token}`);
     expect(leaveRes.status).toBe(200);
 
     const resubmit = await request(app)
-      .post("/coach-requests")
+      .post("/api/v1/coach-requests")
       .set("Authorization", `Bearer ${rejoinClient.token}`)
       .send({ token });
 
@@ -383,10 +383,10 @@ describe("coach request responses (US4)", () => {
     otherCoach = await signupAndLogin("coach");
 
     const inviteRes = await request(app)
-      .post("/coach/invite")
+      .post("/api/v1/coach/invite")
       .set("Authorization", `Bearer ${coach.token}`);
     const submitRes = await request(app)
-      .post("/coach-requests")
+      .post("/api/v1/coach-requests")
       .set("Authorization", `Bearer ${client.token}`)
       .send({ token: inviteRes.body.token });
     pendingRequestId = submitRes.body.id;
@@ -394,7 +394,7 @@ describe("coach request responses (US4)", () => {
 
   it("returns 200 with the pending request", async () => {
     const res = await request(app)
-      .get("/coach/requests")
+      .get("/api/v1/coach/requests")
       .set("Authorization", `Bearer ${coach.token}`);
 
     expect(res.status).toBe(200);
@@ -406,7 +406,7 @@ describe("coach request responses (US4)", () => {
 
   it("returns 404 when accepting another coach's request", async () => {
     const res = await request(app)
-      .post(`/coach-requests/${pendingRequestId}/accept`)
+      .post(`/api/v1/coach/requests/${pendingRequestId}/accept`)
       .set("Authorization", `Bearer ${otherCoach.token}`);
 
     expect(res.status).toBe(404);
@@ -414,7 +414,7 @@ describe("coach request responses (US4)", () => {
 
   it("accepts a pending request: 200, coach_clients row created, visible in GET /coach/clients", async () => {
     const res = await request(app)
-      .post(`/coach-requests/${pendingRequestId}/accept`)
+      .post(`/api/v1/coach/requests/${pendingRequestId}/accept`)
       .set("Authorization", `Bearer ${coach.token}`);
 
     expect(res.status).toBe(200);
@@ -423,7 +423,7 @@ describe("coach request responses (US4)", () => {
     expect(res.body.assignment.client_id).toBeDefined();
 
     const clientsRes = await request(app)
-      .get("/coach/clients")
+      .get("/api/v1/coach/clients")
       .set("Authorization", `Bearer ${coach.token}`);
     expect(clientsRes.status).toBe(200);
     expect(clientsRes.body.clients.length).toBe(1);
@@ -432,7 +432,7 @@ describe("coach request responses (US4)", () => {
 
   it("returns 400 when accepting an already-accepted request", async () => {
     const res = await request(app)
-      .post(`/coach-requests/${pendingRequestId}/accept`)
+      .post(`/api/v1/coach/requests/${pendingRequestId}/accept`)
       .set("Authorization", `Bearer ${coach.token}`);
 
     expect(res.status).toBe(400);
@@ -443,16 +443,16 @@ describe("coach request responses (US4)", () => {
     const rejectClient = await signupAndLogin("client");
 
     const inviteRes = await request(app)
-      .post("/coach/invite")
+      .post("/api/v1/coach/invite")
       .set("Authorization", `Bearer ${rejectCoach.token}`);
     const submitRes = await request(app)
-      .post("/coach-requests")
+      .post("/api/v1/coach-requests")
       .set("Authorization", `Bearer ${rejectClient.token}`)
       .send({ token: inviteRes.body.token });
     const requestId = submitRes.body.id;
 
     const res = await request(app)
-      .post(`/coach-requests/${requestId}/reject`)
+      .post(`/api/v1/coach/requests/${requestId}/reject`)
       .set("Authorization", `Bearer ${rejectCoach.token}`);
 
     expect(res.status).toBe(200);
@@ -466,7 +466,7 @@ describe("coach request responses (US4)", () => {
 
   it("returns 400 when rejecting a non-pending request", async () => {
     const res = await request(app)
-      .post(`/coach-requests/${pendingRequestId}/reject`)
+      .post(`/api/v1/coach/requests/${pendingRequestId}/reject`)
       .set("Authorization", `Bearer ${coach.token}`);
 
     expect(res.status).toBe(400);
@@ -478,41 +478,41 @@ describe("coach request responses (US4)", () => {
     const client = await signupAndLogin("client");
 
     const inviteA = await request(app)
-      .post("/coach/invite")
+      .post("/api/v1/coach/invite")
       .set("Authorization", `Bearer ${coachA.token}`);
     const inviteB = await request(app)
-      .post("/coach/invite")
+      .post("/api/v1/coach/invite")
       .set("Authorization", `Bearer ${coachB.token}`);
 
     const submitA = await request(app)
-      .post("/coach-requests")
+      .post("/api/v1/coach-requests")
       .set("Authorization", `Bearer ${client.token}`)
       .send({ token: inviteA.body.token });
     const submitB = await request(app)
-      .post("/coach-requests")
+      .post("/api/v1/coach-requests")
       .set("Authorization", `Bearer ${client.token}`)
       .send({ token: inviteB.body.token });
     expect(submitA.status).toBe(201);
     expect(submitB.status).toBe(201);
 
     const acceptA = await request(app)
-      .post(`/coach-requests/${submitA.body.id}/accept`)
+      .post(`/api/v1/coach/requests/${submitA.body.id}/accept`)
       .set("Authorization", `Bearer ${coachA.token}`);
     expect(acceptA.status).toBe(200);
 
     const acceptB = await request(app)
-      .post(`/coach-requests/${submitB.body.id}/accept`)
+      .post(`/api/v1/coach/requests/${submitB.body.id}/accept`)
       .set("Authorization", `Bearer ${coachB.token}`);
     expect(acceptB.status).toBe(400);
 
     const bRow = await prisma.coach_requests.findUnique({ where: { id: submitB.body.id } });
     expect(bRow?.status).toBe("rejected");
     expect(bRow?.rejected_at).not.toBeNull();
-  });
+  }, 30000);
 
   it("returns 403 for a client role", async () => {
     const res = await request(app)
-      .get("/coach/requests")
+      .get("/api/v1/coach/requests")
       .set("Authorization", `Bearer ${client.token}`);
 
     expect(res.status).toBe(403);
@@ -523,7 +523,7 @@ describe("GET /coach/clients (US5)", () => {
   it("returns 200 empty list for a new coach", async () => {
     const fresh = await signupAndLogin("coach");
     const res = await request(app)
-      .get("/coach/clients")
+      .get("/api/v1/coach/clients")
       .set("Authorization", `Bearer ${fresh.token}`);
 
     expect(res.status).toBe(200);
@@ -533,7 +533,7 @@ describe("GET /coach/clients (US5)", () => {
   it("returns 403 for a client role", async () => {
     const client = await signupAndLogin("client");
     const res = await request(app)
-      .get("/coach/clients")
+      .get("/api/v1/coach/clients")
       .set("Authorization", `Bearer ${client.token}`);
 
     expect(res.status).toBe(403);
@@ -549,20 +549,20 @@ describe("GET /client/coach (US6)", () => {
     client = await signupAndLogin("client");
 
     const inviteRes = await request(app)
-      .post("/coach/invite")
+      .post("/api/v1/coach/invite")
       .set("Authorization", `Bearer ${coach.token}`);
     const submitRes = await request(app)
-      .post("/coach-requests")
+      .post("/api/v1/coach-requests")
       .set("Authorization", `Bearer ${client.token}`)
       .send({ token: inviteRes.body.token });
     await request(app)
-      .post(`/coach-requests/${submitRes.body.id}/accept`)
+      .post(`/api/v1/coach/requests/${submitRes.body.id}/accept`)
       .set("Authorization", `Bearer ${coach.token}`);
   }, 60000);
 
   it("returns 200 with the assigned coach profile", async () => {
     const res = await request(app)
-      .get("/client/coach")
+      .get("/api/v1/client/coach")
       .set("Authorization", `Bearer ${client.token}`);
 
     expect(res.status).toBe(200);
@@ -574,7 +574,7 @@ describe("GET /client/coach (US6)", () => {
   it("returns 404 for a client without an assignment", async () => {
     const unassigned = await signupAndLogin("client");
     const res = await request(app)
-      .get("/client/coach")
+      .get("/api/v1/client/coach")
       .set("Authorization", `Bearer ${unassigned.token}`);
 
     expect(res.status).toBe(404);
@@ -582,7 +582,7 @@ describe("GET /client/coach (US6)", () => {
 
   it("returns 403 for a coach role", async () => {
     const res = await request(app)
-      .get("/client/coach")
+      .get("/api/v1/client/coach")
       .set("Authorization", `Bearer ${coach.token}`);
 
     expect(res.status).toBe(403);
@@ -598,40 +598,40 @@ describe("POST /client/leave-coach (US7)", () => {
     client = await signupAndLogin("client");
 
     const inviteRes = await request(app)
-      .post("/coach/invite")
+      .post("/api/v1/coach/invite")
       .set("Authorization", `Bearer ${coach.token}`);
     const submitRes = await request(app)
-      .post("/coach-requests")
+      .post("/api/v1/coach-requests")
       .set("Authorization", `Bearer ${client.token}`)
       .send({ token: inviteRes.body.token });
     await request(app)
-      .post(`/coach-requests/${submitRes.body.id}/accept`)
+      .post(`/api/v1/coach/requests/${submitRes.body.id}/accept`)
       .set("Authorization", `Bearer ${coach.token}`);
   }, 60000);
 
   it("leaves the coach: 200, record gone, GET /client/coach → 404", async () => {
     const leaveRes = await request(app)
-      .post("/client/leave-coach")
+      .post("/api/v1/client/leave-coach")
       .set("Authorization", `Bearer ${client.token}`);
 
     expect(leaveRes.status).toBe(200);
 
     const myCoachRes = await request(app)
-      .get("/client/coach")
+      .get("/api/v1/client/coach")
       .set("Authorization", `Bearer ${client.token}`);
     expect(myCoachRes.status).toBe(404);
   });
 
   it("returns 404 when leaving again without a coach", async () => {
     const res = await request(app)
-      .post("/client/leave-coach")
+      .post("/api/v1/client/leave-coach")
       .set("Authorization", `Bearer ${client.token}`);
 
     expect(res.status).toBe(404);
   });
 
   it("returns 401 unauthenticated", async () => {
-    const res = await request(app).post("/client/leave-coach");
+    const res = await request(app).post("/api/v1/client/leave-coach");
 
     expect(res.status).toBe(401);
   });
@@ -652,33 +652,33 @@ describe("DELETE /coach/clients/:id (US8)", () => {
     clientProfileId = clientProfile!.id;
 
     const inviteRes = await request(app)
-      .post("/coach/invite")
+      .post("/api/v1/coach/invite")
       .set("Authorization", `Bearer ${coach.token}`);
     const submitRes = await request(app)
-      .post("/coach-requests")
+      .post("/api/v1/coach-requests")
       .set("Authorization", `Bearer ${client.token}`)
       .send({ token: inviteRes.body.token });
     await request(app)
-      .post(`/coach-requests/${submitRes.body.id}/accept`)
+      .post(`/api/v1/coach/requests/${submitRes.body.id}/accept`)
       .set("Authorization", `Bearer ${coach.token}`);
   }, 60000);
 
   it("removes the assigned client: 200, record gone", async () => {
     const res = await request(app)
-      .delete(`/coach/clients/${clientProfileId}`)
+      .delete(`/api/v1/coach/clients/${clientProfileId}`)
       .set("Authorization", `Bearer ${coach.token}`);
 
     expect(res.status).toBe(200);
 
     const clientsRes = await request(app)
-      .get("/coach/clients")
+      .get("/api/v1/coach/clients")
       .set("Authorization", `Bearer ${coach.token}`);
     expect(clientsRes.body.clients.length).toBe(0);
   });
 
   it("returns 404 when removing a client not assigned to this coach", async () => {
     const res = await request(app)
-      .delete(`/coach/clients/${clientProfileId}`)
+      .delete(`/api/v1/coach/clients/${clientProfileId}`)
       .set("Authorization", `Bearer ${coach.token}`);
 
     expect(res.status).toBe(404);
@@ -686,7 +686,7 @@ describe("DELETE /coach/clients/:id (US8)", () => {
 
   it("returns 400 for a malformed id", async () => {
     const res = await request(app)
-      .delete("/coach/clients/not-a-uuid")
+      .delete("/api/v1/coach/clients/not-a-uuid")
       .set("Authorization", `Bearer ${coach.token}`);
 
     expect(res.status).toBe(400);
@@ -694,7 +694,7 @@ describe("DELETE /coach/clients/:id (US8)", () => {
 
   it("returns 403 for a client role", async () => {
     const res = await request(app)
-      .delete(`/coach/clients/${clientProfileId}`)
+      .delete(`/api/v1/coach/clients/${clientProfileId}`)
       .set("Authorization", `Bearer ${client.token}`);
 
     expect(res.status).toBe(403);
