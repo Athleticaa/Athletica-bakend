@@ -1,12 +1,7 @@
 import "reflect-metadata";
 import { Prisma } from "@prisma/client";
-import { container } from "tsyringe";
-import { PrismaClientToken } from "../../src/di/tokens";
-import { JwtService } from "../../src/lib/jwt";
-import {
-  CoachAssignmentService,
-  ServiceError,
-} from "../../src/modules/coach-assignment/coach-assignment.service";
+import { CoachAssignmentService } from "../../src/modules/coach-assignment/coach-assignment.service";
+import { ServiceError } from "../../src/lib/service-error";
 
 const mockPrisma = {
   coach_profiles: {
@@ -48,9 +43,7 @@ function p2002() {
 }
 
 function getService(): CoachAssignmentService {
-  container.registerInstance(PrismaClientToken, mockPrisma as any);
-  container.registerInstance(JwtService, mockJwt as any);
-  return new CoachAssignmentService();
+  return new CoachAssignmentService(mockPrisma as any, mockJwt as any);
 }
 
 function expectServiceError(promise: Promise<unknown>, key: string, statusCode: number) {

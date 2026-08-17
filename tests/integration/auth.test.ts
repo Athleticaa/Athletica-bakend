@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
+import jwt from "jsonwebtoken";
 import request from "supertest";
 import app from "../../src/app";
 
@@ -173,14 +174,32 @@ describe("GET /auth/me (authenticated route)", () => {
     const res = await request(app).get("/api/v1/auth/me");
 
     expect(res.status).toBe(401);
+    expect(res.body.error).toBe("Authentication required");
   });
 
-  it("should return 401 with invalid token", async () => {
+  it("should return 401 with invalid-token message for an invalid token", async () => {
     const res = await request(app)
       .get("/api/v1/auth/me")
       .set("Authorization", "Bearer invalidtoken");
 
     expect(res.status).toBe(401);
+    expect(res.body.error).toBe("Invalid token");
+  });
+
+  it("should return 401 with expired-token message for an expired token", async () => {
+    const secret = process.env.JWT_SECRET || "change-me-to-a-random-secret-in-production";
+    const expiredToken = jwt.sign(
+      { sub: "user", email: "test@example.com", role: "coach" },
+      secret,
+      { expiresIn: "-10s" }
+    );
+
+    const res = await request(app)
+      .get("/api/v1/auth/me")
+      .set("Authorization", `Bearer ${expiredToken}`);
+
+    expect(res.status).toBe(401);
+    expect(res.body.error).toBe("Token has expired");
   });
 });
 

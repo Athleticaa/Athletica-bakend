@@ -6,6 +6,6 @@ module.exports = {
   testMatch: ["**/*.test.ts"],
   setupFiles: ["<rootDir>/tests/setup.ts"],
   transform: {
-    "^.+\\.ts$": "esbuild-jest",
+    "^.+\\.ts$": "<rootDir>/jest.transformer.js",
   },
 };

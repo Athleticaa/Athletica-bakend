@@ -18,6 +18,8 @@ import { FoodService } from "./modules/nutrition/food.service";
 import { NutritionPlanService } from "./modules/nutrition/nutrition-plan.service";
 import { NutritionClientService } from "./modules/nutrition/nutrition-client.service";
 import { NutritionController } from "./modules/nutrition/nutrition.controller";
+import { ProfileService } from "./modules/profile/profile.service";
+import { ProfileController } from "./modules/profile/profile.controller";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
 const prisma = new PrismaClient({ adapter });
@@ -38,5 +40,7 @@ container.registerSingleton(FoodService);
 container.registerSingleton(NutritionPlanService);
 container.registerSingleton(NutritionClientService);
 container.registerSingleton(NutritionController);
+container.registerSingleton(ProfileService);
+container.registerSingleton(ProfileController);
 
 export { container };
