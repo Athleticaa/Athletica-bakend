@@ -1,8 +1,7 @@
 const VALID_ROLES = ["coach", "client"] as const;
 
 export interface SignupInput {
-  first_name: string;
-  last_name: string;
+  username: string;
   email: string;
   password: string;
   role: string;
@@ -47,10 +46,8 @@ function tFallback(key: string): string {
 
 export function validateSignup(input: SignupInput, t: (key: string) => string = tFallback): string[] {
   const errors: string[] = [];
-  if (!input.first_name || input.first_name.length < 1 || input.first_name.length > 100)
-    errors.push(t("first_name_length"));
-  if (!input.last_name || input.last_name.length < 1 || input.last_name.length > 100)
-    errors.push(t("last_name_length"));
+  if (!input.username || input.username.length < 1 || input.username.length > 100)
+    errors.push(t("username_length"));
   if (!input.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.email))
     errors.push(t("email_invalid"));
   if (!input.password || input.password.length < 8)

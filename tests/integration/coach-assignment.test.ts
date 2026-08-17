@@ -14,8 +14,7 @@ async function signupAndLogin(role: "coach" | "client", email?: string) {
   const signupRes = await request(app)
     .post("/api/v1/auth/signup")
     .send({
-      first_name: "Test",
-      last_name: role === "coach" ? "Coach" : "Client",
+      username: `test-${role}-${Date.now()}`,
       email: usedEmail,
       password: "password123",
       role,

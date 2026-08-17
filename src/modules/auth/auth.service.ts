@@ -51,11 +51,13 @@ export class AuthService {
     const existing = await this.prisma.users.findUnique({ where: { email: input.email } });
     if (existing) throw new ServiceError("email_already_registered", 409);
 
+    const existingUsername = await this.prisma.users.findUnique({ where: { username: input.username } });
+    if (existingUsername) throw new ServiceError("username_already_taken", 409);
+
     const hashedPassword = await this.hashPassword(input.password);
     const user = await this.prisma.users.create({
       data: {
-        first_name: input.first_name,
-        last_name: input.last_name,
+        username: input.username,
         email: input.email,
         password: hashedPassword,
         role: input.role,
@@ -112,8 +114,7 @@ export class AuthService {
     return {
       user: {
         id: user.id,
-        first_name: user.first_name,
-        last_name: user.last_name,
+        username: user.username,
         email: user.email,
         role: user.role,
         email_verified: user.email_verified,
@@ -154,8 +155,7 @@ export class AuthService {
     return {
       user: {
         id: user.id,
-        first_name: user.first_name,
-        last_name: user.last_name,
+        username: user.username,
         email: user.email,
         role: user.role,
         email_verified: true,

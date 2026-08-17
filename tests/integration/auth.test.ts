@@ -6,7 +6,7 @@ import app from "../../src/app";
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
 const prisma = new PrismaClient({ adapter });
 
-const TEST_EMAILS = ["coach-test@example.com", "client-test@example.com", "invalid-role@example.com"];
+const TEST_EMAILS = ["coach-test@example.com", "client-test@example.com", "invalid-role@example.com", "username-dup@example.com"];
 
 beforeAll(async () => {
   const scoped = { email: { in: TEST_EMAILS } };
@@ -25,8 +25,7 @@ describe("POST /auth/signup", () => {
     const res = await request(app)
       .post("/api/v1/auth/signup")
       .send({
-        first_name: "John",
-        last_name: "Doe",
+        username: "johndoe",
         email: "coach-test@example.com",
         password: "password123",
         role: "coach",
@@ -40,8 +39,7 @@ describe("POST /auth/signup", () => {
     const res = await request(app)
       .post("/api/v1/auth/signup")
       .send({
-        first_name: "Jane",
-        last_name: "Smith",
+        username: "janesmith",
         email: "client-test@example.com",
         password: "password123",
         role: "client",
@@ -55,8 +53,7 @@ describe("POST /auth/signup", () => {
     const res = await request(app)
       .post("/api/v1/auth/signup")
       .send({
-        first_name: "Test",
-        last_name: "User",
+        username: "testuser",
         email: "invalid-role@example.com",
         password: "password123",
         role: "admin",
@@ -70,8 +67,7 @@ describe("POST /auth/signup", () => {
     const res = await request(app)
       .post("/api/v1/auth/signup")
       .send({
-        first_name: "John",
-        last_name: "Doe",
+        username: "johndoe",
         email: "coach-test@example.com",
         password: "password123",
         role: "coach",
@@ -79,6 +75,20 @@ describe("POST /auth/signup", () => {
 
     expect(res.status).toBe(409);
     expect(res.body.error).toBe("Email already registered");
+  });
+
+  it("should return 409 for duplicate username", async () => {
+    const res = await request(app)
+      .post("/api/v1/auth/signup")
+      .send({
+        username: "johndoe",
+        email: "username-dup@example.com",
+        password: "password123",
+        role: "coach",
+      });
+
+    expect(res.status).toBe(409);
+    expect(res.body.error).toBe("Username already taken");
   });
 });
 

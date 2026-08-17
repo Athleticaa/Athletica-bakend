@@ -23,8 +23,7 @@ describe("JwtService", () => {
 describe("validateSignup", () => {
   it("should return no errors for valid input", () => {
     const errors = validateSignup({
-      first_name: "John",
-      last_name: "Doe",
+      username: "johndoe",
       email: "john@example.com",
       password: "password123",
       role: "coach",
@@ -34,8 +33,7 @@ describe("validateSignup", () => {
 
   it("should return errors for invalid role", () => {
     const errors = validateSignup({
-      first_name: "John",
-      last_name: "Doe",
+      username: "johndoe",
       email: "john@example.com",
       password: "password123",
       role: "admin",
@@ -45,8 +43,7 @@ describe("validateSignup", () => {
 
   it("should return errors for short password", () => {
     const errors = validateSignup({
-      first_name: "John",
-      last_name: "Doe",
+      username: "johndoe",
       email: "john@example.com",
       password: "short",
       role: "coach",
@@ -56,8 +53,7 @@ describe("validateSignup", () => {
 
   it("should return errors for invalid email", () => {
     const errors = validateSignup({
-      first_name: "John",
-      last_name: "Doe",
+      username: "johndoe",
       email: "notanemail",
       password: "password123",
       role: "coach",

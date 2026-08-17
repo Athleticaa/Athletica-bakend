@@ -156,7 +156,7 @@ export class CoachAssignmentService {
       include: {
         client: {
           include: {
-            user: { select: { first_name: true, last_name: true, email: true } },
+            user: { select: { username: true, email: true } },
           },
         },
       },
@@ -233,7 +233,7 @@ export class CoachAssignmentService {
       include: {
         client: {
           include: {
-            user: { select: { first_name: true, last_name: true, email: true } },
+            user: { select: { username: true, email: true } },
           },
         },
       },
@@ -248,7 +248,7 @@ export class CoachAssignmentService {
       include: {
         coach: {
           include: {
-            user: { select: { first_name: true, last_name: true, email: true } },
+            user: { select: { username: true, email: true } },
           },
         },
       },
