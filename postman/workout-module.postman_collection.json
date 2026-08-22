@@ -1,0 +1,1062 @@
+{
+  "info": {
+    "_postman_id": "workout-module-collection",
+    "name": "Workout Module",
+    "description": "Express.js backend workout module - Full API collection",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Exercise Catalog",
+      "item": [
+        {
+          "name": "List Exercises",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/exercises?page=1&pageSize=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["exercises"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "20"
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "primaryMuscle",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "equipment",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "difficulty",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "exerciseType",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "movementPattern",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "workoutLocation",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "priority",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "isDefault",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "goal",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "tag",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "classification",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.data && jsonData.data.length > 0) {",
+                  "    pm.collectionVariables.set('exerciseId', jsonData.data[0].id);",
+                  "    console.log('Saved exerciseId: ' + jsonData.data[0].id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Exercise by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/exercises/{{exerciseId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["exercises", "{{exerciseId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Template CRUD (US1) - Coach only",
+      "item": [
+        {
+          "name": "Create Template",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Push Pull Legs Split\",\n  \"description\": \"A 3-day split for intermediate lifters\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/templates",
+              "host": ["{{baseUrl}}"],
+              "path": ["templates"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.data && jsonData.data.id) {",
+                  "    pm.collectionVariables.set('templateId', jsonData.data.id);",
+                  "    console.log('Saved templateId: ' + jsonData.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "List Templates",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/templates?page=1&pageSize=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["templates"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Template",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/templates/{{templateId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["templates", "{{templateId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Template",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Push Pull Legs V2\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/templates/{{templateId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["templates", "{{templateId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Template Days",
+      "item": [
+        {
+          "name": "Add Day",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Push Day\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/templates/{{templateId}}/days",
+              "host": ["{{baseUrl}}"],
+              "path": ["templates", "{{templateId}}", "days"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.data && Array.isArray(jsonData.data)) {",
+                  "    var lastDay = jsonData.data[jsonData.data.length - 1];",
+                  "    pm.collectionVariables.set('templateDayId', lastDay.id);",
+                  "    console.log('Saved templateDayId: ' + lastDay.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Day",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Push Day Updated\",\n  \"is_rest\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/templates/{{templateId}}/days/{{templateDayId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["templates", "{{templateId}}", "days", "{{templateDayId}}"]
+            }
+          }
+        },
+        {
+          "name": "Reorder Days",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"day_ids\": [\"{{templateDayId}}\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/templates/{{templateId}}/days/reorder",
+              "host": ["{{baseUrl}}"],
+              "path": ["templates", "{{templateId}}", "days", "reorder"]
+            }
+          }
+        },
+        {
+          "name": "Delete Day",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/templates/{{templateId}}/days/{{templateDayId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["templates", "{{templateId}}", "days", "{{templateDayId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Template Exercises",
+      "item": [
+        {
+          "name": "Add Exercise to Day",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"exercise_id\": \"{{exerciseId}}\",\n  \"notes\": \"Warm-up first\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/templates/{{templateId}}/days/{{templateDayId}}/exercises",
+              "host": ["{{baseUrl}}"],
+              "path": ["templates", "{{templateId}}", "days", "{{templateDayId}}", "exercises"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.data && jsonData.data.exercises && jsonData.data.exercises.length > 0) {",
+                  "    pm.collectionVariables.set('templateExerciseId', jsonData.data.exercises[0].id);",
+                  "    console.log('Saved templateExerciseId: ' + jsonData.data.exercises[0].id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Exercise",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notes\": \"Updated notes\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/templates/{{templateId}}/days/{{templateDayId}}/exercises/{{templateExerciseId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["templates", "{{templateId}}", "days", "{{templateDayId}}", "exercises", "{{templateExerciseId}}"]
+            }
+          }
+        },
+        {
+          "name": "Remove Exercise",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/templates/{{templateId}}/days/{{templateDayId}}/exercises/{{templateExerciseId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["templates", "{{templateId}}", "days", "{{templateDayId}}", "exercises", "{{templateExerciseId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Plan Assignment (US3) - Coach only",
+      "item": [
+        {
+          "name": "Assign Plan",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"coach_client_id\": \"{{coachClientId}}\",\n  \"title\": \"January Program\",\n  \"description\": \"4-week program\",\n  \"start_date\": \"2026-01-01\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/templates/{{templateId}}/assign",
+              "host": ["{{baseUrl}}"],
+              "path": ["templates", "{{templateId}}", "assign"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.data) {",
+                  "    if (jsonData.data.id) {",
+                  "        pm.collectionVariables.set('planId', jsonData.data.id);",
+                  "        console.log('Saved planId: ' + jsonData.data.id);",
+                  "    }",
+                  "    if (jsonData.data.days && jsonData.data.days.length > 0) {",
+                  "        var firstDay = jsonData.data.days[0];",
+                  "        pm.collectionVariables.set('planDayId', firstDay.id);",
+                  "        console.log('Saved planDayId: ' + firstDay.id);",
+                  "        if (firstDay.exercises && firstDay.exercises.length > 0) {",
+                  "            pm.collectionVariables.set('planExerciseId', firstDay.exercises[0].id);",
+                  "            console.log('Saved planExerciseId: ' + firstDay.exercises[0].id);",
+                  "        }",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Plan CRUD (US6) - Coach only",
+      "item": [
+        {
+          "name": "List Plans",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/plans?page=1&pageSize=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["plans"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "10"
+                },
+                {
+                  "key": "is_active",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "client_id",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Plan",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/plans/{{planId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["plans", "{{planId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Plan",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"February Program\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/plans/{{planId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["plans", "{{planId}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Plan",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/plans/{{planId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["plans", "{{planId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Plan Days (US5) - Coach only",
+      "item": [
+        {
+          "name": "Add Day to Plan",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Pull Day\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/plans/{{planId}}/days",
+              "host": ["{{baseUrl}}"],
+              "path": ["plans", "{{planId}}", "days"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.data && Array.isArray(jsonData.data)) {",
+                  "    var lastDay = jsonData.data[jsonData.data.length - 1];",
+                  "    pm.collectionVariables.set('planDayId', lastDay.id);",
+                  "    console.log('Saved planDayId: ' + lastDay.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Plan Day",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Pull Day Updated\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/plans/{{planId}}/days/{{planDayId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["plans", "{{planId}}", "days", "{{planDayId}}"]
+            }
+          }
+        },
+        {
+          "name": "Reorder Plan Days",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"day_ids\": [\"{{planDayId}}\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/plans/{{planId}}/days/reorder",
+              "host": ["{{baseUrl}}"],
+              "path": ["plans", "{{planId}}", "days", "reorder"]
+            }
+          }
+        },
+        {
+          "name": "Delete Plan Day",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/plans/{{planId}}/days/{{planDayId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["plans", "{{planId}}", "days", "{{planDayId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Plan Exercises (US4) - Coach only",
+      "item": [
+        {
+          "name": "Add Exercise to Plan Day",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"exercise_id\": \"{{exerciseId}}\",\n  \"sets\": 3,\n  \"reps\": 10,\n  \"notes\": \"Keep strict form\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/plans/{{planId}}/days/{{planDayId}}/exercises",
+              "host": ["{{baseUrl}}"],
+              "path": ["plans", "{{planId}}", "days", "{{planDayId}}", "exercises"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.data && jsonData.data.exercises && jsonData.data.exercises.length > 0) {",
+                  "    pm.collectionVariables.set('planExerciseId', jsonData.data.exercises[0].id);",
+                  "    console.log('Saved planExerciseId: ' + jsonData.data.exercises[0].id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Plan Exercise",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sets\": 4,\n  \"reps\": 8,\n  \"notes\": \"Increased weight\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/plans/{{planId}}/days/{{planDayId}}/exercises/{{planExerciseId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["plans", "{{planId}}", "days", "{{planDayId}}", "exercises", "{{planExerciseId}}"]
+            }
+          }
+        },
+        {
+          "name": "Remove Exercise from Plan Day",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/plans/{{planId}}/days/{{planDayId}}/exercises/{{planExerciseId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["plans", "{{planId}}", "days", "{{planDayId}}", "exercises", "{{planExerciseId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Client Endpoints (US7) - Client only",
+      "item": [
+        {
+          "name": "Get Today's Workout",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/today",
+              "host": ["{{baseUrl}}"],
+              "path": ["today"]
+            }
+          }
+        },
+        {
+          "name": "Get My Active Plan",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/my/plans",
+              "host": ["{{baseUrl}}"],
+              "path": ["my", "plans"]
+            }
+          }
+        },
+        {
+          "name": "Get Plan Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/my/plans/{{planId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["my", "plans", "{{planId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Client Complete/Uncomplete (US8) - Client only",
+      "item": [
+        {
+          "name": "Complete Workout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/workouts/{{workoutLogId}}/complete",
+              "host": ["{{baseUrl}}"],
+              "path": ["workouts", "{{workoutLogId}}", "complete"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "console.log('Complete workout response:', JSON.stringify(jsonData));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Uncomplete Workout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/workouts/{{workoutLogId}}/uncomplete",
+              "host": ["{{baseUrl}}"],
+              "path": ["workouts", "{{workoutLogId}}", "uncomplete"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "console.log('Uncomplete workout response:', JSON.stringify(jsonData));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Client History (US9) - Client only",
+      "item": [
+        {
+          "name": "Get History",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/history",
+              "host": ["{{baseUrl}}"],
+              "path": ["history"],
+              "query": [
+                {
+                  "key": "from",
+                  "value": "",
+                  "disabled": true,
+                  "description": "YYYY-MM-DD"
+                },
+                {
+                  "key": "to",
+                  "value": "",
+                  "disabled": true,
+                  "description": "YYYY-MM-DD"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api/v1/workouts",
+      "type": "string"
+    },
+    {
+      "key": "authToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "templateId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "templateDayId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "templateExerciseId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "planId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "planDayId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "planExerciseId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "exerciseId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "workoutLogId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "coachClientId",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}
