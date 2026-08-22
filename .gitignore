@@ -12,3 +12,6 @@ package-lock.json
 dist/
 *.log
 auth.postman_collection.json
+.env.local
+.gitignore
+.vercel/.env.development.local
