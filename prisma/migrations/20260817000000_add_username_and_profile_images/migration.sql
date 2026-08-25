@@ -1,5 +1,9 @@
 -- Add username to users (with backfill), move profile_image to role profiles
 
+-- Add profile_image to role tables first
+ALTER TABLE "coach_profiles" ADD COLUMN "profile_image" VARCHAR;
+ALTER TABLE "client_profiles" ADD COLUMN "profile_image" VARCHAR;
+
 -- Backfill role-profile images from the users column being removed
 UPDATE "coach_profiles" cp
 SET "profile_image" = u."profile_image"
