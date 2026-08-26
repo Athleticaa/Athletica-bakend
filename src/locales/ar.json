@@ -121,5 +121,6 @@
   "username_already_taken": "اسم المستخدم مستخدم بالفعل",
   "no_profile_image": "لا توجد صورة بروفايل للحذف",
   "profile_image_updated": "تم تحديث صورة البروفايل بنجاح",
-  "profile_image_deleted": "تم حذف صورة البروفايل بنجاح"
+  "profile_image_deleted": "تم حذف صورة البروفايل بنجاح",
+  "logged_out": "تم تسجيل الخروج بنجاح"
 }

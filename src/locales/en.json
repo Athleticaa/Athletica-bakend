@@ -121,5 +121,6 @@
   "username_already_taken": "Username already taken",
   "no_profile_image": "No profile image to delete",
   "profile_image_updated": "Profile image updated successfully",
-  "profile_image_deleted": "Profile image deleted successfully"
+  "profile_image_deleted": "Profile image deleted successfully",
+  "logged_out": "Logged out successfully"
 }

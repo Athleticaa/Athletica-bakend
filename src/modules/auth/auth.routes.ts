@@ -13,6 +13,7 @@ router.post("/reset-password/confirm", controller.confirmReset);
 router.post("/verify-email", controller.verifyEmail);
 router.post("/resend-verification", controller.resendVerification);
 router.post("/change-password", authenticate, controller.changePassword);
+router.post("/logout", authenticate, controller.logout);
 router.get("/me", authenticate, controller.me);
 
 export default router;

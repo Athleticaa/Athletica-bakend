@@ -212,6 +212,10 @@ export class AuthService {
     ]);
   }
 
+  async logout(userId: string) {
+    await this.prisma.refresh_tokens.deleteMany({ where: { user_id: userId } });
+  }
+
   async changePassword(userId: string, oldPassword: string, newPassword: string) {
     const user = await this.prisma.users.findUnique({ where: { id: userId } });
     if (!user) throw new ServiceError("invalid_request", 400);

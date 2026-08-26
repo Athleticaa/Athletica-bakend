@@ -127,6 +127,15 @@ export class AuthController {
     }
   };
 
+  logout = async (req: Request, res: Response) => {
+    try {
+      await this.authService.logout(req.user!.sub);
+      res.status(200).json({ message: req.t("logged_out") });
+    } catch (err) {
+      this.handleError(res, err);
+    }
+  };
+
   me = (req: Request, res: Response) => {
     res.status(200).json({ user: req.user });
   };
