@@ -9,10 +9,12 @@ export function validateSubmitRequest(
   t: (key: string) => string
 ): string[] {
   const errors: string[] = [];
-  const token = body?.token;
+  const code = body?.code || body?.token;
 
-  if (!token || typeof token !== "string" || token.trim().length === 0) {
-    errors.push(t("validation_token_required"));
+  if (!code || typeof code !== "string" || code.trim().length === 0) {
+    errors.push(t("validation_code_required"));
+  } else if (!/^[A-Za-z0-9]{6}$/.test(code.trim())) {
+    errors.push(t("validation_code_invalid"));
   }
 
   return errors;

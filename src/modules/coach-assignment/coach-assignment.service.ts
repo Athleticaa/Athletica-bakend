@@ -1,4 +1,5 @@
 import { Prisma, PrismaClient } from "@prisma/client";
+import crypto from "crypto";
 import { injectable, inject } from "tsyringe";
 import { PrismaClientToken, JwtServiceToken } from "../../di/tokens";
 import { JwtService } from "../../lib/jwt";
@@ -34,67 +35,85 @@ export class CoachAssignmentService {
     return profile.id;
   }
 
+  private generateInviteCode(): string {
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    let result = "";
+    const bytes = crypto.randomBytes(6);
+    for (let i = 0; i < 6; i++) {
+      result += chars[bytes[i] % chars.length];
+    }
+    return result;
+  }
+
   async generateInvite(userId: string) {
     const profile = await this.getCoachProfile(userId);
 
     const now = new Date();
     if (
-      profile.active_invite_token &&
-      profile.active_invite_token_expires_at &&
-      profile.active_invite_token_expires_at > now
+      profile.active_invite_code &&
+      profile.active_invite_code_expires_at &&
+      profile.active_invite_code_expires_at > now
     ) {
       return {
-        token: profile.active_invite_token,
-        expires_at: profile.active_invite_token_expires_at,
+        code: profile.active_invite_code,
+        token: profile.active_invite_code, // fallback alias
+        expires_at: profile.active_invite_code_expires_at,
         reused: true,
       };
     }
 
-    const token = this.jwtService.signInviteToken(profile.id);
+    let newCode = "";
+    let isUnique = false;
+    const maxAttempts = 100;
+    let attempts = 0;
+    while (!isUnique) {
+      if (++attempts > maxAttempts) {
+        throw new ServiceError("invite_code_generation_failed", 500);
+      }
+      newCode = this.generateInviteCode();
+      const existing = await this.prisma.coach_profiles.findFirst({
+        where: { active_invite_code: newCode, active_invite_code_expires_at: { gt: now } },
+      });
+      if (!existing) isUnique = true;
+    }
+
     const expiresAt = new Date(now.getTime() + config.invite.ttlMs);
     await this.prisma.coach_profiles.update({
       where: { id: profile.id },
-      data: { active_invite_token: token, active_invite_token_expires_at: expiresAt },
+      data: { active_invite_code: newCode, active_invite_code_expires_at: expiresAt },
     });
 
-    return { token, expires_at: expiresAt, reused: false };
+    return { code: newCode, token: newCode, expires_at: expiresAt, reused: false };
   }
 
   async revokeInvite(userId: string) {
     const profile = await this.getCoachProfile(userId);
 
-    if (!profile.active_invite_token) {
+    if (!profile.active_invite_code) {
       throw new ServiceError("no_active_invite", 404);
     }
 
     await this.prisma.coach_profiles.update({
       where: { id: profile.id },
-      data: { active_invite_token: null, active_invite_token_expires_at: null },
+      data: { active_invite_code: null, active_invite_code_expires_at: null },
     });
 
     return { message: "Invitation link revoked successfully" };
   }
 
-  async submitRequest(userId: string, token: string) {
-    let payload;
-    try {
-      payload = this.jwtService.verifyInviteToken(token);
-    } catch {
-      throw new ServiceError("invalid_or_expired_token", 400);
-    }
+  async submitRequest(userId: string, tokenOrCode: string) {
+    const normalizedCode = tokenOrCode.trim().toUpperCase();
 
-    const coachProfile = await this.prisma.coach_profiles.findUnique({
-      where: { id: payload.coach_profile_id },
+    const now = new Date();
+    const coachProfile = await this.prisma.coach_profiles.findFirst({
+      where: {
+        active_invite_code: normalizedCode,
+        active_invite_code_expires_at: { gt: now },
+      },
     });
-    if (!coachProfile) throw new ServiceError("invalid_or_expired_token", 400);
 
-    if (
-      !coachProfile.active_invite_token ||
-      coachProfile.active_invite_token !== token ||
-      !coachProfile.active_invite_token_expires_at ||
-      coachProfile.active_invite_token_expires_at < new Date()
-    ) {
-      throw new ServiceError("invalid_or_expired_token", 400);
+    if (!coachProfile) {
+      throw new ServiceError("invalid_or_expired_code", 400);
     }
 
     if (coachProfile.user_id === userId) {

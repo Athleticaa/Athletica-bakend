@@ -45,6 +45,8 @@
   "client_profile_not_found": "ملف العميل غير موجود",
   "client_not_assigned": "العميل غير معين لهذا المدرب",
   "validation_token_required": "الرمز مطلوب",
+  "validation_code_required": "رمز الدعوة مطلوب",
+  "validation_code_invalid": "يجب أن يتكون الرمز من 6 أحرف وأرقام",
   "exercise_not_found": "التمرين غير موجود",
   "food_not_found": "الطعام غير موجود",
   "invalid_uuid": "تنسيق UUID غير صالح",

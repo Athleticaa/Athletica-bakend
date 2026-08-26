@@ -45,6 +45,8 @@
   "client_profile_not_found": "Client profile not found",
   "client_not_assigned": "Client not assigned to this coach",
   "validation_token_required": "token is required",
+  "validation_code_required": "code is required",
+  "validation_code_invalid": "code must be 6 alphanumeric characters",
   "exercise_not_found": "Exercise not found",
   "food_not_found": "Food not found",
   "invalid_uuid": "Invalid UUID format",

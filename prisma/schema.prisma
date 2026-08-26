@@ -67,14 +67,16 @@ model coach_profiles {
   bio                         String
   specialization              String      @db.VarChar
   profile_image               String?     @db.VarChar
-  active_invite_token         String?     @db.VarChar
-  active_invite_token_expires_at DateTime?
+  active_invite_code            String?     @db.VarChar(6)
+  active_invite_code_expires_at DateTime?
 
   user                users                 @relation(fields: [user_id], references: [id])
   coach_requests      coach_requests[]      @relation("coach_requests_coach_id")
   coach_clients       coach_clients[]       @relation("coach_clients_coach_id")
   workout_templates   workout_templates[]
   nutrition_templates nutrition_templates[]
+
+  @@index([active_invite_code])
 }
 
 model client_profiles {

@@ -44,10 +44,11 @@ export class CoachAssignmentController {
 
   createInvite = async (req: Request, res: Response) => {
     try {
-      const { token, expires_at, reused } = await this.service.generateInvite(req.user!.sub);
+      const { code, token, expires_at, reused } = await this.service.generateInvite(req.user!.sub);
       res.status(reused ? 200 : 201).json({
+        code,
         token,
-        invite_url: `${config.appUrl}/invite/${token}`,
+        invite_url: `${config.appUrl}/invite/${code}`,
         expires_at,
       });
     } catch (err) {
@@ -72,7 +73,8 @@ export class CoachAssignmentController {
     }
 
     try {
-      const { record, created } = await this.service.submitRequest(req.user!.sub, req.body.token);
+      const codeToSubmit = req.body.code || req.body.token;
+      const { record, created } = await this.service.submitRequest(req.user!.sub, codeToSubmit);
       res.status(created ? 201 : 200).json(mapRequestRecord(record));
     } catch (err) {
       this.handleError(res, err);
