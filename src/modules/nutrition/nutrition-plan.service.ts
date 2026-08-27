@@ -224,7 +224,7 @@ export class NutritionPlanService extends NutritionBaseService implements INutri
     const coachId = await this.getCoachProfileId(userId);
 
     const plan = await this.prisma.nutrition_plans.findFirst({
-      where: { id: planId, coach_client: { coach_id: coachId } },
+      where: { id: planId, coach_client: { coach_id: coachId }, is_active: true },
       include: {
         nutrition_meals: {
           orderBy: { meal_order: "asc" },

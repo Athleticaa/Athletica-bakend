@@ -189,7 +189,16 @@ export class NutritionClientService implements INutritionClientService {
     const clientId = await this.getClientProfileId(userId);
     const plan = await this.getActivePlan(clientId);
 
-    if (!plan) return { meals: [], day_completed: null };
+    if (!plan) {
+      const assignment = await this.prisma.coach_clients.findFirst({
+        where: { client_id: clientId },
+        include: { coach: { include: { user: { select: { username: true, email: true } } } } },
+      });
+      const coach = assignment
+        ? { id: assignment.coach.id, user: assignment.coach.user }
+        : null;
+      throw new ServiceError("no_active_plan_found", 404, { coach });
+    }
 
     await this.ensurePlanActive(plan);
 
@@ -219,7 +228,16 @@ export class NutritionClientService implements INutritionClientService {
     const clientId = await this.getClientProfileId(userId);
     const plan = await this.getActivePlanSummary(clientId);
 
-    if (!plan) return { plan: null };
+    if (!plan) {
+      const assignment = await this.prisma.coach_clients.findFirst({
+        where: { client_id: clientId },
+        include: { coach: { include: { user: { select: { username: true, email: true } } } } },
+      });
+      const coach = assignment
+        ? { id: assignment.coach.id, user: assignment.coach.user }
+        : null;
+      throw new ServiceError("no_active_plan_found", 404, { coach });
+    }
 
     await this.ensurePlanActive(plan);
 
@@ -242,6 +260,7 @@ export class NutritionClientService implements INutritionClientService {
       where: {
         id: planId,
         coach_client: { client_id: clientId },
+        is_active: true,
       },
       include: {
         nutrition_meals: {

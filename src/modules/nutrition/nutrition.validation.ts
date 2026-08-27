@@ -489,16 +489,18 @@ export function parseListClientPlansQuery(
   }
 
   let clientId: string | undefined;
-  if (query.client_id !== undefined) {
-    clientId = String(query.client_id) || undefined;
+  const rawClientId = query.client_id ?? (query as Record<string, unknown>).clientId;
+  if (rawClientId !== undefined) {
+    clientId = String(rawClientId) || undefined;
     if (clientId && !isValidUuid(clientId)) {
       errors.push(t("invalid_client_id"));
     }
   }
 
   let isActive: boolean | undefined;
-  if (query.is_active !== undefined) {
-    const parsed = parseBoolean(query.is_active);
+  const rawIsActive = query.is_active ?? (query as Record<string, unknown>).isActive;
+  if (rawIsActive !== undefined) {
+    const parsed = parseBoolean(rawIsActive);
     if (parsed === null) {
       errors.push(t("invalid_is_active"));
     } else {
