@@ -110,7 +110,10 @@ export class CoachAssignmentService {
         active_invite_code: normalizedCode,
         active_invite_code_expires_at: { gt: now },
       },
-    });
+      include: {
+        user: { select: { username: true, email: true } },
+      },
+    } as any);
 
     if (!coachProfile) {
       throw new ServiceError("invalid_or_expired_code", 400);
@@ -118,6 +121,36 @@ export class CoachAssignmentService {
 
     if (coachProfile.user_id === userId) {
       throw new ServiceError("cannot_assign_self", 400);
+    }
+
+    // Build coach info for response (name/email) — include is requested above,
+    // with fallback to a direct users lookup for resilience (e.g. legacy mocks).
+    let coach: { id: string; username: string; name: string; email: string } | undefined;
+    const embeddedUser = (coachProfile as any).user;
+    if (embeddedUser?.username && embeddedUser?.email) {
+      coach = {
+        id: coachProfile.id,
+        username: embeddedUser.username,
+        name: embeddedUser.username,
+        email: embeddedUser.email,
+      };
+    } else {
+      try {
+        const fallbackUser = await (this.prisma as any).users?.findUnique?.({
+          where: { id: coachProfile.user_id },
+          select: { username: true, email: true },
+        });
+        if (fallbackUser?.username && fallbackUser?.email) {
+          coach = {
+            id: coachProfile.id,
+            username: fallbackUser.username,
+            name: fallbackUser.username,
+            email: fallbackUser.email,
+          };
+        }
+      } catch {
+        // ignore — coach stays undefined and will be omitted
+      }
     }
 
     const clientProfileId = await this.getClientProfileId(userId);
@@ -150,7 +183,7 @@ export class CoachAssignmentService {
           where: { id: existingRequest.id },
           data: { status: "pending", rejected_at: null },
         });
-        return { record, created: false };
+        return { record, created: false, coach };
       }
     }
 
@@ -158,7 +191,7 @@ export class CoachAssignmentService {
       const record = await this.prisma.coach_requests.create({
         data: { coach_id: coachProfile.id, client_id: clientProfileId, status: "pending" },
       });
-      return { record, created: true };
+      return { record, created: true, coach };
     } catch (err) {
       if (this.isUniqueViolation(err)) {
         throw new ServiceError("request_already_exists", 409);

@@ -74,8 +74,10 @@ export class CoachAssignmentController {
 
     try {
       const codeToSubmit = req.body.code || req.body.token;
-      const { record, created } = await this.service.submitRequest(req.user!.sub, codeToSubmit);
-      res.status(created ? 201 : 200).json(mapRequestRecord(record));
+      const { record, created, coach } = await this.service.submitRequest(req.user!.sub, codeToSubmit);
+      const payload: any = mapRequestRecord(record);
+      if (coach) payload.coach = coach;
+      res.status(created ? 201 : 200).json(payload);
     } catch (err) {
       this.handleError(res, err);
     }
