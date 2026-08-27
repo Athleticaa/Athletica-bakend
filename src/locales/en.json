@@ -122,5 +122,16 @@
   "no_profile_image": "No profile image to delete",
   "profile_image_updated": "Profile image updated successfully",
   "profile_image_deleted": "Profile image deleted successfully",
-  "logged_out": "Logged out successfully"
+  "logged_out": "Logged out successfully",
+  "answers_required": "answers array is required and must not be empty",
+  "answer_required": "answer is required",
+  "answer_invalid": "answer must be a non-negative integer for choice questions",
+  "answer_text_empty": "text answer must not be empty",
+  "answer_out_of_range": "answer index is out of range for this question",
+  "answers_already_exist": "Answers already submitted for one or more of these questions",
+  "invalid_question_ids": "One or more question IDs are invalid",
+  "answers_not_found": "One or more answers not found for this client",
+  "answers_created": "Answers submitted successfully",
+  "answers_updated": "Answers updated successfully",
+  "answer_text_required": "A non-empty text answer is required for this question"
 }

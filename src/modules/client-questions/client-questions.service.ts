@@ -40,29 +40,42 @@ export class ClientQuestionsService {
     const questionIds = answers.map((a) => a.question_id);
     const answeredQuestions = await this.prisma.client_questions.findMany({
       where: { id: { in: questionIds } },
-      select: { id: true, group_key: true, choices: true },
+      select: { id: true, group_key: true, choices: true, question_type: true },
     });
 
     const groupKeys = answeredQuestions.map((q) => q.group_key);
     const langQuestions = await this.prisma.client_questions.findMany({
       where: { group_key: { in: groupKeys }, language },
-      select: { group_key: true, question: true, choices: true },
+      select: { group_key: true, question: true, choices: true, question_type: true },
     });
 
     const langByGroup = new Map(langQuestions.map((q) => [q.group_key, q]));
     const groupByQuestion = new Map(answeredQuestions.map((q) => [q.id, q.group_key]));
+    const typeByQuestion = new Map(answeredQuestions.map((q) => [q.id, q.question_type]));
 
     return answers.map((a) => {
       const groupKey = groupByQuestion.get(a.question_id)!;
       const langQ = langByGroup.get(groupKey);
+      const questionType = typeByQuestion.get(a.question_id);
+      const isTextQuestion = questionType === "text";
+
+      let answerText: string | null = null;
+      if (isTextQuestion) {
+        answerText = a.answer;
+      } else {
+        const choiceIndex = parseInt(a.answer, 10);
+        answerText = !isNaN(choiceIndex) ? (langQ?.choices[choiceIndex] ?? null) : null;
+      }
+
       return {
         id: a.id,
         client_id: a.client_id,
         question_id: a.question_id,
         answer: a.answer,
-        answer_text: langQ?.choices[a.answer as number] ?? null,
+        answer_text: answerText,
         created_at: a.created_at,
         question: langQ?.question ?? null,
+        question_type: questionType ?? "choice",
       };
     });
   }
@@ -79,27 +92,17 @@ export class ClientQuestionsService {
 
     const questions = await this.prisma.client_questions.findMany({
       where: { id: { in: answers.map((a) => a.question_id) } },
-      select: { id: true, choices: true },
+      select: { id: true, choices: true, question_type: true },
     });
 
     const questionMap = new Map(questions.map((q) => [q.id, q]));
-    const invalid = answers.filter((a) => !questionMap.has(a.question_id));
-    if (invalid.length > 0) {
-      throw new ServiceError("invalid_question_ids", 400);
-    }
 
-    const outOfRange = answers.filter((a) => {
-      const q = questionMap.get(a.question_id)!;
-      return a.answer < 0 || a.answer >= q.choices.length;
-    });
-    if (outOfRange.length > 0) {
-      throw new ServiceError("answer_out_of_range", 400);
-    }
+    this.validateAnswersAgainstQuestions(answers, questionMap);
 
     const data = answers.map((a) => ({
       client_id: clientId,
       question_id: a.question_id,
-      answer: a.answer,
+      answer: String(a.answer),
     }));
 
     await this.prisma.client_answers.createMany({ data });
@@ -119,24 +122,49 @@ export class ClientQuestionsService {
 
     const questions = await this.prisma.client_questions.findMany({
       where: { id: { in: answers.map((a) => a.question_id) } },
-      select: { id: true, choices: true },
+      select: { id: true, choices: true, question_type: true },
     });
 
     const questionMap = new Map(questions.map((q) => [q.id, q]));
-    const outOfRange = answers.filter((a) => {
-      const q = questionMap.get(a.question_id);
-      if (!q) return true;
-      return a.answer < 0 || a.answer >= q.choices.length;
-    });
-    if (outOfRange.length > 0) {
-      throw new ServiceError("answer_out_of_range", 400);
-    }
+
+    this.validateAnswersAgainstQuestions(answers, questionMap);
 
     for (const item of answers) {
       await this.prisma.client_answers.updateMany({
         where: { client_id: clientId, question_id: item.question_id },
-        data: { answer: item.answer },
+        data: { answer: String(item.answer) },
       });
+    }
+  }
+
+  /**
+   * Validates that each answer is consistent with its question type:
+   * - "choice" questions: answer must be a non-negative integer index within choices array bounds
+   * - "text" questions: answer must be a non-empty string
+   */
+  private validateAnswersAgainstQuestions(
+    answers: AnswerItem[],
+    questionMap: Map<string, { id: string; choices: string[]; question_type: string }>
+  ): void {
+    const invalid = answers.filter((a) => !questionMap.has(a.question_id));
+    if (invalid.length > 0) {
+      throw new ServiceError("invalid_question_ids", 400);
+    }
+
+    for (const a of answers) {
+      const q = questionMap.get(a.question_id)!;
+
+      if (q.question_type === "text") {
+        if (typeof a.answer !== "string" || a.answer.trim().length === 0) {
+          throw new ServiceError("answer_text_required", 400);
+        }
+      } else {
+        // choice question: answer must be a valid index
+        const idx = typeof a.answer === "number" ? a.answer : parseInt(String(a.answer), 10);
+        if (!Number.isInteger(idx) || idx < 0 || idx >= q.choices.length) {
+          throw new ServiceError("answer_out_of_range", 400);
+        }
+      }
     }
   }
 }

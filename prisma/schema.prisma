@@ -377,12 +377,13 @@ model nutrition_meal_logs {
 }
 
 model client_questions {
-  id         String           @id @default(uuid()) @db.Uuid
-  group_key  String           @db.Uuid
-  question   String           @db.VarChar
-  choices    String[]
-  language   String           @db.VarChar
-  created_at DateTime         @default(now())
+  id            String   @id @default(uuid()) @db.Uuid
+  group_key     String   @db.Uuid
+  question      String   @db.VarChar
+  question_type String   @default("choice") @db.VarChar
+  choices       String[]
+  language      String   @db.VarChar
+  created_at    DateTime @default(now())
 
   client_answers client_answers[]
 
@@ -394,7 +395,7 @@ model client_answers {
   id          String   @id @default(uuid()) @db.Uuid
   client_id   String   @db.Uuid
   question_id String   @db.Uuid
-  answer      Int
+  answer      String   @db.VarChar
   created_at  DateTime @default(now())
 
   client   client_profiles  @relation(fields: [client_id], references: [id])

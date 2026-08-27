@@ -205,6 +205,21 @@ const questions = [
   },
 ];
 
+const textQuestions: Array<{ en: string; ar: string }> = [
+  {
+    en: "Type Your Height",
+    ar: "أدخل طولك",
+  },
+  {
+    en: "Type Your Weight",
+    ar: "أدخل وزنك",
+  },
+  {
+    en: "Add Food You Like & Dislike",
+    ar: "أضف الطعام الذي تحبه وتكرهه",
+  },
+];
+
 async function main() {
   console.log("Seeding client questions...");
   for (const q of questions) {
@@ -212,11 +227,30 @@ async function main() {
     for (const lang of ["en", "ar"] as const) {
       await prisma.client_questions.upsert({
         where: { question_language: { question: q[lang], language: lang } },
-        update: { choices: q.choices[lang], group_key: groupKey },
+        update: { choices: q.choices[lang], group_key: groupKey, question_type: "choice" },
         create: {
           group_key: groupKey,
           question: q[lang],
+          question_type: "choice",
           choices: q.choices[lang],
+          language: lang,
+        },
+      });
+    }
+  }
+
+  console.log("Seeding open-text questions...");
+  for (const q of textQuestions) {
+    const groupKey = crypto.randomUUID();
+    for (const lang of ["en", "ar"] as const) {
+      await prisma.client_questions.upsert({
+        where: { question_language: { question: q[lang], language: lang } },
+        update: { choices: [], group_key: groupKey, question_type: "text" },
+        create: {
+          group_key: groupKey,
+          question: q[lang],
+          question_type: "text",
+          choices: [],
           language: lang,
         },
       });
