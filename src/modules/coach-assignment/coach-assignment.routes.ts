@@ -14,6 +14,7 @@ coachRouter.get("/requests", authenticate, authorize("coach"), controller.listRe
 coachRouter.post("/requests/:id/accept", authenticate, authorize("coach"), controller.acceptRequest);
 coachRouter.post("/requests/:id/reject", authenticate, authorize("coach"), controller.rejectRequest);
 coachRouter.get("/clients", authenticate, authorize("coach"), controller.listClients);
+coachRouter.get("/clients/:id", authenticate, authorize("coach"), controller.getClientProfile);
 coachRouter.delete("/clients/:id", authenticate, authorize("coach"), controller.removeClient);
 
 // Client routes — mounted at /api/v1/client

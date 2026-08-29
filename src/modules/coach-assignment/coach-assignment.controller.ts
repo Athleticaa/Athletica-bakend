@@ -8,10 +8,13 @@ import { config } from "../../config";
 function mapClientProfile(client: any) {
   return {
     id: client.id,
-    user: client.user,
+    user: client.user ? { ...client.user, name: client.user.username } : client.user,
+    profile_image: client.profile_image ?? null,
+    gender: client.gender,
+    birth_date: client.birth_date ?? null,
+    height: client.height ?? null,
+    weight: client.weight ?? null,
     goal: client.goal,
-    height: client.height,
-    weight: client.weight,
   };
 }
 
@@ -160,6 +163,21 @@ export class CoachAssignmentController {
           assigned_at: c.created_at,
         })),
       });
+    } catch (err) {
+      this.handleError(res, err);
+    }
+  };
+
+  getClientProfile = async (req: Request, res: Response) => {
+    const clientId = String(req.params.id);
+    if (!isValidUuid(clientId)) {
+      res.status(400).json({ error: req.t("validation_failed") });
+      return;
+    }
+    const acceptLanguage = (req.headers["accept-language"] as string) || (req as any).language || "en";
+    try {
+      const data = await this.service.getClientProfileForCoach(req.user!.sub, clientId, acceptLanguage);
+      res.status(200).json(data);
     } catch (err) {
       this.handleError(res, err);
     }

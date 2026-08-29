@@ -5,6 +5,14 @@ import { PrismaClientToken, JwtServiceToken } from "../../di/tokens";
 import { JwtService } from "../../lib/jwt";
 import { ServiceError } from "../../lib/service-error";
 import { config } from "../../config";
+import { todayDateOnly, addDays, formatDateOnly } from "../nutrition/nutrition.utils";
+
+const WEEK_DAYS = 7;
+
+export type StreakResult = {
+  current: number;
+  last_date: string | null;
+};
 
 @injectable()
 export class CoachAssignmentService {
@@ -291,6 +299,206 @@ export class CoachAssignmentService {
       },
     });
     return { clients };
+  }
+
+  private resolveLanguage(raw?: string): string {
+    const v = (raw || "").toLowerCase();
+    return v.includes("ar") ? "ar" : "en";
+  }
+
+  private async getAnswersForClient(clientId: string, language: string) {
+    const answers = await this.prisma.client_answers.findMany({
+      where: { client_id: clientId },
+      orderBy: { created_at: "asc" },
+    });
+    if (answers.length === 0) return [];
+    const questionIds = answers.map((a) => a.question_id);
+    const answeredQuestions = await this.prisma.client_questions.findMany({
+      where: { id: { in: questionIds } },
+      select: { id: true, group_key: true, choices: true, question_type: true },
+    });
+    const groupKeys = answeredQuestions.map((q) => q.group_key);
+    const langQuestions = await this.prisma.client_questions.findMany({
+      where: { group_key: { in: groupKeys }, language },
+      select: { group_key: true, question: true, choices: true, question_type: true },
+    });
+    const langByGroup = new Map(langQuestions.map((q) => [q.group_key, q]));
+    const groupByQuestion = new Map(answeredQuestions.map((q) => [q.id, q.group_key]));
+    const typeByQuestion = new Map(answeredQuestions.map((q) => [q.id, q.question_type]));
+    return answers.map((a) => {
+      const groupKey = groupByQuestion.get(a.question_id)!;
+      const langQ = langByGroup.get(groupKey);
+      const questionType = typeByQuestion.get(a.question_id);
+      const isText = questionType === "text";
+      let answerText: string | null = null;
+      if (isText) {
+        answerText = a.answer;
+      } else {
+        const idx = parseInt(a.answer, 10);
+        answerText = !isNaN(idx) ? (langQ?.choices[idx] ?? null) : null;
+      }
+      return {
+        id: a.id,
+        client_id: a.client_id,
+        question_id: a.question_id,
+        answer: a.answer,
+        answer_text: answerText,
+        created_at: a.created_at,
+        question: langQ?.question ?? null,
+        question_type: questionType ?? "choice",
+      };
+    });
+  }
+
+  private async getNutritionStreak(clientId: string): Promise<StreakResult> {
+    const today = todayDateOnly();
+    const start = addDays(today, -(WEEK_DAYS - 1));
+    const [totalByDate, completedByDate] = await Promise.all([
+      this.prisma.nutrition_meal_logs.groupBy({
+        by: ["date"],
+        where: { client_id: clientId, date: { gte: start, lte: today } },
+        _count: { _all: true },
+      }),
+      this.prisma.nutrition_meal_logs.groupBy({
+        by: ["date"],
+        where: { client_id: clientId, completed: true, date: { gte: start, lte: today } },
+        _count: { _all: true },
+      }),
+    ]);
+    const totalMap = new Map<string, number>();
+    for (const e of totalByDate) totalMap.set(formatDateOnly(e.date), e._count._all);
+    const completedMap = new Map<string, number>();
+    for (const e of completedByDate) completedMap.set(formatDateOnly(e.date), e._count._all);
+
+    let current = 0;
+    let last_date: string | null = null;
+
+    // Find last_date: most recent completed day within window
+    for (let i = 0; i < WEEK_DAYS; i++) {
+      const d = addDays(today, -i);
+      const key = formatDateOnly(d);
+      const total = totalMap.get(key);
+      const completed = completedMap.get(key) ?? 0;
+      if (total !== undefined && total > 0 && completed === total) {
+        last_date = key;
+        break;
+      }
+    }
+
+    // Current streak: consecutive from today backwards
+    for (let i = 0; i < WEEK_DAYS; i++) {
+      const d = addDays(today, -i);
+      const key = formatDateOnly(d);
+      const total = totalMap.get(key);
+      if (total === undefined || total === 0) break;
+      const completed = completedMap.get(key) ?? 0;
+      if (completed === total) current++;
+      else break;
+    }
+
+    return { current, last_date };
+  }
+
+  private async getWorkoutStreak(clientId: string): Promise<StreakResult> {
+    const today = todayDateOnly();
+    const start = addDays(today, -(WEEK_DAYS - 1));
+    const [totalByDate, completedByDate] = await Promise.all([
+      this.prisma.workout_logs.groupBy({
+        by: ["workout_date"],
+        where: { client_id: clientId, workout_date: { gte: start, lte: today } },
+        _count: { _all: true },
+      }),
+      this.prisma.workout_logs.groupBy({
+        by: ["workout_date"],
+        where: { client_id: clientId, completed: true, workout_date: { gte: start, lte: today } },
+        _count: { _all: true },
+      }),
+    ]);
+    const totalMap = new Map<string, number>();
+    for (const e of totalByDate as any[]) totalMap.set(formatDateOnly((e as any).workout_date), (e as any)._count._all);
+    const completedMap = new Map<string, number>();
+    for (const e of completedByDate as any[]) completedMap.set(formatDateOnly((e as any).workout_date), (e as any)._count._all);
+
+    let current = 0;
+    let last_date: string | null = null;
+
+    for (let i = 0; i < WEEK_DAYS; i++) {
+      const d = addDays(today, -i);
+      const key = formatDateOnly(d);
+      const total = totalMap.get(key);
+      const completed = completedMap.get(key) ?? 0;
+      if (total !== undefined && total > 0 && completed === total) {
+        last_date = key;
+        break;
+      }
+    }
+
+    for (let i = 0; i < WEEK_DAYS; i++) {
+      const d = addDays(today, -i);
+      const key = formatDateOnly(d);
+      const total = totalMap.get(key);
+      if (total === undefined || total === 0) break;
+      const completed = completedMap.get(key) ?? 0;
+      if (completed === total) current++;
+      else break;
+    }
+
+    return { current, last_date };
+  }
+
+  private async getActiveNutritionPlanSummary(coachClientId: string) {
+    const plan = await this.prisma.nutrition_plans.findFirst({
+      where: { coach_client_id: coachClientId, is_active: true },
+      orderBy: { created_at: "desc" },
+      select: { id: true, title: true, description: true, is_active: true, created_at: true },
+    });
+    return plan ?? null;
+  }
+
+  async getClientProfileForCoach(coachUserId: string, clientProfileId: string, acceptLanguage?: string) {
+    const coachProfileId = await this.getCoachProfileId(coachUserId);
+
+    const coachClient = await this.prisma.coach_clients.findFirst({
+      where: { coach_id: coachProfileId, client_id: clientProfileId },
+      select: { id: true, created_at: true },
+    });
+    if (!coachClient) throw new ServiceError("client_not_assigned", 404);
+
+    const language = this.resolveLanguage(acceptLanguage);
+
+    const [clientProfile, questionsAnswers, nutritionPlan, nutritionStreak, workoutStreak] = await Promise.all([
+      this.prisma.client_profiles.findUnique({
+        where: { id: clientProfileId },
+        include: { user: { select: { id: true, username: true, email: true } } },
+      }),
+      this.getAnswersForClient(clientProfileId, language),
+      this.getActiveNutritionPlanSummary(coachClient.id),
+      this.getNutritionStreak(clientProfileId),
+      this.getWorkoutStreak(clientProfileId),
+    ]);
+
+    if (!clientProfile) throw new ServiceError("client_profile_not_found", 404);
+
+    return {
+      client: {
+        id: clientProfile.id,
+        user: clientProfile.user
+          ? { id: clientProfile.user.id, username: clientProfile.user.username, email: clientProfile.user.email, name: clientProfile.user.username }
+          : null,
+        profile_image: clientProfile.profile_image ?? null,
+        gender: clientProfile.gender,
+        birth_date: clientProfile.birth_date ?? null,
+        height: clientProfile.height ?? null,
+        weight: clientProfile.weight ?? null,
+        goal: clientProfile.goal,
+        assigned_at: coachClient.created_at,
+      },
+      nutrition_plan: nutritionPlan,
+      workout_plan: null as null,
+      nutrition_streak: nutritionStreak,
+      workout_streak: workoutStreak,
+      questions_answers: questionsAnswers,
+    };
   }
 
   async getMyCoach(userId: string) {
