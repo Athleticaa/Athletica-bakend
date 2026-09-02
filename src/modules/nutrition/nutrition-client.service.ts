@@ -91,7 +91,7 @@ export class NutritionClientService implements INutritionClientService {
       include: {
         nutrition_meals: {
           orderBy: { meal_order: "asc" },
-          include: { nutrition_meal_foods: { include: { food: true } } },
+          include: { nutrition_meal_foods: { include: { food: { include: { category: true } } } } },
         },
       },
     });
@@ -212,7 +212,7 @@ export class NutritionClientService implements INutritionClientService {
       where: { client_id: clientId, date: today, nutrition_plan_id: plan.id },
       include: {
         nutrition_meal: {
-          include: { nutrition_meal_foods: { include: { food: true } } },
+          include: { nutrition_meal_foods: { include: { food: { include: { category: true } } } } },
         },
       },
       orderBy: { nutrition_meal: { meal_order: "asc" } },
@@ -265,7 +265,7 @@ export class NutritionClientService implements INutritionClientService {
       include: {
         nutrition_meals: {
           orderBy: { meal_order: "asc" },
-          include: { nutrition_meal_foods: { include: { food: true } } },
+          include: { nutrition_meal_foods: { include: { food: { include: { category: true } } } } },
         },
       },
     });
@@ -315,7 +315,7 @@ export class NutritionClientService implements INutritionClientService {
       where: { id: mealLogId, client_id: clientId },
       include: {
         nutrition_meal: {
-          include: { nutrition_meal_foods: { include: { food: true } } },
+          include: { nutrition_meal_foods: { include: { food: { include: { category: true } } } } },
         },
       },
     });
@@ -344,7 +344,7 @@ export class NutritionClientService implements INutritionClientService {
       },
       include: {
         nutrition_meal: {
-          include: { nutrition_meal_foods: { include: { food: true } } },
+          include: { nutrition_meal_foods: { include: { food: { include: { category: true } } } } },
         },
       },
     });
@@ -364,7 +364,7 @@ export class NutritionClientService implements INutritionClientService {
       where: { id: mealLogId, client_id: clientId },
       include: {
         nutrition_meal: {
-          include: { nutrition_meal_foods: { include: { food: true } } },
+          include: { nutrition_meal_foods: { include: { food: { include: { category: true } } } } },
         },
       },
     });
@@ -387,7 +387,7 @@ export class NutritionClientService implements INutritionClientService {
       },
       include: {
         nutrition_meal: {
-          include: { nutrition_meal_foods: { include: { food: true } } },
+          include: { nutrition_meal_foods: { include: { food: { include: { category: true } } } } },
         },
       },
     });

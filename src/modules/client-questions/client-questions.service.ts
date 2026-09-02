@@ -3,6 +3,8 @@ import { injectable, container } from "tsyringe";
 import { PrismaClientToken } from "../../di/tokens";
 import { ServiceError } from "../../lib/service-error";
 import type { AnswerItem } from "./client-questions.validation";
+import { resolveHeightWeightFromAnswers } from "./height-weight.util";
+import { resolveGenderGoalFromAnswers } from "./gender-goal.util";
 
 export { ServiceError };
 
@@ -105,7 +107,23 @@ export class ClientQuestionsService {
       answer: String(a.answer),
     }));
 
-    await this.prisma.client_answers.createMany({ data });
+    // Resolve profile sync patches before transaction (fresh lookups, no cache)
+    const [hwPatch, ggPatch] = await Promise.all([
+      resolveHeightWeightFromAnswers(this.prisma, answers),
+      resolveGenderGoalFromAnswers(this.prisma, answers),
+    ]);
+    const profilePatch = { ...hwPatch, ...ggPatch };
+
+    // Atomic: answers + profile sync together — no partial commit if second write fails
+    await this.prisma.$transaction(async (tx) => {
+      await tx.client_answers.createMany({ data });
+      if (Object.keys(profilePatch).length > 0) {
+        await tx.client_profiles.update({
+          where: { id: clientId },
+          data: profilePatch,
+        });
+      }
+    });
   }
 
   async updateAnswers(clientId: string, answers: AnswerItem[]) {
@@ -129,12 +147,28 @@ export class ClientQuestionsService {
 
     this.validateAnswersAgainstQuestions(answers, questionMap);
 
-    for (const item of answers) {
-      await this.prisma.client_answers.updateMany({
-        where: { client_id: clientId, question_id: item.question_id },
-        data: { answer: String(item.answer) },
-      });
-    }
+    // Resolve profile sync patches before transaction
+    const [hwPatch, ggPatch] = await Promise.all([
+      resolveHeightWeightFromAnswers(this.prisma, answers),
+      resolveGenderGoalFromAnswers(this.prisma, answers),
+    ]);
+    const profilePatch = { ...hwPatch, ...ggPatch };
+
+    // Atomic: all answer updates + profile sync in one transaction
+    await this.prisma.$transaction(async (tx) => {
+      for (const item of answers) {
+        await tx.client_answers.updateMany({
+          where: { client_id: clientId, question_id: item.question_id },
+          data: { answer: String(item.answer) },
+        });
+      }
+      if (Object.keys(profilePatch).length > 0) {
+        await tx.client_profiles.update({
+          where: { id: clientId },
+          data: profilePatch,
+        });
+      }
+    });
   }
 
   /**

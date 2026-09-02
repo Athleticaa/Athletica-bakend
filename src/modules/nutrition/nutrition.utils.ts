@@ -61,11 +61,21 @@ export type FoodWithData = {
     name_en: string;
     name_ar: string;
     serving_unit: string;
+    serving_unit_en: string;
+    serving_unit_ar: string;
     base_grams: number;
     calories: number;
     protein: number;
     carbs: number;
     fat: number;
+    category_id?: string;
+    is_archived?: boolean;
+    category?: {
+      id: string;
+      name: string;
+      name_en: string;
+      name_ar: string;
+    } | null;
   };
 };
 
@@ -74,8 +84,10 @@ export type FoodWithData = {
  * API payload. Nutrition values are scaled linearly by
  * `quantity / base_grams` (e.g. 150g of a 389kcal/100g food -> 583.5kcal).
  *
- * `lang` selects the localized food name: "ar" -> name_ar, "en" -> name_en,
- * anything else/absent -> default name.
+ * Now returns BOTH languages for every food in every context (no lang filtering).
+ * `lang` is kept for backwards compat (still sets legacy `food_name`) but
+ * `food_name_en` / `food_name_ar` / `name_en` / `name_ar` and
+ * `serving_unit_en` / `serving_unit_ar` are always present.
  */
 export function toFoodPayload(f: FoodWithData, lang?: string) {
   if (f.food.base_grams <= 0) {
@@ -83,16 +95,36 @@ export function toFoodPayload(f: FoodWithData, lang?: string) {
   }
   const scale = f.quantity / f.food.base_grams;
   const foodName = lang === "ar" ? f.food.name_ar : lang === "en" ? f.food.name_en : f.food.name;
+  const category = f.food.category;
   return {
     id: f.id,
     food_id: f.food_id,
+    // legacy single-language field (kept for compat)
     food_name: foodName,
+    // bilingual — always returned
+    food_name_en: f.food.name_en,
+    food_name_ar: f.food.name_ar,
+    name: f.food.name,
+    name_en: f.food.name_en,
+    name_ar: f.food.name_ar,
     quantity: f.quantity,
     serving_unit: f.food.serving_unit,
+    serving_unit_en: f.food.serving_unit_en ?? f.food.serving_unit,
+    serving_unit_ar: f.food.serving_unit_ar ?? f.food.serving_unit,
     calories: round1(f.food.calories * scale),
     protein: round1(f.food.protein * scale),
     carbs: round1(f.food.carbs * scale),
     fat: round1(f.food.fat * scale),
+    ...(category
+      ? {
+          category: {
+            id: category.id,
+            name: category.name,
+            name_en: category.name_en,
+            name_ar: category.name_ar,
+          },
+        }
+      : {}),
   };
 }
 

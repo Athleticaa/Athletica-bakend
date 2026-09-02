@@ -8,6 +8,14 @@ const prisma = new PrismaClient({ adapter });
 
 const questions = [
   {
+    en: "What is your gender?",
+    ar: "ما هو جنسك؟",
+    choices: {
+      en: ["Male", "Female"],
+      ar: ["ذكر", "أنثى"],
+    },
+  },
+  {
     en: "Have you had any past injuries?",
     ar: "هل تعرضت لأي إصابات سابقة؟",
     choices: {
