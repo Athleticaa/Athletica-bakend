@@ -1,3 +1,5 @@
+import { isValidSpecialization } from "../profile/specializations";
+
 const VALID_ROLES = ["coach", "client"] as const;
 
 export interface SignupInput {
@@ -54,6 +56,11 @@ export function validateSignup(input: SignupInput, t: (key: string) => string = 
     errors.push(t("password_min"));
   if (!VALID_ROLES.includes(input.role as any))
     errors.push(t("role_invalid"));
+  if (input.role === "coach" && input.specialization !== undefined) {
+    if (!isValidSpecialization(input.specialization)) {
+      errors.push(t("specialization_invalid"));
+    }
+  }
   return errors;
 }
 

@@ -1,0 +1,606 @@
+{
+  "info": {
+    "name": "Profile",
+    "description": "API endpoints for user profile. Unified route `GET|PATCH /api/v1/profile` returns/updates profile based on JWT role.\n\n## Changelog (2026-09-02) – Profile Enhancements\n- **Schema:** `coach_profiles` + `client_profiles` now have `phone_number (VARCHAR, nullable, max 20)` and `location (VARCHAR, nullable, max 100)` – `prisma/schema.prisma:68,92`.\n- **Validation `src/modules/profile/profile.validation.ts`:**\n  - `UpdateCoachProfileInput` + `UpdateClientProfileInput` now accept `username, phone_number, location`.\n  - `username`: string 1-100 chars, checked for uniqueness (409 `username_already_taken`).\n  - `phone_number`: string max 20 (trimmed, empty string → null).\n  - `location`: string max 100 (trimmed, empty string → null).\n  - `specialization`: now ENUM-validated via `isValidSpecialization()` – must be one of 16 keys (see Specializations folder). Old 100-char free text removed. Error `specialization_invalid` now means \"must be one of allowed values\".\n- **Service `src/modules/profile/profile.service.ts`:**\n  - `getCoachProfile` returns `specialization_display: {en, ar}|null` + `phone_number` + `location`.\n  - `getClientProfile` returns `phone_number` + `location`.\n  - `updateCoachProfile` / `updateClientProfile` accept `username` (updates `users` table) + `phone_number`/`location` (nullify on empty). Gender is normalized via `GENDER_MAP` and synced bidirectionally to `client_answers` (gender question) – updating gender patches the related answer index.\n  - All updates return new fields; `specialization_display` added for coach.\n- **Auth `src/modules/auth/auth.validation.ts`:** `POST /api/v1/auth/signup` when `role=coach` validates optional `specialization` against same ENUM.\n- **i18n `src/locales/en.json|ar.json`:** new keys `phone_number_invalid`, `location_invalid` + updated `specialization_invalid`.\n\n**Auth:** All endpoints require `Authorization: Bearer {{token}}`. Use `coach_token` or `client_token`.\n**Base URL:** `{{base_url}}` default `http://localhost:3000/api/v1`.\n\n**Postman AI hints:**\n- PATCH body is partial – send only fields you want to update; at least one of `username, bio, specialization, phone_number, location` (coach) or `username, gender, birth_date, height, weight, goal, phone_number, location` (client) required else 400 `no_fields_to_update`.\n- To clear phone/location send `\"phone_number\": \"\"` or `\"location\": \"\"`.\n- Specialization must be a KEY, not display string (e.g. `\"strength_training\"` not \"Strength Training\").\n- Gender accepts `male|female|Male|Female|ذكر|أنثى|other|unspecified` – normalized to `male|female` for DB and synced to answers.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "coach_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "client_token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Get Profile",
+      "description": "GET /profile – returns role-based profile. Coach includes `specialization_display` + `phone_number`/`location`. Client includes `phone_number`/`location` + gender/goal etc.\nRequires Bearer token. Role from JWT decides which profile is returned.",
+      "item": [
+        {
+          "name": "Get Coach Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.expect(pm.response.code).to.eql(200); });",
+                  "var json = pm.response.json();",
+                  "pm.test('Has specialization_display and phone_number', function () {",
+                  "  pm.expect(json).to.have.property('profile');",
+                  "  pm.expect(json.profile).to.have.property('specialization_display');",
+                  "  pm.expect(json.profile).to.have.property('phone_number');",
+                  "  pm.expect(json.profile).to.have.property('location');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coach_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "en",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/profile",
+              "host": ["{{base_url}}"],
+              "path": ["profile"]
+            },
+            "description": "Returns `{ user: {id, username, email, role, ...}, profile: {id, bio, specialization, specialization_display:{en, ar}|null, phone_number, location, profile_image} }`"
+          },
+          "response": [
+            {
+              "name": "Coach Profile Example",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{coach_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/profile",
+                  "host": ["{{base_url}}"],
+                  "path": ["profile"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [],
+              "cookie": [],
+              "body": "{\n  \"user\": {\n    \"id\": \"uuid\",\n    \"username\": \"coach_mike\",\n    \"email\": \"coach@example.com\",\n    \"role\": \"coach\",\n    \"email_verified\": true,\n    \"created_at\": \"2026-09-02T00:00:00.000Z\"\n  },\n  \"profile\": {\n    \"id\": \"uuid\",\n    \"bio\": \"10y CrossFit coach\",\n    \"specialization\": \"crossfit\",\n    \"specialization_display\": { \"en\": \"CrossFit\", \"ar\": \"كروس فت\" },\n    \"phone_number\": \"+201012345678\",\n    \"location\": \"Cairo, Egypt\",\n    \"profile_image\": \"https://res.cloudinary.com/.../coach-...\" \n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Client Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.expect(pm.response.code).to.eql(200); });",
+                  "var json = pm.response.json();",
+                  "pm.test('Has phone_number and location', function () {",
+                  "  pm.expect(json.profile).to.have.property('phone_number');",
+                  "  pm.expect(json.profile).to.have.property('location');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{client_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "en",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/profile",
+              "host": ["{{base_url}}"],
+              "path": ["profile"]
+            },
+            "description": "Returns `{ user, profile: {id, gender, birth_date, height, weight, goal, phone_number, location, profile_image} }`"
+          },
+          "response": [
+            {
+              "name": "Client Profile Example",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{client_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/profile",
+                  "host": ["{{base_url}}"],
+                  "path": ["profile"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [],
+              "cookie": [],
+              "body": "{\n  \"user\": {\n    \"id\": \"uuid\",\n    \"username\": \"ahmed123\",\n    \"email\": \"client@example.com\",\n    \"role\": \"client\"\n  },\n  \"profile\": {\n    \"id\": \"uuid\",\n    \"gender\": \"male\",\n    \"birth_date\": \"1998-05-12T00:00:00.000Z\",\n    \"height\": 175,\n    \"weight\": 78,\n    \"goal\": \"muscle_building\",\n    \"phone_number\": \"+201112223333\",\n    \"location\": \"Alexandria\",\n    \"profile_image\": null\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Update Profile (PATCH)",
+      "description": "PATCH /profile – role-based partial update. New fields: `username`, `phone_number`, `location`. Coach also `bio`, `specialization` (ENUM). Client also `gender`, `birth_date`, `height`, `weight`, `goal`. Send empty string to clear phone/location → stored as null.",
+      "item": [
+        {
+          "name": "Update Coach – Full (new fields)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.expect(pm.response.code).to.eql(200); });",
+                  "var json = pm.response.json();",
+                  "pm.test('Returns specialization_display', function () { pm.expect(json).to.have.property('specialization_display'); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coach_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "en",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"coach_mike_updated\",\n  \"bio\": \"Updated bio - max 500 chars\",\n  \"specialization\": \"strength_training\",\n  \"phone_number\": \"+201012345678\",\n  \"location\": \"Cairo, Egypt\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/profile",
+              "host": ["{{base_url}}"],
+              "path": ["profile"]
+            },
+            "description": "Allowed `specialization` keys: general, strength_training, weight_loss, muscle_building, cardio, crossfit, bodybuilding, flexibility, rehabilitation, sports_performance, nutrition, yoga, pilates, calisthenics, boxing, mma. Returns `{id, username?, bio, specialization, specialization_display, phone_number, location, profile_image}`"
+          },
+          "response": [
+            {
+              "name": "Success – Coach Updated",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"bio\": \"Updated bio\",\n  \"specialization\": \"yoga\",\n  \"phone_number\": \"+201000000000\",\n  \"location\": \"Giza\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/profile",
+                  "host": ["{{base_url}}"],
+                  "path": ["profile"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [],
+              "cookie": [],
+              "body": "{\n  \"id\": \"uuid\",\n  \"username\": \"coach_mike_updated\",\n  \"bio\": \"Updated bio - max 500 chars\",\n  \"specialization\": \"strength_training\",\n  \"specialization_display\": { \"en\": \"Strength Training\", \"ar\": \"تدريب القوة\" },\n  \"phone_number\": \"+201012345678\",\n  \"location\": \"Cairo, Egypt\",\n  \"profile_image\": null\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update Coach – Clear Phone/Location",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coach_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone_number\": \"\",\n  \"location\": \"\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/profile",
+              "host": ["{{base_url}}"],
+              "path": ["profile"]
+            },
+            "description": "Empty string → null in DB. Useful to clear fields."
+          }
+        },
+        {
+          "name": "Update Coach – Invalid Specialization (400)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coach_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"specialization\": \"invalid_value\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/profile",
+              "host": ["{{base_url}}"],
+              "path": ["profile"]
+            },
+            "description": "Expected 400 `{error: \"Validation failed\", details: [\"Specialization must be one of the allowed values\"]}`"
+          }
+        },
+        {
+          "name": "Update Client – Full (new fields + gender sync)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.expect(pm.response.code).to.eql(200); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{client_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "en",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"ahmed_updated\",\n  \"gender\": \"male\",\n  \"birth_date\": \"1998-05-12\",\n  \"height\": 176,\n  \"weight\": 79,\n  \"goal\": \"weight_loss\",\n  \"phone_number\": \"+201112223333\",\n  \"location\": \"Alexandria, Egypt\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/profile",
+              "host": ["{{base_url}}"],
+              "path": ["profile"]
+            },
+            "description": "Gender normalized: accepts Male/Female/ذكر/أنثى/male/female. Syncs to client_answers gender question automatically. Returns `{id, username?, gender, birth_date, height, weight, goal, phone_number, location, profile_image}`"
+          },
+          "response": [
+            {
+              "name": "Success – Client Updated",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"gender\": \"female\",\n  \"phone_number\": \"+201122233344\",\n  \"location\": \"Mansoura\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/profile",
+                  "host": ["{{base_url}}"],
+                  "path": ["profile"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [],
+              "cookie": [],
+              "body": "{\n  \"id\": \"uuid\",\n  \"username\": \"ahmed_updated\",\n  \"gender\": \"female\",\n  \"birth_date\": \"1998-05-12T00:00:00.000Z\",\n  \"height\": 176,\n  \"weight\": 79,\n  \"goal\": \"weight_loss\",\n  \"phone_number\": \"+201112223333\",\n  \"location\": \"Alexandria, Egypt\",\n  \"profile_image\": null\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update Client – Minimal (phone only)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{client_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone_number\": \"+201000000001\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/profile",
+              "host": ["{{base_url}}"],
+              "path": ["profile"]
+            }
+          }
+        },
+        {
+          "name": "Update – No Fields (400)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coach_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{base_url}}/profile",
+              "host": ["{{base_url}}"],
+              "path": ["profile"]
+            },
+            "description": "Expected 400 `no_fields_to_update`"
+          }
+        },
+        {
+          "name": "Update – Username Taken (409)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coach_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"existing_username\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/profile",
+              "host": ["{{base_url}}"],
+              "path": ["profile"]
+            },
+            "description": "Expected 409 `username_already_taken`"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Profile Image",
+      "description": "POST /profile/image (multipart/form-data, field `image`) – uploads to Cloudinary (5MB max, JPEG/PNG/WebP). DELETE /profile/image – removes image and clears DB field.",
+      "item": [
+        {
+          "name": "Upload Image – Coach/Client",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coach_token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "image",
+                  "type": "file",
+                  "src": [],
+                  "description": "JPEG/PNG/WebP, max 5MB"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/profile/image",
+              "host": ["{{base_url}}"],
+              "path": ["profile", "image"]
+            },
+            "description": "Use coach_token or client_token – role determines which profile image is updated. Returns `{profile_image: \"https://...\"}`"
+          },
+          "response": [
+            {
+              "name": "Image Upload Success",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{coach_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "image",
+                      "type": "file",
+                      "src": []
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{base_url}}/profile/image",
+                  "host": ["{{base_url}}"],
+                  "path": ["profile", "image"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [],
+              "cookie": [],
+              "body": "{\n  \"profile_image\": \"https://res.cloudinary.com/dgf5zilda/image/upload/v123/athletica/profiles/coach-...\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Delete Image",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coach_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/profile/image",
+              "host": ["{{base_url}}"],
+              "path": ["profile", "image"]
+            },
+            "description": "Deletes current profile image from Cloudinary and nulls DB field. 404 `no_profile_image` if none."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Specializations Reference",
+      "description": "ENUM for `specialization` – keys to send, display values per language. `specialization_display` returned in GET /profile and PATCH response.",
+      "item": [
+        {
+          "name": "List Specializations (reference – no endpoint)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/profile/specializations (client-side constant)",
+              "host": ["{{base_url}}"],
+              "path": ["profile", "specializations (client-side constant)"]
+            },
+            "description": "No API endpoint – frontend should use this constant from `src/modules/profile/specializations.ts`. Keys: general, strength_training, weight_loss, muscle_building, cardio, crossfit, bodybuilding, flexibility, rehabilitation, sports_performance, nutrition, yoga, pilates, calisthenics, boxing, mma.\n\nExamples:\n- strength_training → {en: \"Strength Training\", ar: \"تدريب القوة\"}\n- yoga → {en: \"Yoga\", ar: \"اليوغا\"}\n- general → {en: \"General Fitness\", ar: \"اللياقة العامة\"}\n\nSignup `POST /api/v1/auth/signup` with `role:coach` also validates specialization against same list."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth – Signup with Specialization (updated)",
+      "description": "POST /api/v1/auth/signup now validates `specialization` for coach role. If provided, must be a valid specialization key else 400 `specialization_invalid`.",
+      "item": [
+        {
+          "name": "Signup Coach – With Valid Specialization",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"coach_new\",\n  \"email\": \"coach_new@example.com\",\n  \"password\": \"Password123!\",\n  \"role\": \"coach\",\n  \"bio\": \"My bio\",\n  \"specialization\": \"nutrition\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/signup",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "signup"]
+            }
+          }
+        },
+        {
+          "name": "Signup Coach – Invalid Specialization (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"coach_bad\",\n  \"email\": \"coach_bad@example.com\",\n  \"password\": \"Password123!\",\n  \"role\": \"coach\",\n  \"specialization\": \"not_a_real_spec\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/signup",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "signup"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

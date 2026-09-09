@@ -66,6 +66,8 @@ model coach_profiles {
   user_id                     String      @db.Uuid
   bio                         String
   specialization              String      @db.VarChar
+  phone_number                String?     @db.VarChar
+  location                    String?     @db.VarChar
   profile_image               String?     @db.VarChar
   active_invite_code            String?     @db.VarChar(6)
   active_invite_code_expires_at DateTime?
@@ -87,6 +89,8 @@ model client_profiles {
   height          Float?
   weight          Float?
   goal            String    @db.VarChar
+  phone_number    String?   @db.VarChar
+  location        String?   @db.VarChar
   profile_image   String?   @db.VarChar
 
   user           users              @relation(fields: [user_id], references: [id])

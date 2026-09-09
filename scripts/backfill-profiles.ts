@@ -9,8 +9,8 @@ const prisma = new PrismaClient({ adapter });
 
 const GENDER_MAP: Record<string, string> = { Male: "male", Female: "female", "ذكر": "male", "أنثى": "female" };
 const GOAL_MAP: Record<string, string> = {
-  "Lose weight": "lose_weight", "Build muscle": "build_muscle", "Improve overall fitness": "improve_fitness", "Increase strength": "increase_strength", "Rehabilitation / injury recovery": "rehabilitation",
-  "إنقاص الوزن": "lose_weight", "بناء العضلات": "build_muscle", "تحسين اللياقة البدنية العامة": "improve_fitness", "زيادة القوة": "increase_strength", "إعادة التأهيل / التعافي من الإصابات": "rehabilitation",
+  "Lose weight": "lose weight", "Build muscle": "build muscle", "Improve overall fitness": "improve fitness", "Increase strength": "increase strength", "Rehabilitation / injury recovery": "rehabilitation",
+  "إنقاص الوزن": "lose weight", "بناء العضلات": "build muscle", "تحسين اللياقة البدنية العامة": "improve fitness", "زيادة القوة": "increase strength", "إعادة التأهيل / التعافي من الإصابات": "rehabilitation",
 };
 
 async function main() {
@@ -58,7 +58,7 @@ async function main() {
       if (choices) {
         const idx = parseInt(a.answer, 10);
         const raw = choices[idx];
-        if (raw !== undefined) cur.goal = GOAL_MAP[raw] ?? raw.toLowerCase().replace(/\s+/g, "_");
+        if (raw !== undefined) cur.goal = GOAL_MAP[raw] ?? raw.toLowerCase().trim().replace(/\s+/g, " ");
       }
     }
     byClient.set(a.client_id, cur);

@@ -4,16 +4,16 @@ export const GENDER_QUESTION_TEXTS = ["What is your gender?", "ما هو جنس�
 export const GOAL_QUESTION_TEXTS = ["What are your primary fitness goals?", "ما هي أهدافك الأساسية في اللياقة البدنية؟"] as const;
 
 const GOAL_MAP: Record<string, string> = {
-  "Lose weight": "lose_weight",
-  "Build muscle": "build_muscle",
-  "Improve overall fitness": "improve_fitness",
-  "Increase strength": "increase_strength",
+  "Lose weight": "lose weight",
+  "Build muscle": "build muscle",
+  "Improve overall fitness": "improve fitness",
+  "Increase strength": "increase strength",
   "Rehabilitation / injury recovery": "rehabilitation",
   // Arabic choices → same canonical values
-  "إنقاص الوزن": "lose_weight",
-  "بناء العضلات": "build_muscle",
-  "تحسين اللياقة البدنية العامة": "improve_fitness",
-  "زيادة القوة": "increase_strength",
+  "إنقاص الوزن": "lose weight",
+  "بناء العضلات": "build muscle",
+  "تحسين اللياقة البدنية العامة": "improve fitness",
+  "زيادة القوة": "increase strength",
   "إعادة التأهيل / التعافي من الإصابات": "rehabilitation",
 };
 
@@ -88,7 +88,7 @@ export async function resolveGenderGoalFromAnswers(
       const idx = typeof a.answer === "number" ? a.answer : parseInt(String(a.answer), 10);
       const raw = choices[idx];
       if (raw !== undefined) {
-        const mapped = GOAL_MAP[raw] ?? raw.toLowerCase().replace(/\s+/g, "_");
+        const mapped = GOAL_MAP[raw] ?? raw.toLowerCase().trim().replace(/\s+/g, " ");
         if (mapped) out.goal = mapped;
       }
     }
