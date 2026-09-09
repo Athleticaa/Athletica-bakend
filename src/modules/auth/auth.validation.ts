@@ -72,16 +72,33 @@ export function validateLogin(input: LoginInput, t: (key: string) => string = tF
 }
 
 export function validateResetPassword(input: ResetPasswordInput, t: (key: string) => string = tFallback): string[] {
-  if (!input.email) return [t("email_required")];
+  const email = typeof input?.email === "string" ? input.email.trim() : "";
+  if (!email) return [t("email_required")];
   return [];
 }
 
 export function validateConfirmReset(input: ConfirmResetInput, t: (key: string) => string = tFallback): string[] {
   const errors: string[] = [];
-  if (!input.email) errors.push(t("email_required"));
-  if (!input.code) errors.push(t("code_required"));
-  if (!input.password) errors.push(t("password_required"));
-  else if (input.password.length < 8) errors.push(t("password_min"));
+  // Only three fields: email, code, password. Extra fields are ignored.
+  const email = typeof input?.email === "string" ? input.email.trim() : "";
+  const rawCode = (input as { code?: unknown })?.code;
+  const code =
+    typeof rawCode === "number" && Number.isInteger(rawCode)
+      ? String(rawCode)
+      : typeof rawCode === "string"
+        ? rawCode.trim()
+        : "";
+  const password = (input as { password?: unknown })?.password;
+
+  if (!email) errors.push(t("email_required"));
+  else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.push(t("email_invalid"));
+
+  if (!code) errors.push(t("code_required"));
+  else if (!/^\d{6}$/.test(code)) errors.push(t("validation_code_invalid"));
+
+  if (typeof password !== "string" || password.length === 0) errors.push(t("password_required"));
+  else if (password.length < 8) errors.push(t("password_min"));
+
   return errors;
 }
 
@@ -95,8 +112,11 @@ export function validateChangePassword(input: ChangePasswordInput, t: (key: stri
 
 export function validateVerifyEmail(input: VerifyEmailInput, t: (key: string) => string = tFallback): string[] {
   const errors: string[] = [];
-  if (!input.email) errors.push(t("email_required"));
-  if (!input.code) errors.push(t("code_required"));
+  const email = typeof input?.email === "string" ? input.email.trim() : "";
+  const rawCode = (input as { code?: unknown })?.code;
+  const code = typeof rawCode === "number" && Number.isInteger(rawCode) ? String(rawCode) : typeof rawCode === "string" ? rawCode.trim() : "";
+  if (!email) errors.push(t("email_required"));
+  if (!code) errors.push(t("code_required"));
   return errors;
 }
 

@@ -1,0 +1,2 @@
+-- Align unique index name with Prisma naming convention
+ALTER INDEX "workout_exercise_logs_workout_day_exercise_id_client_id_workout_date_key" RENAME TO "workout_exercise_logs_workout_day_exercise_id_client_id_wor_key";

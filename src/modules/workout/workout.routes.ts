@@ -53,9 +53,9 @@ router.get("/today", authenticate, authorize("client"), controller.getTodayWorko
 router.get("/my/plans", authenticate, authorize("client"), controller.getMyActivePlan);
 router.get("/my/plans/:pid", authenticate, authorize("client"), controller.getPlanDetails);
 
-// Client Complete/Uncomplete (US8) - Client only
-router.post("/workouts/:wlid/complete", authenticate, authorize("client"), controller.completeWorkout);
-router.post("/workouts/:wlid/uncomplete", authenticate, authorize("client"), controller.uncompleteWorkout);
+// Client Exercise Complete/Uncomplete (per-exercise, like nutrition meals) - Client only
+router.post("/exercises/:elid/complete", authenticate, authorize("client"), controller.completeExercise);
+router.post("/exercises/:elid/uncomplete", authenticate, authorize("client"), controller.uncompleteExercise);
 
 // Client History (US9) - Client only
 router.get("/history", authenticate, authorize("client"), controller.getHistory);

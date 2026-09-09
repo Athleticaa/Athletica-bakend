@@ -284,7 +284,6 @@ export interface AssignPlanInput {
   coach_client_id: string;
   title?: string;
   description?: string;
-  start_date: string;
 }
 
 export interface UpdatePlanInput {
@@ -297,7 +296,7 @@ export function validateAssignPlan(
   t: Translate = tFallback
 ): string[] {
   const errors: string[] = [];
-  const { coach_client_id, title, description, start_date } = input ?? {};
+  const { coach_client_id, title, description } = input ?? {};
 
   if (!coach_client_id || !isValidUuid(coach_client_id)) {
     errors.push(t("invalid_coach_client_id"));
@@ -309,12 +308,6 @@ export function validateAssignPlan(
 
   if (description !== undefined && (typeof description !== "string" || description.trim().length === 0)) {
     errors.push(t("plan_description_required"));
-  }
-
-  if (!start_date || typeof start_date !== "string") {
-    errors.push(t("start_date_required"));
-  } else if (!/^\d{4}-\d{2}-\d{2}$/.test(start_date)) {
-    errors.push(t("start_date_invalid_format"));
   }
 
   return errors;
@@ -405,31 +398,3 @@ export function validateUpdatePlanExercise(
   return errors;
 }
 
-export interface HistoryQueryInput {
-  from?: string;
-  to?: string;
-}
-
-export function validateHistoryQuery(
-  input: HistoryQueryInput,
-  t: Translate = tFallback
-): string[] {
-  const errors: string[] = [];
-  const { from, to } = input ?? {};
-
-  if (from) {
-    if (typeof from !== "string") errors.push(t("invalid_from_date"));
-    else if (!/^\d{4}-\d{2}-\d{2}$/.test(from)) errors.push(t("date_invalid_format"));
-  }
-
-  if (to) {
-    if (typeof to !== "string") errors.push(t("invalid_to_date"));
-    else if (!/^\d{4}-\d{2}-\d{2}$/.test(to)) errors.push(t("date_invalid_format"));
-  }
-
-  if (from && to && from > to) {
-    errors.push(t("from_date_after_to_date"));
-  }
-
-  return errors;
-}

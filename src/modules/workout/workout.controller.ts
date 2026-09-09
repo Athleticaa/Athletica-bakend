@@ -5,7 +5,7 @@ import { WorkoutTemplateService } from "./workout-template.service";
 import { WorkoutPlanService } from "./workout-plan.service";
 import { WorkoutClientService } from "./workout-client.service";
 import { ServiceError } from "../../lib/service-error";
-import { isValidUuid, parseListExercisesQuery, validateCreateTemplate, validateUpdateTemplate, validateCreateDay, validateUpdateDay, validateReorderDays, validateCreateTemplateExercise, validateUpdateTemplateExercise, validateAssignPlan, validateCreatePlanExercise, validateUpdatePlanExercise, validateUpdatePlan, validateHistoryQuery } from "./workout.validation";
+import { isValidUuid, parseListExercisesQuery, validateCreateTemplate, validateUpdateTemplate, validateCreateDay, validateUpdateDay, validateReorderDays, validateCreateTemplateExercise, validateUpdateTemplateExercise, validateAssignPlan, validateCreatePlanExercise, validateUpdatePlanExercise, validateUpdatePlan } from "./workout.validation";
 
 @injectable()
 export class WorkoutController {
@@ -311,7 +311,6 @@ export class WorkoutController {
         templateId,
         title: req.body.title,
         description: req.body.description,
-        start_date: req.body.start_date,
       });
       res.status(201).json({ success: true, data: plan });
     } catch (err) {
@@ -557,23 +556,23 @@ export class WorkoutController {
   };
 
   // =========================================================================
-  // Client Complete/Uncomplete (US8)
+  // Client Exercise Complete/Uncomplete (per-exercise, like nutrition meals)
   // =========================================================================
 
-  completeWorkout = async (req: Request, res: Response) => {
+  completeExercise = async (req: Request, res: Response) => {
     try {
-      const logId = this.param(req, "wlid");
-      const data = await this.clientService.completeWorkout(this.userId(req), logId);
+      const logId = this.param(req, "elid");
+      const data = await this.clientService.completeExercise(this.userId(req), logId);
       res.status(200).json({ success: true, data });
     } catch (err) {
       this.handleError(res, err);
     }
   };
 
-  uncompleteWorkout = async (req: Request, res: Response) => {
+  uncompleteExercise = async (req: Request, res: Response) => {
     try {
-      const logId = this.param(req, "wlid");
-      const data = await this.clientService.uncompleteWorkout(this.userId(req), logId);
+      const logId = this.param(req, "elid");
+      const data = await this.clientService.uncompleteExercise(this.userId(req), logId);
       res.status(200).json({ success: true, data });
     } catch (err) {
       this.handleError(res, err);
@@ -585,15 +584,8 @@ export class WorkoutController {
   // =========================================================================
 
   getHistory = async (req: Request, res: Response) => {
-    const { from, to } = req.query;
-    const errors = validateHistoryQuery({ from: from as string, to: to as string }, req.t);
-    if (errors.length > 0) {
-      res.status(400).json({ success: false, error: req.t("validation_failed"), details: errors });
-      return;
-    }
-
     try {
-      const data = await this.clientService.getHistory(this.userId(req), from as string, to as string);
+      const data = await this.clientService.getHistory(this.userId(req));
       res.status(200).json({ success: true, data });
     } catch (err) {
       this.handleError(res, err);

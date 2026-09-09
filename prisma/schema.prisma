@@ -98,6 +98,7 @@ model client_profiles {
   coach_requests coach_requests[]   @relation("coach_requests_client_id")
   coach_clients  coach_clients[]    @relation("coach_clients_client_id")
   workout_logs   workout_logs[]
+  workout_exercise_logs workout_exercise_logs[]
   nutrition_meal_logs nutrition_meal_logs[]
   client_answers client_answers[]
 }
@@ -214,6 +215,7 @@ model workout_plans {
   template     workout_templates? @relation(fields: [workout_template_id], references: [id])
   workout_days workout_days[]
   workout_logs workout_logs[]
+  workout_exercise_logs workout_exercise_logs[]
 }
 
 model workout_days {
@@ -226,6 +228,7 @@ model workout_days {
   workout_plan          workout_plans           @relation(fields: [workout_plan_id], references: [id])
   workout_day_exercises workout_day_exercises[]
   workout_logs          workout_logs[]
+  workout_exercise_logs workout_exercise_logs[]
 }
 
 model workout_day_exercises {
@@ -239,6 +242,7 @@ model workout_day_exercises {
 
   workout_day workout_days @relation(fields: [workout_day_id], references: [id])
   exercise    exercises    @relation(fields: [exercise_id], references: [id])
+  workout_exercise_logs workout_exercise_logs[]
 
   @@unique([workout_day_id, order_number])
 }
@@ -256,6 +260,27 @@ model workout_logs {
   workout_plan workout_plans   @relation(fields: [workout_plan_id], references: [id])
   workout_day  workout_days    @relation(fields: [workout_day_id], references: [id])
   client       client_profiles @relation(fields: [client_id], references: [id])
+}
+
+model workout_exercise_logs {
+  id                      String   @id @default(uuid()) @db.Uuid
+  workout_plan_id         String   @db.Uuid
+  workout_day_id          String   @db.Uuid
+  workout_day_exercise_id String   @db.Uuid
+  client_id               String   @db.Uuid
+  workout_date            DateTime @db.Date
+  completed               Boolean  @default(false)
+  completed_at            DateTime?
+  created_at              DateTime @default(now())
+
+  workout_plan       workout_plans         @relation(fields: [workout_plan_id], references: [id])
+  workout_day        workout_days          @relation(fields: [workout_day_id], references: [id])
+  workout_day_exercise workout_day_exercises @relation(fields: [workout_day_exercise_id], references: [id])
+  client             client_profiles       @relation(fields: [client_id], references: [id])
+
+  @@unique([workout_day_exercise_id, client_id, workout_date])
+  @@index([client_id, workout_date])
+  @@index([workout_plan_id])
 }
 
 model food_categories {

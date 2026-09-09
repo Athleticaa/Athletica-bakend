@@ -19,9 +19,8 @@ export class WorkoutPlanService extends WorkoutBaseService {
     templateId: string;
     title?: string;
     description?: string;
-    start_date: string;
   }) {
-    const { coachId, coachClientId, templateId, title, description, start_date } = input;
+    const { coachId, coachClientId, templateId, title, description } = input;
 
     await this.getCoachClientId(coachId, coachClientId);
 
@@ -40,6 +39,10 @@ export class WorkoutPlanService extends WorkoutBaseService {
 
     const cycle_days = Math.min(template.workout_template_days.length, 7);
 
+    // Server-generated start date: always today (UTC midnight for `@db.Date`).
+    // Never taken from body/request.
+    const effectiveStartDate = todayDateOnly();
+
     await this.prisma.workout_plans.updateMany({
       where: { coach_client_id: coachClientId, is_active: true, deleted_at: null },
       data: { is_active: false },
@@ -52,7 +55,7 @@ export class WorkoutPlanService extends WorkoutBaseService {
         workout_template_id: templateId,
         title: title ?? template.title,
         description: description ?? template.description,
-        start_date: start_date,
+        start_date: effectiveStartDate,
         cycle_days: cycle_days,
         workout_days: {
           create: template.workout_template_days.map((day: any) => ({
@@ -75,7 +78,10 @@ export class WorkoutPlanService extends WorkoutBaseService {
         workout_days: {
           orderBy: { day_number: "asc" },
           include: {
-            workout_day_exercises: { orderBy: { order_number: "asc" } },
+            workout_day_exercises: {
+              orderBy: { order_number: "asc" },
+              include: { exercise: true },
+            },
           },
         },
       },
@@ -104,7 +110,10 @@ export class WorkoutPlanService extends WorkoutBaseService {
           workout_days: {
             orderBy: { day_number: "asc" },
             include: {
-              workout_day_exercises: { orderBy: { order_number: "asc" } },
+              workout_day_exercises: {
+              orderBy: { order_number: "asc" },
+              include: { exercise: true },
+            },
             },
           },
         },
@@ -142,7 +151,10 @@ export class WorkoutPlanService extends WorkoutBaseService {
         workout_days: {
           orderBy: { day_number: "asc" },
           include: {
-            workout_day_exercises: { orderBy: { order_number: "asc" } },
+            workout_day_exercises: {
+              orderBy: { order_number: "asc" },
+              include: { exercise: true },
+            },
           },
         },
       },
@@ -217,6 +229,9 @@ export class WorkoutPlanService extends WorkoutBaseService {
         });
 
         if (!wasRest && willBeRest) {
+          await tx.workout_exercise_logs.deleteMany({
+            where: { workout_day_id: dayId },
+          });
           await tx.workout_day_exercises.deleteMany({
             where: { workout_day_id: dayId },
           });
@@ -238,6 +253,8 @@ export class WorkoutPlanService extends WorkoutBaseService {
     await this.getOwnedPlanDay(planId, dayId);
 
     await this.prisma.$transaction(async (tx) => {
+      await tx.workout_exercise_logs.deleteMany({ where: { workout_day_id: dayId } });
+      await tx.workout_logs.deleteMany({ where: { workout_day_id: dayId } });
       await tx.workout_days.delete({ where: { id: dayId } });
 
       const remainingDays = await tx.workout_days.findMany({
@@ -374,6 +391,7 @@ export class WorkoutPlanService extends WorkoutBaseService {
     await this.getPlanExercise(dayId, exerciseId);
 
     await this.prisma.$transaction(async (tx) => {
+      await tx.workout_exercise_logs.deleteMany({ where: { workout_day_exercise_id: exerciseId } });
       await tx.workout_day_exercises.delete({ where: { id: exerciseId } });
 
       const remaining = await tx.workout_day_exercises.findMany({

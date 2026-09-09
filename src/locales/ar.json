@@ -161,14 +161,9 @@
   "template_has_no_days": "لا يمكن تعيين قالب بدون أيام",
   "template_has_no_exercises": "لا يمكن تعيين قالب بدون تمارين في يوم واحد أو أكثر",
   "workout_today_only": "يمكن إكمال أو إلغاء إكمال تمارين اليوم فقط",
-  "workout_already_completed": "تم إكمال التمرين بالفعل",
-  "workout_not_completed": "التمرين غير مكتمل",
-  "workout_log_not_found": "سجل التمرين غير موجود",
+  "exercise_log_not_found": "سجل التمرين غير موجود",
+  "exercise_not_completed": "التمرين غير مكتمل",
   "day_orders_incomplete": "قائمة إعادة الترتيب لا تغطي جميع الأيام",
   "day_orders_invalid": "قائمة إعادة الترتيب تحتوي على معرفات غير صالحة أو ترتيب مكرر",
-  "exercise_already_in_day": "التمرين موجود بالفعل في هذا اليوم",
-  "invalid_from_date": "تاريخ البداية غير صالح",
-  "invalid_to_date": "تاريخ النهاية غير صالح",
-  "date_invalid_format": "يجب أن يكون التاريخ بتنسيق YYYY-MM-DD",
-  "from_date_after_to_date": "يجب أن يكون تاريخ البداية قبل تاريخ النهاية"
+  "exercise_already_in_day": "التمرين موجود بالفعل في هذا اليوم"
 }

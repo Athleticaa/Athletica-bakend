@@ -28,7 +28,10 @@ export class WorkoutTemplateService extends WorkoutBaseService {
         workout_template_days: {
           orderBy: { day_number: "asc" },
           include: {
-            workout_template_exercises: { orderBy: { exercise_order: "asc" } },
+            workout_template_exercises: {
+              orderBy: { exercise_order: "asc" },
+              include: { exercise: true },
+            },
           },
         },
       },
@@ -82,7 +85,10 @@ export class WorkoutTemplateService extends WorkoutBaseService {
         workout_template_days: {
           orderBy: { day_number: "asc" },
           include: {
-            workout_template_exercises: { orderBy: { exercise_order: "asc" } },
+            workout_template_exercises: {
+              orderBy: { exercise_order: "asc" },
+              include: { exercise: true },
+            },
           },
         },
       },

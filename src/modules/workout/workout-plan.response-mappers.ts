@@ -12,6 +12,7 @@ export function toPlanResponse(plan: any) {
       sets: ex.sets,
       reps: ex.reps,
       notes: ex.notes,
+      exercise: ex.exercise ?? null,
     })) ?? [],
   })) ?? [];
 

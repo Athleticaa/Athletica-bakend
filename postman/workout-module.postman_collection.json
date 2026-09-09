@@ -22,8 +22,12 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/exercises?page=1&pageSize=20",
-              "host": ["{{baseUrl}}"],
-              "path": ["exercises"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "exercises"
+              ],
               "query": [
                 {
                   "key": "page",
@@ -125,8 +129,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/exercises/{{exerciseId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["exercises", "{{exerciseId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "exercises",
+                "{{exerciseId}}"
+              ]
             }
           }
         }
@@ -157,8 +166,12 @@
             },
             "url": {
               "raw": "{{baseUrl}}/templates",
-              "host": ["{{baseUrl}}"],
-              "path": ["templates"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "templates"
+              ]
             }
           },
           "event": [
@@ -190,8 +203,12 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/templates?page=1&pageSize=10",
-              "host": ["{{baseUrl}}"],
-              "path": ["templates"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "templates"
+              ],
               "query": [
                 {
                   "key": "page",
@@ -218,8 +235,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/templates/{{templateId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["templates", "{{templateId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "templates",
+                "{{templateId}}"
+              ]
             }
           }
         },
@@ -245,8 +267,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/templates/{{templateId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["templates", "{{templateId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "templates",
+                "{{templateId}}"
+              ]
             }
           }
         }
@@ -277,8 +304,14 @@
             },
             "url": {
               "raw": "{{baseUrl}}/templates/{{templateId}}/days",
-              "host": ["{{baseUrl}}"],
-              "path": ["templates", "{{templateId}}", "days"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "templates",
+                "{{templateId}}",
+                "days"
+              ]
             }
           },
           "event": [
@@ -320,8 +353,15 @@
             },
             "url": {
               "raw": "{{baseUrl}}/templates/{{templateId}}/days/{{templateDayId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["templates", "{{templateId}}", "days", "{{templateDayId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "templates",
+                "{{templateId}}",
+                "days",
+                "{{templateDayId}}"
+              ]
             }
           }
         },
@@ -347,8 +387,15 @@
             },
             "url": {
               "raw": "{{baseUrl}}/templates/{{templateId}}/days/reorder",
-              "host": ["{{baseUrl}}"],
-              "path": ["templates", "{{templateId}}", "days", "reorder"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "templates",
+                "{{templateId}}",
+                "days",
+                "reorder"
+              ]
             }
           }
         },
@@ -365,8 +412,15 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/templates/{{templateId}}/days/{{templateDayId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["templates", "{{templateId}}", "days", "{{templateDayId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "templates",
+                "{{templateId}}",
+                "days",
+                "{{templateDayId}}"
+              ]
             }
           }
         }
@@ -397,8 +451,16 @@
             },
             "url": {
               "raw": "{{baseUrl}}/templates/{{templateId}}/days/{{templateDayId}}/exercises",
-              "host": ["{{baseUrl}}"],
-              "path": ["templates", "{{templateId}}", "days", "{{templateDayId}}", "exercises"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "templates",
+                "{{templateId}}",
+                "days",
+                "{{templateDayId}}",
+                "exercises"
+              ]
             }
           },
           "event": [
@@ -439,8 +501,17 @@
             },
             "url": {
               "raw": "{{baseUrl}}/templates/{{templateId}}/days/{{templateDayId}}/exercises/{{templateExerciseId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["templates", "{{templateId}}", "days", "{{templateDayId}}", "exercises", "{{templateExerciseId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "templates",
+                "{{templateId}}",
+                "days",
+                "{{templateDayId}}",
+                "exercises",
+                "{{templateExerciseId}}"
+              ]
             }
           }
         },
@@ -457,8 +528,17 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/templates/{{templateId}}/days/{{templateDayId}}/exercises/{{templateExerciseId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["templates", "{{templateId}}", "days", "{{templateDayId}}", "exercises", "{{templateExerciseId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "templates",
+                "{{templateId}}",
+                "days",
+                "{{templateDayId}}",
+                "exercises",
+                "{{templateExerciseId}}"
+              ]
             }
           }
         }
@@ -489,8 +569,14 @@
             },
             "url": {
               "raw": "{{baseUrl}}/templates/{{templateId}}/assign",
-              "host": ["{{baseUrl}}"],
-              "path": ["templates", "{{templateId}}", "assign"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "templates",
+                "{{templateId}}",
+                "assign"
+              ]
             }
           },
           "event": [
@@ -538,8 +624,12 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/plans?page=1&pageSize=10",
-              "host": ["{{baseUrl}}"],
-              "path": ["plans"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "plans"
+              ],
               "query": [
                 {
                   "key": "page",
@@ -576,8 +666,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/plans/{{planId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["plans", "{{planId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "plans",
+                "{{planId}}"
+              ]
             }
           }
         },
@@ -603,8 +698,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/plans/{{planId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["plans", "{{planId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "plans",
+                "{{planId}}"
+              ]
             }
           }
         },
@@ -621,8 +721,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/plans/{{planId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["plans", "{{planId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "plans",
+                "{{planId}}"
+              ]
             }
           }
         }
@@ -653,8 +758,14 @@
             },
             "url": {
               "raw": "{{baseUrl}}/plans/{{planId}}/days",
-              "host": ["{{baseUrl}}"],
-              "path": ["plans", "{{planId}}", "days"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "plans",
+                "{{planId}}",
+                "days"
+              ]
             }
           },
           "event": [
@@ -696,8 +807,15 @@
             },
             "url": {
               "raw": "{{baseUrl}}/plans/{{planId}}/days/{{planDayId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["plans", "{{planId}}", "days", "{{planDayId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "plans",
+                "{{planId}}",
+                "days",
+                "{{planDayId}}"
+              ]
             }
           }
         },
@@ -723,8 +841,15 @@
             },
             "url": {
               "raw": "{{baseUrl}}/plans/{{planId}}/days/reorder",
-              "host": ["{{baseUrl}}"],
-              "path": ["plans", "{{planId}}", "days", "reorder"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "plans",
+                "{{planId}}",
+                "days",
+                "reorder"
+              ]
             }
           }
         },
@@ -741,8 +866,15 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/plans/{{planId}}/days/{{planDayId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["plans", "{{planId}}", "days", "{{planDayId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "plans",
+                "{{planId}}",
+                "days",
+                "{{planDayId}}"
+              ]
             }
           }
         }
@@ -773,8 +905,16 @@
             },
             "url": {
               "raw": "{{baseUrl}}/plans/{{planId}}/days/{{planDayId}}/exercises",
-              "host": ["{{baseUrl}}"],
-              "path": ["plans", "{{planId}}", "days", "{{planDayId}}", "exercises"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "plans",
+                "{{planId}}",
+                "days",
+                "{{planDayId}}",
+                "exercises"
+              ]
             }
           },
           "event": [
@@ -815,8 +955,17 @@
             },
             "url": {
               "raw": "{{baseUrl}}/plans/{{planId}}/days/{{planDayId}}/exercises/{{planExerciseId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["plans", "{{planId}}", "days", "{{planDayId}}", "exercises", "{{planExerciseId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "plans",
+                "{{planId}}",
+                "days",
+                "{{planDayId}}",
+                "exercises",
+                "{{planExerciseId}}"
+              ]
             }
           }
         },
@@ -833,8 +982,17 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/plans/{{planId}}/days/{{planDayId}}/exercises/{{planExerciseId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["plans", "{{planId}}", "days", "{{planDayId}}", "exercises", "{{planExerciseId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "plans",
+                "{{planId}}",
+                "days",
+                "{{planDayId}}",
+                "exercises",
+                "{{planExerciseId}}"
+              ]
             }
           }
         }
@@ -856,8 +1014,12 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/today",
-              "host": ["{{baseUrl}}"],
-              "path": ["today"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "today"
+              ]
             }
           }
         },
@@ -874,8 +1036,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/my/plans",
-              "host": ["{{baseUrl}}"],
-              "path": ["my", "plans"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "my",
+                "plans"
+              ]
             }
           }
         },
@@ -892,18 +1059,24 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/my/plans/{{planId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["my", "plans", "{{planId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "my",
+                "plans",
+                "{{planId}}"
+              ]
             }
           }
         }
       ]
     },
     {
-      "name": "Client Complete/Uncomplete (US8) - Client only",
+      "name": "Client Exercise Complete/Uncomplete - Client only",
       "item": [
         {
-          "name": "Complete Workout",
+          "name": "Complete Exercise",
           "request": {
             "method": "POST",
             "header": [
@@ -914,9 +1087,15 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/workouts/{{workoutLogId}}/complete",
-              "host": ["{{baseUrl}}"],
-              "path": ["workouts", "{{workoutLogId}}", "complete"]
+              "raw": "{{baseUrl}}/exercises/{{exerciseLogId}}/complete",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "exercises",
+                "{{exerciseLogId}}",
+                "complete"
+              ]
             }
           },
           "event": [
@@ -933,7 +1112,7 @@
           ]
         },
         {
-          "name": "Uncomplete Workout",
+          "name": "Uncomplete Exercise",
           "request": {
             "method": "POST",
             "header": [
@@ -944,9 +1123,15 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/workouts/{{workoutLogId}}/uncomplete",
-              "host": ["{{baseUrl}}"],
-              "path": ["workouts", "{{workoutLogId}}", "uncomplete"]
+              "raw": "{{baseUrl}}/exercises/{{exerciseLogId}}/uncomplete",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "exercises",
+                "{{exerciseLogId}}",
+                "uncomplete"
+              ]
             }
           },
           "event": [
@@ -980,21 +1165,11 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/history",
-              "host": ["{{baseUrl}}"],
-              "path": ["history"],
-              "query": [
-                {
-                  "key": "from",
-                  "value": "",
-                  "disabled": true,
-                  "description": "YYYY-MM-DD"
-                },
-                {
-                  "key": "to",
-                  "value": "",
-                  "disabled": true,
-                  "description": "YYYY-MM-DD"
-                }
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "history"
               ]
             }
           }

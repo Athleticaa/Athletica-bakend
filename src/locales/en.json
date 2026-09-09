@@ -161,14 +161,9 @@
   "template_has_no_days": "Cannot assign template with no days",
   "template_has_no_exercises": "Cannot assign template with no exercises in one or more days",
   "workout_today_only": "Can only complete or uncomplete today's workouts",
-  "workout_already_completed": "Workout is already completed",
-  "workout_not_completed": "Workout is not completed",
-  "workout_log_not_found": "Workout log not found",
+  "exercise_log_not_found": "Exercise log not found",
+  "exercise_not_completed": "Exercise is not completed",
   "day_orders_incomplete": "Reorder list doesn't cover all days",
   "day_orders_invalid": "Reorder list has invalid IDs or duplicate orders",
-  "exercise_already_in_day": "Exercise already exists in this day",
-  "invalid_from_date": "Invalid from date",
-  "invalid_to_date": "Invalid to date",
-  "date_invalid_format": "Date must be in YYYY-MM-DD format",
-  "from_date_after_to_date": "From date must be before to date"
+  "exercise_already_in_day": "Exercise already exists in this day"
 }

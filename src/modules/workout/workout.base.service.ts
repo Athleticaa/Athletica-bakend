@@ -27,7 +27,10 @@ export abstract class WorkoutBaseService {
         workout_template_days: {
           orderBy: { day_number: "asc" },
           include: {
-            workout_template_exercises: { orderBy: { exercise_order: "asc" } },
+            workout_template_exercises: {
+              orderBy: { exercise_order: "asc" },
+              include: { exercise: true },
+            },
           },
         },
       },
@@ -52,7 +55,10 @@ export abstract class WorkoutBaseService {
         workout_days: {
           orderBy: { day_number: "asc" },
           include: {
-            workout_day_exercises: { orderBy: { order_number: "asc" } },
+            workout_day_exercises: {
+              orderBy: { order_number: "asc" },
+              include: { exercise: true },
+            },
           },
         },
       },

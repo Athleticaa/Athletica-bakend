@@ -403,12 +403,12 @@ export class CoachAssignmentService {
     const today = todayDateOnly();
     const start = addDays(today, -(WEEK_DAYS - 1));
     const [totalByDate, completedByDate] = await Promise.all([
-      this.prisma.workout_logs.groupBy({
+      this.prisma.workout_exercise_logs.groupBy({
         by: ["workout_date"],
         where: { client_id: clientId, workout_date: { gte: start, lte: today } },
         _count: { _all: true },
       }),
-      this.prisma.workout_logs.groupBy({
+      this.prisma.workout_exercise_logs.groupBy({
         by: ["workout_date"],
         where: { client_id: clientId, completed: true, workout_date: { gte: start, lte: today } },
         _count: { _all: true },
@@ -535,14 +535,13 @@ export class CoachAssignmentService {
       await tx.nutrition_plans.deleteMany({ where: { id: { in: nutritionPlanIds } } });
     }
 
-    // Workout chain: day_exercises + logs → days → plans
+    // Workout chain: exercise_logs + day_exercises + day_logs → days → plans
     const workoutPlanIds = (
       await tx.workout_plans.findMany({
         where: { coach_client_id: coachClientId },
         select: { id: true },
       })
     ).map((p: { id: string }) => p.id);
-
     if (workoutPlanIds.length > 0) {
       const workoutDayIds = (
         await tx.workout_days.findMany({
@@ -552,6 +551,7 @@ export class CoachAssignmentService {
       ).map((d: { id: string }) => d.id);
 
       if (workoutDayIds.length > 0) {
+        await tx.workout_exercise_logs.deleteMany({ where: { workout_day_id: { in: workoutDayIds } } });
         await tx.workout_day_exercises.deleteMany({ where: { workout_day_id: { in: workoutDayIds } } });
         await tx.workout_logs.deleteMany({ where: { workout_day_id: { in: workoutDayIds } } });
       }
