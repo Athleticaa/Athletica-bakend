@@ -4,14 +4,18 @@ node_modules
 # .specify
 .agents
 specs
+dist
 # prisma/*
 /docs
 plan.md
 init_schema.txt
 package-lock.json
-dist/
+
 *.log
 auth.postman_collection.json
+.aider*
+.vercel
+.env*.local
 .env.local
 .gitignore
 .vercel/.env.development.local

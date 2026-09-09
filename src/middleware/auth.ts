@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { container } from "tsyringe";
+import jwt from "jsonwebtoken";
 import { JwtService, JwtPayload } from "../lib/jwt";
 
 declare global {
@@ -13,7 +14,7 @@ declare global {
 export function authenticate(req: Request, res: Response, next: NextFunction): void {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    res.status(401).json({ error: "Authentication required" });
+    res.status(401).json({ error: req.t("auth_required") });
     return;
   }
 
@@ -23,20 +24,24 @@ export function authenticate(req: Request, res: Response, next: NextFunction): v
     const decoded = jwtService.verifyToken(token);
     req.user = decoded;
     next();
-  } catch {
-    res.status(401).json({ error: "Authentication required" });
+  } catch (err) {
+    if (err instanceof jwt.TokenExpiredError) {
+      res.status(401).json({ error: req.t("token_expired") });
+      return;
+    }
+    res.status(401).json({ error: req.t("token_invalid") });
   }
 }
 
 export function authorize(...roles: string[]) {
   return (req: Request, res: Response, next: NextFunction): void => {
     if (!req.user) {
-      res.status(401).json({ error: "Authentication required" });
+      res.status(401).json({ error: req.t("auth_required") });
       return;
     }
 
     if (!roles.includes(req.user.role)) {
-      res.status(403).json({ error: "Insufficient permissions" });
+      res.status(403).json({ error: req.t("insufficient_permissions") });
       return;
     }
 

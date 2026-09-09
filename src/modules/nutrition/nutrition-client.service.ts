@@ -91,7 +91,7 @@ export class NutritionClientService implements INutritionClientService {
       include: {
         nutrition_meals: {
           orderBy: { meal_order: "asc" },
-          include: { nutrition_meal_foods: { include: { food: true } } },
+          include: { nutrition_meal_foods: { include: { food: { include: { category: true } } } } },
         },
       },
     });
@@ -189,7 +189,16 @@ export class NutritionClientService implements INutritionClientService {
     const clientId = await this.getClientProfileId(userId);
     const plan = await this.getActivePlan(clientId);
 
-    if (!plan) return { meals: [], day_completed: null };
+    if (!plan) {
+      const assignment = await this.prisma.coach_clients.findFirst({
+        where: { client_id: clientId },
+        include: { coach: { include: { user: { select: { username: true, email: true } } } } },
+      });
+      const coach = assignment
+        ? { id: assignment.coach.id, user: assignment.coach.user }
+        : null;
+      throw new ServiceError("no_active_plan_found", 404, { coach });
+    }
 
     await this.ensurePlanActive(plan);
 
@@ -203,7 +212,7 @@ export class NutritionClientService implements INutritionClientService {
       where: { client_id: clientId, date: today, nutrition_plan_id: plan.id },
       include: {
         nutrition_meal: {
-          include: { nutrition_meal_foods: { include: { food: true } } },
+          include: { nutrition_meal_foods: { include: { food: { include: { category: true } } } } },
         },
       },
       orderBy: { nutrition_meal: { meal_order: "asc" } },
@@ -219,7 +228,16 @@ export class NutritionClientService implements INutritionClientService {
     const clientId = await this.getClientProfileId(userId);
     const plan = await this.getActivePlanSummary(clientId);
 
-    if (!plan) return { plan: null };
+    if (!plan) {
+      const assignment = await this.prisma.coach_clients.findFirst({
+        where: { client_id: clientId },
+        include: { coach: { include: { user: { select: { username: true, email: true } } } } },
+      });
+      const coach = assignment
+        ? { id: assignment.coach.id, user: assignment.coach.user }
+        : null;
+      throw new ServiceError("no_active_plan_found", 404, { coach });
+    }
 
     await this.ensurePlanActive(plan);
 
@@ -242,11 +260,12 @@ export class NutritionClientService implements INutritionClientService {
       where: {
         id: planId,
         coach_client: { client_id: clientId },
+        is_active: true,
       },
       include: {
         nutrition_meals: {
           orderBy: { meal_order: "asc" },
-          include: { nutrition_meal_foods: { include: { food: true } } },
+          include: { nutrition_meal_foods: { include: { food: { include: { category: true } } } } },
         },
       },
     });
@@ -296,7 +315,7 @@ export class NutritionClientService implements INutritionClientService {
       where: { id: mealLogId, client_id: clientId },
       include: {
         nutrition_meal: {
-          include: { nutrition_meal_foods: { include: { food: true } } },
+          include: { nutrition_meal_foods: { include: { food: { include: { category: true } } } } },
         },
       },
     });
@@ -325,7 +344,7 @@ export class NutritionClientService implements INutritionClientService {
       },
       include: {
         nutrition_meal: {
-          include: { nutrition_meal_foods: { include: { food: true } } },
+          include: { nutrition_meal_foods: { include: { food: { include: { category: true } } } } },
         },
       },
     });
@@ -345,7 +364,7 @@ export class NutritionClientService implements INutritionClientService {
       where: { id: mealLogId, client_id: clientId },
       include: {
         nutrition_meal: {
-          include: { nutrition_meal_foods: { include: { food: true } } },
+          include: { nutrition_meal_foods: { include: { food: { include: { category: true } } } } },
         },
       },
     });
@@ -368,7 +387,7 @@ export class NutritionClientService implements INutritionClientService {
       },
       include: {
         nutrition_meal: {
-          include: { nutrition_meal_foods: { include: { food: true } } },
+          include: { nutrition_meal_foods: { include: { food: { include: { category: true } } } } },
         },
       },
     });

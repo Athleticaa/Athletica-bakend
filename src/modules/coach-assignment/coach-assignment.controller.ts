@@ -8,10 +8,13 @@ import { config } from "../../config";
 function mapClientProfile(client: any) {
   return {
     id: client.id,
-    user: client.user,
+    user: client.user ? { ...client.user, name: client.user.username } : client.user,
+    profile_image: client.profile_image ?? null,
+    gender: client.gender,
+    birth_date: client.birth_date ?? null,
+    height: client.height ?? null,
+    weight: client.weight ?? null,
     goal: client.goal,
-    height: client.height,
-    weight: client.weight,
   };
 }
 
@@ -44,10 +47,11 @@ export class CoachAssignmentController {
 
   createInvite = async (req: Request, res: Response) => {
     try {
-      const { token, expires_at, reused } = await this.service.generateInvite(req.user!.sub);
+      const { code, token, expires_at, reused } = await this.service.generateInvite(req.user!.sub);
       res.status(reused ? 200 : 201).json({
+        code,
         token,
-        invite_url: `${config.appUrl}/invite/${token}`,
+        invite_url: `${config.appUrl}/invite/${code}`,
         expires_at,
       });
     } catch (err) {
@@ -72,8 +76,11 @@ export class CoachAssignmentController {
     }
 
     try {
-      const { record, created } = await this.service.submitRequest(req.user!.sub, req.body.token);
-      res.status(created ? 201 : 200).json(mapRequestRecord(record));
+      const codeToSubmit = req.body.code || req.body.token;
+      const { record, created, coach } = await this.service.submitRequest(req.user!.sub, codeToSubmit);
+      const payload: any = mapRequestRecord(record);
+      if (coach) payload.coach = coach;
+      res.status(created ? 201 : 200).json(payload);
     } catch (err) {
       this.handleError(res, err);
     }
@@ -156,6 +163,21 @@ export class CoachAssignmentController {
           assigned_at: c.created_at,
         })),
       });
+    } catch (err) {
+      this.handleError(res, err);
+    }
+  };
+
+  getClientProfile = async (req: Request, res: Response) => {
+    const clientId = String(req.params.id);
+    if (!isValidUuid(clientId)) {
+      res.status(400).json({ error: req.t("validation_failed") });
+      return;
+    }
+    const acceptLanguage = (req.headers["accept-language"] as string) || (req as any).language || "en";
+    try {
+      const data = await this.service.getClientProfileForCoach(req.user!.sub, clientId, acceptLanguage);
+      res.status(200).json(data);
     } catch (err) {
       this.handleError(res, err);
     }

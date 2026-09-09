@@ -44,6 +44,11 @@ export class NutritionController {
   private handleError(res: Response, err: unknown) {
     if (err instanceof ServiceError) {
       const t = (res.req as Request).t || ((s: string) => s);
+      const details = (err as ServiceError).details as Record<string, unknown> | undefined;
+      if (details && typeof details === "object" && "coach" in details) {
+        res.status(err.statusCode).json({ error: t(err.messageKey), coach: (details as { coach: unknown }).coach });
+        return;
+      }
       res.status(err.statusCode).json({ error: t(err.messageKey) });
       return;
     }
