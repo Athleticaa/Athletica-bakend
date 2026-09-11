@@ -1,10 +1,10 @@
 node_modules
 .env
 .opencode
-.specify
+# .specify
 .agents
 specs
-dist  
+dist
 # prisma/*
 /docs
 plan.md
@@ -17,4 +17,5 @@ auth.postman_collection.json
 .vercel
 .env*.local
 .env.local
+.gitignore
 .vercel/.env.development.local

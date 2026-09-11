@@ -352,3 +352,48 @@ describe("CoachAssignmentService.acceptRequest", () => {
     await expectServiceError(service.acceptRequest("coach-user", "req-1"), "request_not_pending", 400);
   });
 });
+
+describe("CoachAssignmentService.leaveCoach workout cascade", () => {
+  it("deletes per-exercise logs before day exercises (FK order)", async () => {
+    const order: string[] = [];
+    const tx: any = {
+      coach_clients: {
+        findFirst: jest.fn().mockResolvedValue({ id: "cc-1" }),
+        delete: jest.fn().mockResolvedValue({}),
+      },
+      nutrition_plans: { findMany: jest.fn().mockResolvedValue([]) },
+      workout_plans: {
+        findMany: jest.fn().mockResolvedValue([{ id: "plan-1" }]),
+        deleteMany: jest.fn().mockResolvedValue({}),
+      },
+      workout_days: {
+        findMany: jest.fn().mockResolvedValue([{ id: "day-1" }]),
+        deleteMany: jest.fn().mockResolvedValue({}),
+      },
+      workout_exercise_logs: {
+        deleteMany: jest.fn().mockImplementation(async () => {
+          order.push("exercise_logs");
+          return {};
+        }),
+      },
+      workout_day_exercises: {
+        deleteMany: jest.fn().mockImplementation(async () => {
+          order.push("day_exercises");
+          return {};
+        }),
+      },
+      workout_logs: { deleteMany: jest.fn().mockResolvedValue({}) },
+    };
+    mockPrisma.client_profiles.findFirst.mockResolvedValue({ id: "client-1" });
+    mockPrisma.$transaction.mockImplementation((cb: (tx: any) => unknown) => cb(tx));
+
+    const service = getService();
+    const result = await service.leaveCoach("user-1");
+
+    expect(tx.workout_exercise_logs.deleteMany).toHaveBeenCalledWith({
+      where: { workout_day_id: { in: ["day-1"] } },
+    });
+    expect(order).toEqual(["exercise_logs", "day_exercises"]);
+    expect(result.message).toBe("Successfully left coach");
+  });
+});

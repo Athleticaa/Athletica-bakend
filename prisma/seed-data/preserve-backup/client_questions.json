@@ -1,0 +1,770 @@
+[
+  {
+    "id": "0949e3eb-7884-4c73-9258-d28ccc75dab0",
+    "group_key": "383e39db-caf8-4144-ad23-f8f3bd43f138",
+    "question": "هل تتمرن حالياً؟",
+    "choices": [
+      "لا أتمرين",
+      "1-2 مرات في الأسبوع",
+      "3-4 مرات في الأسبوع",
+      "5+ مرات في الأسبوع",
+      "بشكل غير منتظم"
+    ],
+    "language": "ar",
+    "created_at": "2026-08-22T07:39:21.611Z",
+    "question_type": "choice"
+  },
+  {
+    "id": "0c249414-ca2e-4c49-8cf9-6988ce089dd8",
+    "group_key": "d2a67277-9974-401a-8162-d51253d300b3",
+    "question": "ما هي التحديات التي تتوقع أن تواجهها؟",
+    "choices": [
+      "ضيق الوقت",
+      "قلة التحفيز",
+      "مسايل التغذية",
+      "الإصابات / الألم",
+      "الاستمرارية"
+    ],
+    "language": "ar",
+    "created_at": "2026-08-22T07:39:27.432Z",
+    "question_type": "choice"
+  },
+  {
+    "id": "0c4398da-3b90-4273-9156-c7977acc70b7",
+    "group_key": "07b1c60d-2208-4247-9571-447d56afbe02",
+    "question": "How many hours do you sleep per night?",
+    "choices": [
+      "Less than 5 hours",
+      "5–6 hours",
+      "6–7 hours",
+      "7–8 hours",
+      "More than 8 hours"
+    ],
+    "language": "en",
+    "created_at": "2026-08-22T07:39:25.469Z",
+    "question_type": "choice"
+  },
+  {
+    "id": "0ce22a4c-1f46-4378-afc6-c88cd1e216df",
+    "group_key": "87068b62-3cd7-45a5-b844-cc5d7661c912",
+    "question": "كيف تقيم مستواك اللياقي؟",
+    "choices": [
+      "مبتدئ",
+      "أقل من المتوسط",
+      "متوسط",
+      "أعلى من المتوسط",
+      "متقدم"
+    ],
+    "language": "ar",
+    "created_at": "2026-08-22T07:39:22.605Z",
+    "question_type": "choice"
+  },
+  {
+    "id": "16b1e7e6-c580-4051-bb79-0a374321aeee",
+    "group_key": "d13b1473-a5f7-41f6-990d-52fbba4a464e",
+    "question": "How would you rate your daily activity level?",
+    "choices": [
+      "Very low",
+      "Low",
+      "Moderate",
+      "High",
+      "Very high"
+    ],
+    "language": "en",
+    "created_at": "2026-08-22T07:39:26.053Z",
+    "question_type": "choice"
+  },
+  {
+    "id": "1a977260-e773-428d-8bb9-7a8fd9a744b2",
+    "group_key": "262f8914-1634-4137-84cf-0b9eb8797240",
+    "question": "ما هو نوع التمارين التي تمارسها؟",
+    "choices": [
+      "جيم / تمارين أوزان",
+      "كارديو (جري، دراجات)",
+      "تمارين منزلية",
+      "أنشطة رياضية",
+      "مختلط"
+    ],
+    "language": "ar",
+    "created_at": "2026-08-22T07:39:22.222Z",
+    "question_type": "choice"
+  },
+  {
+    "id": "2266cd17-fe25-4efb-86e0-6a72fc4e8e88",
+    "group_key": "f009e1bf-14b9-4835-aabf-d701eb097425",
+    "question": "Do you have any previous experience with personal training or fitness programs?",
+    "choices": [
+      "1–3 months",
+      "3–6 months",
+      "6–12 months",
+      "No specific timeline",
+      "As fast as possible"
+    ],
+    "language": "en",
+    "created_at": "2026-08-22T07:39:24.003Z",
+    "question_type": "choice"
+  },
+  {
+    "id": "26cdc6a5-3b18-4d4b-a589-48de44e12235",
+    "group_key": "8ac663bb-9bb5-4d73-87ac-5d6ffc020beb",
+    "question": "أدخل طولك",
+    "choices": [],
+    "language": "ar",
+    "created_at": "2026-08-26T09:16:21.142Z",
+    "question_type": "text"
+  },
+  {
+    "id": "2931e508-f0fd-4737-944b-708107ddc4f9",
+    "group_key": "06185e1c-1efb-403c-9009-72a450e87420",
+    "question": "ما هو جنسك؟",
+    "choices": [
+      "ذكر",
+      "أنثى"
+    ],
+    "language": "ar",
+    "created_at": "2026-08-30T14:20:44.627Z",
+    "question_type": "choice"
+  },
+  {
+    "id": "2b2bd0ce-952d-4e70-91f9-e80b48b06d16",
+    "group_key": "f009e1bf-14b9-4835-aabf-d701eb097425",
+    "question": "هل لديك أي خبرة سابقة مع التدريب الشخصي أو برامج اللياقة البدنية؟",
+    "choices": [
+      "1-3 أشهر",
+      "3-6 أشهر",
+      "6-12 شهرًا",
+      "لا يوجد جدول زمني محدد",
+      "في أسرع وقت ممكن"
+    ],
+    "language": "ar",
+    "created_at": "2026-08-22T07:39:24.148Z",
+    "question_type": "choice"
+  },
+  {
+    "id": "2e8e40d9-00f5-4056-824d-289466660d61",
+    "group_key": "d2a67277-9974-401a-8162-d51253d300b3",
+    "question": "What challenges do you expect to face?",
+    "choices": [
+      "Lack of time",
+      "Lack of motivation",
+      "Nutrition issues",
+      "Injuries / pain",
+      "Consistency"
+    ],
+    "language": "en",
+    "created_at": "2026-08-22T07:39:27.285Z",
+    "question_type": "choice"
+  },
+  {
+    "id": "38d9ef80-b0ba-409d-8332-7797b4051b7b",
+    "group_key": "fd23c963-2560-4a1c-8874-84a3272718f7",
+    "question": "ما هي أهدافك الأساسية في اللياقة البدنية؟",
+    "choices": [
+      "إنقاص الوزن",
+      "بناء العضلات",
+      "تحسين اللياقة البدنية العامة",
+      "زيادة القوة",
+      "إعادة التأهيل / التعافي من الإصابات"
+    ],
+    "language": "ar",
+    "created_at": "2026-08-22T07:39:24.439Z",
+    "question_type": "choice"
+  },
+  {
+    "id": "3ac9085e-979d-4f7b-9209-9d684658c587",
+    "group_key": "dd3f1ab6-1a57-420d-9441-aa379c1a1324",
+    "question": "هل تعاني من أي حالات طبية؟",
+    "choices": [
+      "لا",
+      "نعم (متحكم بها)",
+      "نعم (تحتاج إلى اهتمام)",
+      "لست متأكداً",
+      "أفضل عدم الإفصاح"
+    ],
+    "language": "ar",
+    "created_at": "2026-08-22T07:39:23.548Z",
+    "question_type": "choice"
+  },
+  {
+    "id": "47931351-22e2-4c9c-9b72-fa8715be5409",
+    "group_key": "262f8914-1634-4137-84cf-0b9eb8797240",
+    "question": "What type of exercise do you do?",
+    "choices": [
+      "Gym / weight training",
+      "Cardio (running, cycling)",
+      "Home workouts",
+      "Sports activities",
+      "Mixed"
+    ],
+    "language": "en",
+    "created_at": "2026-08-22T07:39:22.053Z",
+    "question_type": "choice"
+  },
+  {
+    "id": "4fcee35a-9f14-41db-a60b-29a6be2ceb56",
+    "group_key": "9d5fed11-251f-4c81-8b04-c9c3207f98a9",
+    "question": "كم عدد الأيام في الأسبوع التي يمكنك تخصيصها للتدريب؟",
+    "choices": [
+      "1-2 أيام",
+      "3-4 أيام",
+      "5-6 أيام",
+      "يومياً",
+      "لست متأكداً"
+    ],
+    "language": "ar",
+    "created_at": "2026-08-22T07:39:26.850Z",
+    "question_type": "choice"
+  },
+  {
+    "id": "5078c55a-1fbf-45c2-a7aa-c4c28f5e6396",
+    "group_key": "7f4f048e-70ef-4a21-9626-5445fa25b69f",
+    "question": "هل تعرضت لأي إصابات سابقة؟",
+    "choices": [
+      "لا توجد إصابات",
+      "إصابات طفيفة (تعافيت تماماً)",
+      "إصابات سابقة (أشعر بألم أحياناً)",
+      "إصابة خطيرة",
+      "مصاب حالياً"
+    ],
+    "language": "ar",
+    "created_at": "2026-08-22T07:39:21.021Z",
+    "question_type": "choice"
+  },
+  {
+    "id": "56dc5781-d3d2-49db-a122-6513d8881ad4",
+    "group_key": "3fdf8377-d57c-4bb8-b675-e3045274b677",
+    "question": "Why is this goal important to you?",
+    "choices": [
+      "Improve appearance",
+      "Health reasons",
+      "Increase confidence",
+      "Sports performance",
+      "Lifestyle change"
+    ],
+    "language": "en",
+    "created_at": "2026-08-22T07:39:23.708Z",
+    "question_type": "choice"
+  },
+  {
+    "id": "5796bb08-60a7-413b-849c-e16f2b7d2bf1",
+    "group_key": "14add7be-bb74-43ba-afe1-99e0021c4363",
+    "question": "Are you currently taking any medications?",
+    "choices": [
+      "No",
+      "Yes (regularly)",
+      "Yes (occasionally)",
+      "Not sure",
+      "Prefer not to say"
+    ],
+    "language": "en",
+    "created_at": "2026-08-22T07:39:23.084Z",
+    "question_type": "choice"
+  },
+  {
+    "id": "5da934ef-89cf-4f06-b54c-80a86a3225f8",
+    "group_key": "87068b62-3cd7-45a5-b844-cc5d7661c912",
+    "question": "How would you rate your fitness level?",
+    "choices": [
+      "Beginner",
+      "Below average",
+      "Average",
+      "Above average",
+      "Advanced"
+    ],
+    "language": "en",
+    "created_at": "2026-08-22T07:39:22.393Z",
+    "question_type": "choice"
+  },
+  {
+    "id": "65c6253c-fe04-456f-91f5-b44ea176e7cb",
+    "group_key": "60ed4971-38f5-43b1-aed1-30f98603d863",
+    "question": "Do you smoke or drink alcohol?",
+    "choices": [
+      "No",
+      "Smoke only",
+      "Drink alcohol only",
+      "Both",
+      "Occasionally"
+    ],
+    "language": "en",
+    "created_at": "2026-08-22T07:39:26.353Z",
+    "question_type": "choice"
+  },
+  {
+    "id": "6f891107-e0ec-4bd0-af48-8936aa624478",
+    "group_key": "fd23c963-2560-4a1c-8874-84a3272718f7",
+    "question": "What are your primary fitness goals?",
+    "choices": [
+      "Lose weight",
+      "Build muscle",
+      "Improve overall fitness",
+      "Increase strength",
+      "Rehabilitation / injury recovery"
+    ],
+    "language": "en",
+    "created_at": "2026-08-22T07:39:24.294Z",
+    "question_type": "choice"
+  },
+  {
+    "id": "72964032-c51f-47ba-a3f4-f2e702d9c4f7",
+    "group_key": "14add7be-bb74-43ba-afe1-99e0021c4363",
+    "question": "هل تتناول أي أدوية حالياً؟",
+    "choices": [
+      "لا",
+      "نعم (بانتظام)",
+      "نعم (من حين لآخر)",
+      "لست متأكداً",
+      "أفضل عدم الإفصاح"
+    ],
+    "language": "ar",
+    "created_at": "2026-08-22T07:39:23.242Z",
+    "question_type": "choice"
+  },
+  {
+    "id": "74699da0-5595-4c71-9667-dc5729e2ae6f",
+    "group_key": "7f86f595-6011-4999-aa95-288181e78a6f",
+    "question": "How much water do you drink daily?",
+    "choices": [
+      "Less than 1L",
+      "1–2L",
+      "2–3L",
+      "3–4L",
+      "More than 4L"
+    ],
+    "language": "en",
+    "created_at": "2026-08-22T07:39:24.880Z",
+    "question_type": "choice"
+  },
+  {
+    "id": "80c0cb0e-5c7f-4a6d-a84b-7cc5f6ec78e6",
+    "group_key": "668593e4-3664-4fcb-a0c7-a8e45401db57",
+    "question": "Type Your Weight",
+    "choices": [],
+    "language": "en",
+    "created_at": "2026-08-26T09:16:21.331Z",
+    "question_type": "text"
+  },
+  {
+    "id": "8a7afc1d-f269-4757-952a-b0d0bae9bef0",
+    "group_key": "85bdb49d-15cd-479f-8c3f-aa3028caf55b",
+    "question": "What is your occupation?",
+    "choices": [
+      "Sedentary (desk job)",
+      "Light activity",
+      "Moderate activity",
+      "Very active",
+      "Student"
+    ],
+    "language": "en",
+    "created_at": "2026-08-22T07:39:25.763Z",
+    "question_type": "choice"
+  },
+  {
+    "id": "8bff0901-8b3e-4ff5-8fe9-87f29443d803",
+    "group_key": "b29ec88f-65d1-42f3-9d32-33fb55ce26a4",
+    "question": "كم وجبة تتناولها في اليوم؟",
+    "choices": [
+      "1-2 وجبات",
+      "3 وجبات",
+      "4 وجبات",
+      "5+ وجبات",
+      "غير منتظم"
+    ],
+    "language": "ar",
+    "created_at": "2026-08-22T07:39:24.729Z",
+    "question_type": "choice"
+  },
+  {
+    "id": "97347d54-50ca-41c4-927e-9c3753d58367",
+    "group_key": "7f86f595-6011-4999-aa95-288181e78a6f",
+    "question": "كم كمية الماء التي تشربها يومياً؟",
+    "choices": [
+      "أقل من 1 لتر",
+      "1-2 لتر",
+      "2-3 لتر",
+      "3-4 لتر",
+      "أكثر من 4 لتر"
+    ],
+    "language": "ar",
+    "created_at": "2026-08-22T07:39:25.026Z",
+    "question_type": "choice"
+  },
+  {
+    "id": "9ae9d4ba-d573-4e83-8ca5-15c86325ff05",
+    "group_key": "85bdb49d-15cd-479f-8c3f-aa3028caf55b",
+    "question": "ما هو عملك أو وظيفتك؟",
+    "choices": [
+      "خامل (وظيفة مكتبية)",
+      "نشاط خفيف",
+      "نشاط متوسط",
+      "نشط للغاية",
+      "طالب"
+    ],
+    "language": "ar",
+    "created_at": "2026-08-22T07:39:25.908Z",
+    "question_type": "choice"
+  },
+  {
+    "id": "9f97b2b5-44b9-4fc1-8acf-c9f935511064",
+    "group_key": "8ac663bb-9bb5-4d73-87ac-5d6ffc020beb",
+    "question": "Type Your Height",
+    "choices": [],
+    "language": "en",
+    "created_at": "2026-08-26T09:16:20.998Z",
+    "question_type": "text"
+  },
+  {
+    "id": "a6ca7f48-164e-4504-bcdb-284f8c61b85d",
+    "group_key": "477af07a-fc95-43db-bf12-b40cd4912429",
+    "question": "أضف الطعام الذي تحبه وتكرهه",
+    "choices": [],
+    "language": "ar",
+    "created_at": "2026-08-26T09:16:21.763Z",
+    "question_type": "text"
+  },
+  {
+    "id": "a77289c7-63ce-4711-b212-083d257393b5",
+    "group_key": "721156ba-8696-4252-9582-c964073e39f5",
+    "question": "Has a doctor ever advised you not to exercise?",
+    "choices": [
+      "No",
+      "Yes (temporarily)",
+      "Yes (specific exercises only)",
+      "Yes (completely)",
+      "Not sure"
+    ],
+    "language": "en",
+    "created_at": "2026-08-22T07:39:21.169Z",
+    "question_type": "choice"
+  },
+  {
+    "id": "a8c797d5-1074-47a7-9201-5c4b196bb7b1",
+    "group_key": "be73c1a3-de90-436d-9b02-df0c313641f7",
+    "question": "كم عدد الأيام التي تتمرن فيها أسبوعياً؟",
+    "choices": [
+      "0",
+      "1-2 أيام",
+      "3-4 مرات في الأسبوع",
+      "5-6 أيام",
+      "يومياً"
+    ],
+    "language": "ar",
+    "created_at": "2026-08-22T07:39:21.907Z",
+    "question_type": "choice"
+  },
+  {
+    "id": "ad713018-135c-4768-879b-dfd11ca4cb9f",
+    "group_key": "0a95ca91-7109-450d-b3f8-8ea323621bf2",
+    "question": "Do you prefer training at the gym or at home?",
+    "choices": [
+      "Gym",
+      "Home",
+      "Both",
+      "Outdoor",
+      "No preference"
+    ],
+    "language": "en",
+    "created_at": "2026-08-22T07:39:26.996Z",
+    "question_type": "choice"
+  },
+  {
+    "id": "b32665da-7420-4904-a5fe-eb40b8940cc6",
+    "group_key": "620acc64-dd54-4f5f-bb65-73f83eac9f6c",
+    "question": "كيف تبدو نظامك الغذائي اليومي؟",
+    "choices": [
+      "صحي ومتوازن",
+      "مختلط (صحي وغير صحي)",
+      "غير صحي في الغالب",
+      "عادات طعام عشوائية",
+      "أتبع حمية غذائية معينة"
+    ],
+    "language": "ar",
+    "created_at": "2026-08-22T07:39:22.925Z",
+    "question_type": "choice"
+  },
+  {
+    "id": "bc2828b4-09c3-4606-b775-8b0170f42249",
+    "group_key": "383e39db-caf8-4144-ad23-f8f3bd43f138",
+    "question": "Are you currently exercising?",
+    "choices": [
+      "Not exercising",
+      "1–2 times/week",
+      "3–4 times/week",
+      "5+ times/week",
+      "Irregular"
+    ],
+    "language": "en",
+    "created_at": "2026-08-22T07:39:21.465Z",
+    "question_type": "choice"
+  },
+  {
+    "id": "bd15f21d-7f8b-419e-8c5d-ec790dc63bba",
+    "group_key": "fb28d6a1-ac96-4d08-a937-bd4dbf102bb9",
+    "question": "How many hours do you training per day?",
+    "choices": [
+      "Less than 25 minutes",
+      "30–40 minutes",
+      "45 minutes",
+      "1 hour",
+      "More than 1 hour"
+    ],
+    "language": "en",
+    "created_at": "2026-08-22T07:39:27.577Z",
+    "question_type": "choice"
+  },
+  {
+    "id": "bdac95e3-0412-491f-a921-fd4b4c13a6de",
+    "group_key": "60ed4971-38f5-43b1-aed1-30f98603d863",
+    "question": "هل تدخن أو تشرب الكحول؟",
+    "choices": [
+      "لا",
+      "التدخين فقط",
+      "شرب الكحول فقط",
+      "كلاهما",
+      "أحياناً"
+    ],
+    "language": "ar",
+    "created_at": "2026-08-22T07:39:26.536Z",
+    "question_type": "choice"
+  },
+  {
+    "id": "c9d7c13d-40bd-442a-ab4f-28a2c2cdff63",
+    "group_key": "d13b1473-a5f7-41f6-990d-52fbba4a464e",
+    "question": "ما مدى تقييمك لمستوى نشاطك اليومي؟",
+    "choices": [
+      "منخفض جداً",
+      "منخفض",
+      "متوسط",
+      "مرتفع",
+      "مرتفع جداً"
+    ],
+    "language": "ar",
+    "created_at": "2026-08-22T07:39:26.200Z",
+    "question_type": "choice"
+  },
+  {
+    "id": "cb5173ef-73be-4c07-9dc8-a5c3fd647901",
+    "group_key": "9d5fed11-251f-4c81-8b04-c9c3207f98a9",
+    "question": "How many days per week can you commit to training?",
+    "choices": [
+      "1–2 days",
+      "3–4 days",
+      "5–6 days",
+      "Daily",
+      "Not sure"
+    ],
+    "language": "en",
+    "created_at": "2026-08-22T07:39:26.703Z",
+    "question_type": "choice"
+  },
+  {
+    "id": "ccd27cc2-1139-497e-93a4-11acbc0141c4",
+    "group_key": "7f4f048e-70ef-4a21-9626-5445fa25b69f",
+    "question": "Have you had any past injuries?",
+    "choices": [
+      "No injuries",
+      "Minor injuries (fully recovered)",
+      "Previous injuries (sometimes feel pain)",
+      "Serious injury",
+      "Currently injured"
+    ],
+    "language": "en",
+    "created_at": "2026-08-22T07:39:19.935Z",
+    "question_type": "choice"
+  },
+  {
+    "id": "d3dcb595-6ac5-4483-a1fa-c04361cc5016",
+    "group_key": "668593e4-3664-4fcb-a0c7-a8e45401db57",
+    "question": "أدخل وزنك",
+    "choices": [],
+    "language": "ar",
+    "created_at": "2026-08-26T09:16:21.476Z",
+    "question_type": "text"
+  },
+  {
+    "id": "d7de5089-77b2-4011-97a4-7a9327ebb493",
+    "group_key": "be73c1a3-de90-436d-9b02-df0c313641f7",
+    "question": "How many days per week do you train?",
+    "choices": [
+      "0",
+      "1–2 days",
+      "3–4 times/week",
+      "5–6 days",
+      "Daily"
+    ],
+    "language": "en",
+    "created_at": "2026-08-22T07:39:21.760Z",
+    "question_type": "choice"
+  },
+  {
+    "id": "db2bef2e-0ca0-4ae9-99af-0f45f5785b3c",
+    "group_key": "90a143bf-1723-4cfe-a823-ecfa96cb7f0c",
+    "question": "Do you have any food allergies or restrictions?",
+    "choices": [
+      "No",
+      "Yes (allergies)",
+      "Yes (diet preference)",
+      "Yes (medical restriction)",
+      "Not sure"
+    ],
+    "language": "en",
+    "created_at": "2026-08-22T07:39:25.171Z",
+    "question_type": "choice"
+  },
+  {
+    "id": "db51fe41-aca7-4f8d-b447-6af8ff7ee00c",
+    "group_key": "477af07a-fc95-43db-bf12-b40cd4912429",
+    "question": "Add Food You Like & Dislike",
+    "choices": [],
+    "language": "en",
+    "created_at": "2026-08-26T09:16:21.619Z",
+    "question_type": "text"
+  },
+  {
+    "id": "e2d6c4cc-ae00-45ea-b5bb-9c7c1acef681",
+    "group_key": "90a143bf-1723-4cfe-a823-ecfa96cb7f0c",
+    "question": "هل تعاني من أي حساسيات أو قيود غذائية؟",
+    "choices": [
+      "لا",
+      "نعم (حساسية)",
+      "نعم (تفضيلات غذائية)",
+      "نعم (قيود طبية)",
+      "لست متأكداً"
+    ],
+    "language": "ar",
+    "created_at": "2026-08-22T07:39:25.317Z",
+    "question_type": "choice"
+  },
+  {
+    "id": "ecafcd2f-bd73-4cea-ab95-6a4099b34d83",
+    "group_key": "721156ba-8696-4252-9582-c964073e39f5",
+    "question": "هل نصحك ألا تتعرض للتمرين من قبل طبيب؟",
+    "choices": [
+      "لا",
+      "نعم (بشكل مؤقت)",
+      "نعم (تمارين محددة فقط)",
+      "نعم (بشكل تام)",
+      "لست متأكداً"
+    ],
+    "language": "ar",
+    "created_at": "2026-08-22T07:39:21.314Z",
+    "question_type": "choice"
+  },
+  {
+    "id": "ef352935-da55-4c54-9604-2042bcf6c581",
+    "group_key": "620acc64-dd54-4f5f-bb65-73f83eac9f6c",
+    "question": "What does your daily diet look like?",
+    "choices": [
+      "Healthy and balanced",
+      "Mixed healthy & unhealthy",
+      "Mostly unhealthy",
+      "Random eating habits",
+      "Following a specific diet"
+    ],
+    "language": "en",
+    "created_at": "2026-08-22T07:39:22.763Z",
+    "question_type": "choice"
+  },
+  {
+    "id": "f3a73773-1d3f-44f1-9892-b554bebb9dbc",
+    "group_key": "07b1c60d-2208-4247-9571-447d56afbe02",
+    "question": "كم عدد ساعات النوم التي تنامها في الليلة؟",
+    "choices": [
+      "أقل من 5 ساعات",
+      "5-6 ساعات",
+      "6-7 ساعات",
+      "7-8 ساعات",
+      "أكثر من 8 ساعات"
+    ],
+    "language": "ar",
+    "created_at": "2026-08-22T07:39:25.615Z",
+    "question_type": "choice"
+  },
+  {
+    "id": "f5a14a8f-67c1-4415-93d4-08320cdf9568",
+    "group_key": "fb28d6a1-ac96-4d08-a937-bd4dbf102bb9",
+    "question": "كم عدد الساعات التي تتمرن فيها يومياً؟",
+    "choices": [
+      "أقل من 25 دقيقة",
+      "30-40 دقيقة",
+      "45 دقيقة",
+      "ساعة واحدة",
+      "أكثر من ساعة واحدة"
+    ],
+    "language": "ar",
+    "created_at": "2026-08-22T07:39:27.724Z",
+    "question_type": "choice"
+  },
+  {
+    "id": "f6dbd9f5-dfde-46b6-9eac-dc67a515b8ea",
+    "group_key": "06185e1c-1efb-403c-9009-72a450e87420",
+    "question": "What is your gender?",
+    "choices": [
+      "Male",
+      "Female"
+    ],
+    "language": "en",
+    "created_at": "2026-08-30T14:20:43.322Z",
+    "question_type": "choice"
+  },
+  {
+    "id": "f844f7e1-4c64-4bd3-9d9a-6d9cda24da0c",
+    "group_key": "3fdf8377-d57c-4bb8-b675-e3045274b677",
+    "question": "لماذا يعتبر هذا الهدف مهمًا بالنسبة لك؟",
+    "choices": [
+      "تحسين المظهر",
+      "أسباب صحية",
+      "زيادة الثقة بالنفس",
+      "الأداء الرياضي",
+      "تغيير نمط الحياة"
+    ],
+    "language": "ar",
+    "created_at": "2026-08-22T07:39:23.857Z",
+    "question_type": "choice"
+  },
+  {
+    "id": "f87c7529-e788-4961-9c09-396e85eadebc",
+    "group_key": "dd3f1ab6-1a57-420d-9441-aa379c1a1324",
+    "question": "Do you have any medical conditions?",
+    "choices": [
+      "No",
+      "Yes (controlled)",
+      "Yes (needs attention)",
+      "Not sure",
+      "Prefer not to say"
+    ],
+    "language": "en",
+    "created_at": "2026-08-22T07:39:23.393Z",
+    "question_type": "choice"
+  },
+  {
+    "id": "f92e6a36-a60b-43d3-9a66-64b1d1657900",
+    "group_key": "b29ec88f-65d1-42f3-9d32-33fb55ce26a4",
+    "question": "How many meals do you eat per day?",
+    "choices": [
+      "1–2 meals",
+      "3 meals",
+      "4 meals",
+      "5+ meals",
+      "Irregular"
+    ],
+    "language": "en",
+    "created_at": "2026-08-22T07:39:24.584Z",
+    "question_type": "choice"
+  },
+  {
+    "id": "fc2b2cfc-7348-40e9-80f2-9a2b01b1c390",
+    "group_key": "0a95ca91-7109-450d-b3f8-8ea323621bf2",
+    "question": "هل تفضل التمارين في الجيم أم في المنزل؟",
+    "choices": [
+      "الجيم",
+      "المنزل",
+      "كلاهما",
+      "في الهواء الطلق",
+      "بدون تفضيل"
+    ],
+    "language": "ar",
+    "created_at": "2026-08-22T07:39:27.141Z",
+    "question_type": "choice"
+  }
+]

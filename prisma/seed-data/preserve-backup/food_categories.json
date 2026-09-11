@@ -1,0 +1,56 @@
+[
+  {
+    "id": "192c3991-ded2-423d-8380-0d6f514af9bc",
+    "name": "Protein",
+    "name_en": "Protein",
+    "name_ar": "بروتين"
+  },
+  {
+    "id": "54e3b870-6985-4cc2-9966-67361ce20de5",
+    "name": "Snack",
+    "name_en": "Snack",
+    "name_ar": "سناك"
+  },
+  {
+    "id": "5c8b5fad-2d29-4767-89e6-077d9fb59104",
+    "name": "Carbs",
+    "name_en": "Carbs",
+    "name_ar": "كاربوهيدرات"
+  },
+  {
+    "id": "7ef1b1a9-88d2-4c6f-800c-3c1932a96243",
+    "name": "Beverage",
+    "name_en": "Beverage",
+    "name_ar": "مشروبات"
+  },
+  {
+    "id": "8ca4192d-7e3b-42b7-8b8b-93db96d2ee3d",
+    "name": "Vegetable",
+    "name_en": "Vegetable",
+    "name_ar": "خضار"
+  },
+  {
+    "id": "8eb1185c-10a0-47b5-a6cd-2e369643a70b",
+    "name": "Fats",
+    "name_en": "Fats",
+    "name_ar": "دهون"
+  },
+  {
+    "id": "9ca16a63-06dc-4463-9f35-208069a4bb40",
+    "name": "Fruit",
+    "name_en": "Fruit",
+    "name_ar": "فاكهة"
+  },
+  {
+    "id": "ae7829a5-c808-4e33-a3cb-388bbcfdbe4e",
+    "name": "Meal",
+    "name_en": "Meal",
+    "name_ar": "وجبة"
+  },
+  {
+    "id": "af0d02c6-840d-4194-821e-a112b57a8e63",
+    "name": "Dairy",
+    "name_en": "Dairy",
+    "name_ar": "ألبان"
+  }
+]
