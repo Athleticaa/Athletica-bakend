@@ -4,6 +4,7 @@ export function toPlanResponse(plan: any) {
     title: day.title,
     day_number: day.day_number,
     is_rest: day.is_rest,
+    note: day.note ?? "",
     exercise_count: day.workout_day_exercises?.length ?? 0,
     exercises: day.workout_day_exercises?.map((ex: any) => ({
       id: ex.id,
@@ -11,6 +12,7 @@ export function toPlanResponse(plan: any) {
       order_number: ex.order_number,
       sets: ex.sets,
       reps: ex.reps,
+      rest_time: ex.rest_time ?? null,
       notes: ex.notes,
       exercise: ex.exercise ?? null,
     })) ?? [],

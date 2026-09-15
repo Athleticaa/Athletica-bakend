@@ -64,7 +64,8 @@ export class WorkoutController {
 
   getExercise = async (req: Request, res: Response) => {
     try {
-      const id = this.param(req, "id");
+      const id = String(req.params.id ?? "").trim();
+      if (!id) throw new ServiceError("exercise_not_found", 404);
       const exercise = await this.exerciseService.getExercise(id);
       res.status(200).json({ success: true, data: { exercise } });
     } catch (err) {
@@ -172,6 +173,7 @@ export class WorkoutController {
       const templateId = this.param(req, "tid");
       const template = await this.templateService.addDayToTemplate(templateId, coachId, {
         title: req.body.title,
+        note: req.body.note,
       });
       res.status(201).json({ success: true, data: template });
     } catch (err) {
@@ -194,6 +196,7 @@ export class WorkoutController {
         title: req.body.title,
         day_number: req.body.day_number,
         is_rest: req.body.is_rest,
+        note: req.body.note,
       });
       res.status(200).json({ success: true, data: template });
     } catch (err) {
@@ -334,6 +337,7 @@ export class WorkoutController {
       const planId = this.param(req, "pid");
       const plan = await this.planService.addDayToPlan(planId, coachId, {
         title: req.body.title,
+        note: req.body.note,
       });
       res.status(201).json({ success: true, data: plan });
     } catch (err) {
@@ -356,6 +360,7 @@ export class WorkoutController {
         title: req.body.title,
         day_number: req.body.day_number,
         is_rest: req.body.is_rest,
+        note: req.body.note,
       });
       res.status(200).json({ success: true, data: plan });
     } catch (err) {
@@ -478,6 +483,7 @@ export class WorkoutController {
         order_number: req.body.order_number,
         sets: req.body.sets,
         reps: req.body.reps,
+        rest_time: req.body.rest_time,
         notes: req.body.notes,
       });
       res.status(201).json({ success: true, data: plan });
@@ -502,6 +508,7 @@ export class WorkoutController {
         order_number: req.body.order_number,
         sets: req.body.sets,
         reps: req.body.reps,
+        rest_time: req.body.rest_time,
         notes: req.body.notes,
       });
       res.status(200).json({ success: true, data: plan });

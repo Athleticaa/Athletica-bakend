@@ -48,8 +48,15 @@ function tFallback(key: string): string {
 
 export function validateSignup(input: SignupInput, t: (key: string) => string = tFallback): string[] {
   const errors: string[] = [];
-  if (!input.username || input.username.length < 1 || input.username.length > 100)
+  if (
+    typeof input.username !== "string" ||
+    input.username.trim().length < 1 ||
+    input.username.trim().length > 100
+  ) {
     errors.push(t("username_length"));
+  } else if (!/^\p{L}+(?:[ ]+\p{L}+)*$/u.test(input.username.trim())) {
+    errors.push(t("username_invalid"));
+  }
   if (!input.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.email))
     errors.push(t("email_invalid"));
   if (!input.password || input.password.length < 8)

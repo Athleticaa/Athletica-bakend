@@ -62,12 +62,14 @@ export class WorkoutPlanService extends WorkoutBaseService {
             title: day.title,
             day_number: day.day_number,
             is_rest: day.is_rest,
+            note: day.note ?? "",
             workout_day_exercises: {
               create: day.workout_template_exercises.map((ex: any) => ({
                 exercise_id: ex.exercise_id,
                 order_number: ex.exercise_order,
                 sets: null,
                 reps: null,
+                rest_time: null,
                 notes: ex.notes,
               })),
             },
@@ -178,7 +180,7 @@ export class WorkoutPlanService extends WorkoutBaseService {
   // Plan Day Management (US5)
   // =========================================================================
 
-  async addDayToPlan(planId: string, coachId: string, input: { title: string }) {
+  async addDayToPlan(planId: string, coachId: string, input: { title: string; note?: string }) {
     await this.getOwnedPlan(coachId, planId);
 
     let day;
@@ -197,6 +199,7 @@ export class WorkoutPlanService extends WorkoutBaseService {
             title: input.title,
             day_number: nextDayNumber,
             is_rest: false,
+            note: input.note ?? "",
           },
         });
         break;
@@ -210,7 +213,7 @@ export class WorkoutPlanService extends WorkoutBaseService {
     return toPlanResponse(updated);
   }
 
-  async updatePlanDay(planId: string, coachId: string, dayId: string, input: { title?: string; day_number?: number; is_rest?: boolean }) {
+  async updatePlanDay(planId: string, coachId: string, dayId: string, input: { title?: string; day_number?: number; is_rest?: boolean; note?: string }) {
     await this.getOwnedPlan(coachId, planId);
     const day = await this.getOwnedPlanDay(planId, dayId);
 
@@ -225,6 +228,7 @@ export class WorkoutPlanService extends WorkoutBaseService {
             title: input.title ?? day.title,
             day_number: input.day_number ?? day.day_number,
             is_rest: willBeRest,
+            note: input.note ?? day.note,
           },
         });
 
@@ -318,7 +322,7 @@ export class WorkoutPlanService extends WorkoutBaseService {
   // Plan Exercise Management (US4)
   // =========================================================================
 
-  async addExerciseToPlanDay(planId: string, coachId: string, dayId: string, input: { exercise_id: string; order_number?: number; sets?: number; reps?: number; notes?: string }) {
+  async addExerciseToPlanDay(planId: string, coachId: string, dayId: string, input: { exercise_id: string; order_number?: number; sets?: number | null; reps?: number | null; rest_time?: number | null; notes?: string }) {
     await this.getOwnedPlan(coachId, planId);
     const day = await this.getOwnedPlanDay(planId, dayId);
 
@@ -345,6 +349,7 @@ export class WorkoutPlanService extends WorkoutBaseService {
             order_number: input.order_number ?? nextOrder,
             sets: input.sets ?? null,
             reps: input.reps ?? null,
+            rest_time: input.rest_time ?? null,
             notes: input.notes ?? "",
           },
         });
@@ -359,7 +364,7 @@ export class WorkoutPlanService extends WorkoutBaseService {
     return toPlanResponse(updated);
   }
 
-  async updatePlanDayExercise(planId: string, coachId: string, dayId: string, exerciseId: string, input: { order_number?: number; sets?: number; reps?: number; notes?: string }) {
+  async updatePlanDayExercise(planId: string, coachId: string, dayId: string, exerciseId: string, input: { order_number?: number; sets?: number | null; reps?: number | null; rest_time?: number | null; notes?: string }) {
     await this.getOwnedPlan(coachId, planId);
     await this.getOwnedPlanDay(planId, dayId);
     await this.getPlanExercise(dayId, exerciseId);
@@ -371,6 +376,7 @@ export class WorkoutPlanService extends WorkoutBaseService {
           order_number: input.order_number,
           sets: input.sets,
           reps: input.reps,
+          rest_time: input.rest_time,
           notes: input.notes,
         },
       });

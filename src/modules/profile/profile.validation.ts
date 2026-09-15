@@ -31,6 +31,8 @@ export function validateUpdateCoachProfile(
   if (input.username !== undefined) {
     if (typeof input.username !== "string" || input.username.trim().length < 1 || input.username.trim().length > 100) {
       errors.push(t("username_length"));
+    } else if (!/^\p{L}+(?:[ ]+\p{L}+)*$/u.test(input.username.trim())) {
+      errors.push(t("username_invalid"));
     }
   }
   if (input.bio !== undefined && (typeof input.bio !== "string" || input.bio.length > 500)) {
@@ -56,6 +58,8 @@ export function validateUpdateClientProfile(
   if (input.username !== undefined) {
     if (typeof input.username !== "string" || input.username.trim().length < 1 || input.username.trim().length > 100) {
       errors.push(t("username_length"));
+    } else if (!/^\p{L}+(?:[ ]+\p{L}+)*$/u.test(input.username.trim())) {
+      errors.push(t("username_invalid"));
     }
   }
   if (input.gender !== undefined && typeof input.gender !== "string") {

@@ -8,7 +8,7 @@ datasource db {
 
 model users {
   id             String   @id @default(uuid()) @db.Uuid
-  username       String   @unique @db.VarChar
+  username       String   @db.VarChar
   email          String   @unique @db.VarChar
   password       String   @db.VarChar
   role           String   @db.VarChar
@@ -135,24 +135,25 @@ model coach_clients {
 }
 
 model exercises {
-  id                String   @id @default(uuid()) @db.Uuid
-  name_en           String   @db.VarChar
-  name_ar           String   @db.VarChar
-  primary_muscle    String   @db.VarChar
-  secondary_muscles String[]
-  equipment         String   @db.VarChar
-  difficulty        String   @db.VarChar
-  exercise_type     String   @db.VarChar
-  classification    String[]
-  movement_pattern  String   @db.VarChar
-  fitness_goals     String[]
-  workout_location  String   @db.VarChar
-  media_type        String   @db.VarChar
-  media_url         String   @db.VarChar
-  video_url         String   @db.VarChar
-  tags              String[]
-  is_default        Boolean  @default(false)
-  priority          String   @db.VarChar
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name            String   @db.VarChar
+  aliases         String[]
+  bodyPart        String   @db.VarChar
+  target          String   @db.VarChar
+  secondaryMuscles String[]
+  equipment       String   @db.VarChar
+  difficulty      String   @db.VarChar
+  muscleGroup     String   @db.VarChar
+  compound        Boolean
+  unilateral      Boolean
+  shortDescription String  @db.Text
+  instructions    String   @db.Text
+  steps           String[]
+  formCues        String[]
+  commonMistakes  String[]
+  breathing       String   @db.Text
+  videos          Json
+  thumbnails      Json
 
   workout_template_exercises workout_template_exercises[]
   workout_day_exercises      workout_day_exercises[]
@@ -177,6 +178,7 @@ model workout_template_days {
   day_number          Int
   title               String  @db.VarChar
   is_rest             Boolean
+  note                String  @default("")
 
   workout_template           workout_templates            @relation(fields: [workout_template_id], references: [id])
   workout_template_exercises workout_template_exercises[]
@@ -224,6 +226,7 @@ model workout_days {
   day_number      Int
   title           String  @db.VarChar
   is_rest         Boolean
+  note            String  @default("")
 
   workout_plan          workout_plans           @relation(fields: [workout_plan_id], references: [id])
   workout_day_exercises workout_day_exercises[]
@@ -238,6 +241,7 @@ model workout_day_exercises {
   order_number   Int
   sets           Int?
   reps           Int?
+  rest_time      Int?
   notes          String
 
   workout_day workout_days @relation(fields: [workout_day_id], references: [id])

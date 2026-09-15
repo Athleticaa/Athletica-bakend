@@ -8,6 +8,7 @@
     "start": "tsx src/index.ts",
     "test": "jest",
     "build": "prisma generate && tsc",
+    "db:reseed-exercises": "tsx scripts/reseed-exercises.ts",
     "postinstall": "prisma generate"
   },
   "keywords": [],

@@ -49,6 +49,16 @@ export class WorkoutTemplateService extends WorkoutBaseService {
         orderBy: { created_at: "desc" },
         skip: (page - 1) * pageSize,
         take: pageSize,
+        include: {
+          workout_template_days: {
+            orderBy: { day_number: "asc" },
+            include: {
+              workout_template_exercises: {
+                orderBy: { exercise_order: "asc" },
+              },
+            },
+          },
+        },
       }),
       this.prisma.workout_templates.count({
         where: { coach_id: coachId, deleted_at: null },
@@ -122,7 +132,7 @@ export class WorkoutTemplateService extends WorkoutBaseService {
   // Template Day Management (US1)
   // =========================================================================
 
-  async addDayToTemplate(templateId: string, coachId: string, input: { title: string }) {
+  async addDayToTemplate(templateId: string, coachId: string, input: { title: string; note?: string }) {
     await this.getOwnedTemplate(coachId, templateId);
 
     let day;
@@ -141,6 +151,7 @@ export class WorkoutTemplateService extends WorkoutBaseService {
             title: input.title,
             day_number: nextDayNumber,
             is_rest: false,
+            note: input.note ?? "",
           },
         });
         break;
@@ -154,7 +165,7 @@ export class WorkoutTemplateService extends WorkoutBaseService {
     return toTemplateResponse(updated);
   }
 
-  async updateTemplateDay(templateId: string, coachId: string, dayId: string, input: { title?: string; day_number?: number; is_rest?: boolean }) {
+  async updateTemplateDay(templateId: string, coachId: string, dayId: string, input: { title?: string; day_number?: number; is_rest?: boolean; note?: string }) {
     await this.getOwnedTemplate(coachId, templateId);
     const day = await this.getOwnedTemplateDay(templateId, dayId);
 
@@ -169,6 +180,7 @@ export class WorkoutTemplateService extends WorkoutBaseService {
             title: input.title ?? day.title,
             day_number: input.day_number ?? day.day_number,
             is_rest: willBeRest,
+            note: input.note ?? day.note,
           },
         });
 

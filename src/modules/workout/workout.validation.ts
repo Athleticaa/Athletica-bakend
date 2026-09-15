@@ -28,18 +28,14 @@ export function isValidUuid(value: string): boolean {
 
 export interface ExerciseFilters {
   search?: string;
-  primaryMuscle?: string;
+  bodyPart?: string;
+  target?: string;
   secondaryMuscle?: string;
   equipment?: string;
   difficulty?: string;
-  exerciseType?: string;
-  movementPattern?: string;
-  workoutLocation?: string;
-  priority?: string;
-  isDefault?: boolean;
-  goal?: string;
-  tag?: string;
-  classification?: string;
+  muscleGroup?: string;
+  compound?: boolean;
+  unilateral?: boolean;
 }
 
 export interface ListExercisesQuery {
@@ -56,22 +52,19 @@ export function parseListExercisesQuery(
   const filters: ExerciseFilters = {};
 
   if (query.search !== undefined) filters.search = String(query.search).trim() || undefined;
-  if (query.primaryMuscle !== undefined) filters.primaryMuscle = String(query.primaryMuscle) || undefined;
-  if (query.secondaryMuscle !== undefined) filters.secondaryMuscle = String(query.secondaryMuscle) || undefined;
-  if (query.equipment !== undefined) filters.equipment = String(query.equipment) || undefined;
-  if (query.difficulty !== undefined) filters.difficulty = String(query.difficulty) || undefined;
-  if (query.exerciseType !== undefined) filters.exerciseType = String(query.exerciseType) || undefined;
-  if (query.movementPattern !== undefined) filters.movementPattern = String(query.movementPattern) || undefined;
-  if (query.workoutLocation !== undefined) filters.workoutLocation = String(query.workoutLocation) || undefined;
-  if (query.priority !== undefined) filters.priority = String(query.priority) || undefined;
-  if (query.goal !== undefined) filters.goal = String(query.goal) || undefined;
-  if (query.tag !== undefined) filters.tag = String(query.tag) || undefined;
-  if (query.classification !== undefined) filters.classification = String(query.classification) || undefined;
+  if (query.bodyPart !== undefined) filters.bodyPart = String(query.bodyPart).trim() || undefined;
+  if (query.target !== undefined) filters.target = String(query.target).trim() || undefined;
+  if (query.secondaryMuscle !== undefined) filters.secondaryMuscle = String(query.secondaryMuscle).trim() || undefined;
+  if (query.equipment !== undefined) filters.equipment = String(query.equipment).trim() || undefined;
+  if (query.difficulty !== undefined) filters.difficulty = String(query.difficulty).trim() || undefined;
+  if (query.muscleGroup !== undefined) filters.muscleGroup = String(query.muscleGroup).trim() || undefined;
 
-  if (query.isDefault !== undefined) {
-    const parsed = parseBoolean(query.isDefault);
-    if (parsed === null) errors.push(t("invalid_is_default"));
-    else filters.isDefault = parsed;
+  for (const key of ["compound", "unilateral"] as const) {
+    if (query[key] !== undefined) {
+      const parsed = parseBoolean(query[key]);
+      if (parsed === null) errors.push(`invalid_${key}`);
+      else filters[key] = parsed;
+    }
   }
 
   const page = parsePositiveInt(query.page ?? "1");
@@ -148,12 +141,14 @@ export function validateUpdateTemplate(
 
 export interface CreateDayInput {
   title: string;
+  note?: string;
 }
 
 export interface UpdateDayInput {
   title?: string;
   day_number?: number;
   is_rest?: boolean;
+  note?: string;
 }
 
 export interface ReorderDaysInput {
@@ -165,12 +160,16 @@ export function validateCreateDay(
   t: Translate = tFallback
 ): string[] {
   const errors: string[] = [];
-  const { title } = input ?? {};
+  const { title, note } = input ?? {};
 
   if (!title || typeof title !== "string" || title.trim().length === 0) {
     errors.push(t("day_title_required"));
   } else if (title.trim().length > 100) {
     errors.push(t("day_title_too_long"));
+  }
+
+  if (note !== undefined && typeof note !== "string") {
+    errors.push(t("invalid_note"));
   }
 
   return errors;
@@ -181,9 +180,9 @@ export function validateUpdateDay(
   t: Translate = tFallback
 ): string[] {
   const errors: string[] = [];
-  const { title, day_number, is_rest } = input ?? {};
+  const { title, day_number, is_rest, note } = input ?? {};
 
-  if (title === undefined && day_number === undefined && is_rest === undefined) {
+  if (title === undefined && day_number === undefined && is_rest === undefined && note === undefined) {
     errors.push(t("invalid_request"));
   }
 
@@ -203,6 +202,10 @@ export function validateUpdateDay(
 
   if (is_rest !== undefined && typeof is_rest !== "boolean") {
     errors.push(t("is_rest_invalid"));
+  }
+
+  if (note !== undefined && typeof note !== "string") {
+    errors.push(t("invalid_note"));
   }
 
   return errors;
@@ -336,6 +339,7 @@ export interface CreatePlanExerciseInput {
   order_number?: number;
   sets?: number;
   reps?: number;
+  rest_time?: number;
   notes?: string;
 }
 
@@ -343,6 +347,7 @@ export interface UpdatePlanExerciseInput {
   order_number?: number;
   sets?: number;
   reps?: number;
+  rest_time?: number;
   notes?: string;
 }
 
@@ -351,7 +356,7 @@ export function validateCreatePlanExercise(
   t: Translate = tFallback
 ): string[] {
   const errors: string[] = [];
-  const { exercise_id, order_number, sets, reps } = input ?? {};
+  const { exercise_id, order_number, sets, reps, rest_time } = input ?? {};
 
   if (!exercise_id || !isValidUuid(exercise_id)) {
     errors.push(t("invalid_exercise_id"));
@@ -361,12 +366,16 @@ export function validateCreatePlanExercise(
     errors.push(t("exercise_order_invalid"));
   }
 
-  if (sets !== undefined && (typeof sets !== "number" || !Number.isInteger(sets) || sets < 1)) {
+  if (sets !== undefined && sets !== null && (typeof sets !== "number" || !Number.isInteger(sets) || sets < 1)) {
     errors.push(t("sets_invalid"));
   }
 
-  if (reps !== undefined && (typeof reps !== "number" || !Number.isInteger(reps) || reps < 1)) {
+  if (reps !== undefined && reps !== null && (typeof reps !== "number" || !Number.isInteger(reps) || reps < 1)) {
     errors.push(t("reps_invalid"));
+  }
+
+  if (rest_time !== undefined && rest_time !== null && (typeof rest_time !== "number" || !Number.isInteger(rest_time) || rest_time < 1)) {
+    errors.push(t("rest_time_invalid"));
   }
 
   return errors;
@@ -377,9 +386,9 @@ export function validateUpdatePlanExercise(
   t: Translate = tFallback
 ): string[] {
   const errors: string[] = [];
-  const { order_number, sets, reps, notes } = input ?? {};
+  const { order_number, sets, reps, rest_time, notes } = input ?? {};
 
-  if (order_number === undefined && sets === undefined && reps === undefined && notes === undefined) {
+  if (order_number === undefined && sets === undefined && reps === undefined && rest_time === undefined && notes === undefined) {
     errors.push(t("invalid_request"));
   }
 
@@ -387,12 +396,16 @@ export function validateUpdatePlanExercise(
     errors.push(t("exercise_order_invalid"));
   }
 
-  if (sets !== undefined && (typeof sets !== "number" || !Number.isInteger(sets) || sets < 1)) {
+  if (sets !== undefined && sets !== null && (typeof sets !== "number" || !Number.isInteger(sets) || sets < 1)) {
     errors.push(t("sets_invalid"));
   }
 
-  if (reps !== undefined && (typeof reps !== "number" || !Number.isInteger(reps) || reps < 1)) {
+  if (reps !== undefined && reps !== null && (typeof reps !== "number" || !Number.isInteger(reps) || reps < 1)) {
     errors.push(t("reps_invalid"));
+  }
+
+  if (rest_time !== undefined && rest_time !== null && (typeof rest_time !== "number" || !Number.isInteger(rest_time) || rest_time < 1)) {
+    errors.push(t("rest_time_invalid"));
   }
 
   return errors;

@@ -274,22 +274,45 @@ async function main() {
   }
   console.log("Client questions seeded successfully.\n");
 
-  // 2. Exercises from JSON file
-  console.log("2. Seeding exercises...");
-  const exercisesPath = path.join(process.cwd(), "01_athletica_mvp_database_v2.json");
+  // 2. Exercises from JSON file — clean replace (delete all, then insert fresh)
+  console.log("2. Seeding exercises (clean replace)...");
+  const exercisesPath = path.join(process.cwd(), "exercises.json");
   if (fs.existsSync(exercisesPath)) {
     const exercisesRaw = JSON.parse(fs.readFileSync(exercisesPath, "utf-8"));
+
+    // Delete child rows first to satisfy FK RESTRICT constraints, then clear exercises
+    console.log("   Clearing dependent rows...");
+    await prisma.workout_exercise_logs.deleteMany({});
+    await prisma.workout_day_exercises.deleteMany({});
+    await prisma.workout_template_exercises.deleteMany({});
+    await prisma.exercises.deleteMany({});
+    console.log("   All exercises and dependent rows deleted.");
+
+    // Bulk-insert fresh from exercises.json
     await prisma.exercises.createMany({
       data: exercisesRaw.map((e: any) => ({
-        id: e.id, name_en: e.name_en, name_ar: e.name_ar, primary_muscle: e.primary_muscle,
-        secondary_muscles: e.secondary_muscles, equipment: e.equipment, difficulty: e.difficulty,
-        exercise_type: e.exercise_type, classification: e.classification, movement_pattern: e.movement_pattern,
-        fitness_goals: e.fitness_goals, workout_location: e.workout_location, media_type: e.media_type,
-        media_url: e.media_url, video_url: e.video_url, tags: e.tags, is_default: e.is_default, priority: e.priority,
+        id: e.id,
+        name_en: e.name_en,
+        name_ar: e.name_ar,
+        primary_muscle: e.primary_muscle,
+        secondary_muscles: e.secondary_muscles ?? [],
+        equipment: e.equipment,
+        difficulty: e.difficulty,
+        exercise_type: e.exercise_type,
+        classification: e.classification ?? [],
+        movement_pattern: e.movement_pattern,
+        fitness_goals: e.fitness_goals ?? [],
+        workout_location: e.workout_location,
+        media_type: e.media_type,
+        media_url: e.media_url ?? "",
+        video_url: e.video_url ?? "",
+        thumbnail_url: e.thumbnail_url ?? e.media_url ?? "",
+        tags: e.tags ?? [],
+        is_default: e.is_default,
+        priority: e.priority,
       })),
-      skipDuplicates: true,
     });
-    console.log(`   Seeded ${exercisesRaw.length} exercises\n`);
+    console.log(`   Inserted ${exercisesRaw.length} exercises from exercises.json\n`);
   } else {
     console.log("   Skipped exercises (file not found)\n");
   }

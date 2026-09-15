@@ -78,7 +78,7 @@ describe("POST /auth/signup", () => {
     expect(res.body.error).toBe("Email already registered");
   });
 
-  it("should return 409 for duplicate username", async () => {
+  it("should allow duplicate usernames when emails differ", async () => {
     const res = await request(app)
       .post("/api/v1/auth/signup")
       .send({
@@ -88,8 +88,8 @@ describe("POST /auth/signup", () => {
         role: "coach",
       });
 
-    expect(res.status).toBe(409);
-    expect(res.body.error).toBe("Username already taken");
+    expect(res.status).toBe(200);
+    expect(res.body.message).toBeTruthy();
   });
 });
 

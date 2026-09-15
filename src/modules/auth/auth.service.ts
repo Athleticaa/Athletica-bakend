@@ -64,9 +64,6 @@ export class AuthService {
     if (existing) throw new ServiceError("email_already_registered", 409);
 
     const trimmedUsername = typeof input.username === "string" ? input.username.trim() : input.username;
-    const existingUsername = await this.prisma.users.findUnique({ where: { username: trimmedUsername } });
-    if (existingUsername) throw new ServiceError("username_already_taken", 409);
-
     const hashedPassword = await this.hashPassword(input.password);
     const user = await this.prisma.users.create({
       data: {
