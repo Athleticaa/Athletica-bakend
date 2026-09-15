@@ -23,6 +23,10 @@ export class ClientQuestionsService {
     });
   }
 
+  async getTotalQuestions(language: string) {
+    return this.prisma.client_questions.count({ where: { language } });
+  }
+
   async getClientProfileId(userId: string) {
     const profile = await this.prisma.client_profiles.findFirst({
       where: { user_id: userId },
@@ -37,7 +41,7 @@ export class ClientQuestionsService {
       orderBy: { created_at: "asc" },
     });
 
-    if (answers.length === 0) return [];
+    if (answers.length === 0) return { answers: [], total: 0 };
 
     const questionIds = answers.map((a) => a.question_id);
     const answeredQuestions = await this.prisma.client_questions.findMany({
@@ -55,9 +59,15 @@ export class ClientQuestionsService {
     const groupByQuestion = new Map(answeredQuestions.map((q) => [q.id, q.group_key]));
     const typeByQuestion = new Map(answeredQuestions.map((q) => [q.id, q.question_type]));
 
-    return answers.map((a) => {
-      const groupKey = groupByQuestion.get(a.question_id)!;
-      const langQ = langByGroup.get(groupKey);
+    const distinctGroups = new Set<string>();
+    for (const a of answers) {
+      const g = groupByQuestion.get(a.question_id);
+      if (g) distinctGroups.add(g);
+    }
+
+    const mapped = answers.map((a) => {
+      const groupKey = groupByQuestion.get(a.question_id);
+      const langQ = groupKey ? langByGroup.get(groupKey) : undefined;
       const questionType = typeByQuestion.get(a.question_id);
       const isTextQuestion = questionType === "text";
 
@@ -80,6 +90,8 @@ export class ClientQuestionsService {
         question_type: questionType ?? "choice",
       };
     });
+
+    return { answers: mapped, total: distinctGroups.size };
   }
 
   async createAnswers(clientId: string, answers: AnswerItem[]) {

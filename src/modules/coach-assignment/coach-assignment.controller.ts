@@ -3,6 +3,7 @@ import { injectable, inject } from "tsyringe";
 import { CoachAssignmentService } from "./coach-assignment.service";
 import { ServiceError } from "../../lib/service-error";
 import { validateSubmitRequest, isValidUuid } from "./coach-assignment.validation";
+import { formatGoal } from "../../lib/format-goal";
 import { config } from "../../config";
 
 function mapClientProfile(client: any) {
@@ -14,7 +15,7 @@ function mapClientProfile(client: any) {
     birth_date: client.birth_date ?? null,
     height: client.height ?? null,
     weight: client.weight ?? null,
-    goal: client.goal,
+    goal: formatGoal(client.goal),
   };
 }
 
@@ -95,7 +96,7 @@ export class CoachAssignmentController {
           client: {
             id: r.client.id,
             user: r.client.user,
-            goal: r.client.goal,
+            goal: formatGoal(r.client.goal),
           },
           status: r.status,
           created_at: r.created_at,

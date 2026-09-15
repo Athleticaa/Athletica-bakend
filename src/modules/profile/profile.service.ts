@@ -4,6 +4,7 @@ import { v2 as cloudinary } from "cloudinary";
 import { PrismaClientToken } from "../../di/tokens";
 import { ServiceError } from "../../lib/service-error";
 import type { UpdateCoachProfileInput, UpdateClientProfileInput } from "./profile.validation";
+import { formatGoal } from "../../lib/format-goal";
 import { getSpecializationDisplay } from "./specializations";
 import { getGenderGoalQuestionIds } from "../client-questions/gender-goal.util";
 
@@ -78,7 +79,7 @@ export class ProfileService {
         birth_date: profile.birth_date,
         height: profile.height,
         weight: profile.weight,
-        goal: profile.goal,
+        goal: formatGoal(profile.goal),
         phone_number: profile.phone_number,
         location: profile.location,
         profile_image: profile.profile_image,
@@ -140,8 +141,10 @@ export class ProfileService {
 
     if (hasUsername) {
       const trimmed = (normalized.username as string).trim();
-      const existing = await this.prisma.users.findUnique({ where: { username: trimmed } });
-      if (existing && existing.id !== userId) throw new ServiceError("username_already_taken", 409);
+      const existing = await this.prisma.users.findFirst({
+        where: { username: trimmed, id: { not: userId } },
+      });
+      if (existing) throw new ServiceError("username_already_taken", 409);
     }
 
     const { freshUser, freshProfile } = await this.prisma.$transaction(async (tx) => {
@@ -219,8 +222,10 @@ export class ProfileService {
 
     if (hasUsername) {
       const trimmed = (normalized.username as string).trim();
-      const existing = await this.prisma.users.findUnique({ where: { username: trimmed } });
-      if (existing && existing.id !== userId) throw new ServiceError("username_already_taken", 409);
+      const existing = await this.prisma.users.findFirst({
+        where: { username: trimmed, id: { not: userId } },
+      });
+      if (existing) throw new ServiceError("username_already_taken", 409);
     }
 
     const hasGenderSync = normalized.gender !== undefined;
@@ -269,7 +274,7 @@ export class ProfileService {
         birth_date: freshProfile.birth_date,
         height: freshProfile.height,
         weight: freshProfile.weight,
-        goal: freshProfile.goal,
+        goal: formatGoal(freshProfile.goal),
         phone_number: freshProfile.phone_number,
         location: freshProfile.location,
         profile_image: freshProfile.profile_image,

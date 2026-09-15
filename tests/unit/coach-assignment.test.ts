@@ -11,6 +11,20 @@ const mockPrisma = {
   },
   client_profiles: {
     findFirst: jest.fn(),
+    findUnique: jest.fn(),
+  },
+  client_answers: {
+    findMany: jest.fn(),
+  },
+  client_questions: {
+    findMany: jest.fn(),
+    count: jest.fn(),
+  },
+  nutrition_plans: {
+    findFirst: jest.fn(),
+  },
+  workout_plans: {
+    findFirst: jest.fn(),
   },
   coach_requests: {
     findUnique: jest.fn(),
@@ -395,5 +409,141 @@ describe("CoachAssignmentService.leaveCoach workout cascade", () => {
     });
     expect(order).toEqual(["exercise_logs", "day_exercises"]);
     expect(result.message).toBe("Successfully left coach");
+  });
+});
+
+describe("CoachAssignmentService.getClientProfileForCoach", () => {
+  beforeEach(() => {
+    mockPrisma.coach_profiles.findFirst.mockResolvedValue({ id: "coach-1", user_id: "coach-user" });
+    mockPrisma.coach_clients.findFirst.mockResolvedValue({ id: "cc-1", created_at: new Date() });
+    mockPrisma.client_answers.findMany.mockResolvedValue([]);
+    mockPrisma.client_questions.count.mockResolvedValue(12);
+    mockPrisma.nutrition_plans.findFirst.mockResolvedValue({
+      id: "nutri-1",
+      title: "Nutrition",
+      description: "desc",
+      is_active: true,
+      created_at: new Date(),
+    });
+    mockPrisma.workout_plans.findFirst.mockResolvedValue({
+      id: "workout-1",
+      title: "Workout",
+      description: "desc",
+      is_active: true,
+      created_at: new Date(),
+      start_date: new Date(),
+      cycle_days: 7,
+    });
+    mockPrisma.client_profiles.findUnique.mockResolvedValue({
+      id: "client-1",
+      user: { id: "user-1", username: "client", email: "c@test.com" },
+      profile_image: null,
+      gender: "male",
+      birth_date: null,
+      height: 180,
+      weight: 80,
+      goal: "gain",
+    });
+  });
+
+  it("returns both plans and no streak fields", async () => {
+    const service = getService();
+    const result = await service.getClientProfileForCoach("coach-user", "client-1");
+
+    expect(result.nutrition_plan).toMatchObject({ id: "nutri-1" });
+    expect(result.workout_plan).toMatchObject({ id: "workout-1", cycle_days: 7 });
+    expect(result).not.toHaveProperty("nutrition_streak");
+    expect(result).not.toHaveProperty("workout_streak");
+    expect(result.total_answers).toBe(0);
+    expect(result.total_questions).toBe(12);
+    expect(mockPrisma.workout_plans.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { coach_client_id: "cc-1", is_active: true, deleted_at: null },
+      })
+    );
+  });
+
+  it("returns null workout_plan when none active", async () => {
+    mockPrisma.workout_plans.findFirst.mockResolvedValue(null);
+
+    const service = getService();
+    const result = await service.getClientProfileForCoach("coach-user", "client-1");
+
+    expect(result.workout_plan).toBeNull();
+    expect(result.nutrition_plan).toMatchObject({ id: "nutri-1" });
+  });
+
+  it("throws 404 when coach is not assigned to this clientProfileId and leaks nothing", async () => {
+    mockPrisma.coach_clients.findFirst.mockResolvedValue(null);
+
+    const service = getService();
+    await expectServiceError(service.getClientProfileForCoach("coach-user", "client-1"), "client_not_assigned", 404);
+
+    expect(mockPrisma.coach_clients.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { coach_id: "coach-1", client_id: "client-1" } })
+    );
+    expect(mockPrisma.client_profiles.findUnique).not.toHaveBeenCalled();
+    expect(mockPrisma.nutrition_plans.findFirst).not.toHaveBeenCalled();
+    expect(mockPrisma.workout_plans.findFirst).not.toHaveBeenCalled();
+    expect(mockPrisma.client_questions.count).not.toHaveBeenCalled();
+  });
+
+  it("counts distinct groups when client answered both language versions", async () => {
+    mockPrisma.client_answers.findMany.mockResolvedValue([
+      { id: "a1", client_id: "client-1", question_id: "q-en", answer: "0", created_at: new Date() },
+      { id: "a2", client_id: "client-1", question_id: "q-ar", answer: "0", created_at: new Date() },
+      { id: "a3", client_id: "client-1", question_id: "q-other", answer: "1", created_at: new Date() },
+    ]);
+    mockPrisma.client_questions.findMany
+      .mockResolvedValueOnce([
+        { id: "q-en", group_key: "g1", choices: ["a", "b"], question_type: "choice" },
+        { id: "q-ar", group_key: "g1", choices: ["a", "b"], question_type: "choice" },
+        { id: "q-other", group_key: "g2", choices: ["a", "b"], question_type: "choice" },
+      ])
+      .mockResolvedValueOnce([
+        { group_key: "g1", question: "Q1", choices: ["a", "b"], question_type: "choice" },
+        { group_key: "g2", question: "Q2", choices: ["a", "b"], question_type: "choice" },
+      ]);
+
+    const service = getService();
+    const result = await service.getClientProfileForCoach("coach-user", "client-1", "en");
+
+    expect(result.questions_answers).toHaveLength(3);
+    expect(result.total_answers).toBe(2);
+    expect(result.total_questions).toBe(12);
+  });
+
+  it("does not crash when an answer references a deleted question", async () => {
+    mockPrisma.client_answers.findMany.mockResolvedValue([
+      { id: "a1", client_id: "client-1", question_id: "q-gone", answer: "0", created_at: new Date() },
+    ]);
+    mockPrisma.client_questions.findMany
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([]);
+
+    const service = getService();
+    const result = await service.getClientProfileForCoach("coach-user", "client-1", "en");
+
+    expect(result.questions_answers).toHaveLength(1);
+    expect(result.questions_answers[0].question).toBeNull();
+    expect(result.total_answers).toBe(0);
+  });
+
+  it("formats underscore goals with spaces", async () => {
+    mockPrisma.client_profiles.findUnique.mockResolvedValue({
+      id: "client-1",
+      user: { id: "user-1", username: "client", email: "c@test.com" },
+      profile_image: null,
+      gender: "male",
+      birth_date: null,
+      height: 180,
+      weight: 80,
+      goal: "muscle_building",
+    });
+
+    const service = getService();
+    const result = await service.getClientProfileForCoach("coach-user", "client-1");
+
+    expect(result.client.goal).toBe("muscle building");
   });
 });
