@@ -1,0 +1,141 @@
+{
+  "info": {
+    "_postman_id": "athletica-client-questions-collection",
+    "name": "Client Questions Module",
+    "description": "Athletica onboarding questions and answers - client profile questionnaire",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Questions",
+      "description": "Onboarding questions - available to all users (GET is public)",
+      "item": [
+        {
+          "name": "List Onboarding Questions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept-Language",
+                "value": "en",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/client/questions",
+              "host": ["{{baseUrl}}"],
+              "path": ["client", "questions"]
+            },
+            "description": "Public endpoint - returns list of onboarding questions with localized text (en/ar). No auth required."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Answers",
+      "description": "Client answers to onboarding questions - requires client role",
+      "item": [
+        {
+          "name": "Get My Answers",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/client/answers",
+              "host": ["{{baseUrl}}"],
+              "path": ["client", "answers"]
+            },
+            "description": "Returns client's answers to onboarding questions."
+          }
+        },
+        {
+          "name": "Submit Answers",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 201 or 200', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"answers\": [\n    { \"question_id\": \"gender\", \"answer_index\": 0 },\n    { \"question_id\": \"goal\", \"answer_index\": 2 },\n    { \"question_id\": \"experience\", \"answer_index\": 1 }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/client/answers",
+              "host": ["{{baseUrl}}"],
+              "path": ["client", "answers"]
+            },
+            "description": "One-shot submission of answers. Each answer has question_id and answer_index (0-based)."
+          }
+        },
+        {
+          "name": "Update Answers",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"answers\": [\n    { \"question_id\": \"goal\", \"answer_index\": 3 }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/client/answers",
+              "host": ["{{baseUrl}}"],
+              "path": ["client", "answers"]
+            },
+            "description": "Update existing answers. Only modifies the provided answers."
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "authToken",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}

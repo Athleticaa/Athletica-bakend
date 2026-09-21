@@ -242,6 +242,36 @@
           }
         },
         {
+          "name": "Get Client Details",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coach_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/coach/clients/{{client_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["coach", "clients", "{{client_id}}"]
+            }
+          }
+        },
+        {
           "name": "Remove Client",
           "event": [
             {

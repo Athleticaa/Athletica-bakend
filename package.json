@@ -9,7 +9,12 @@
     "test": "jest",
     "lint": "eslint src/",
     "build": "prisma generate && tsc",
-    "db:reseed-exercises": "tsx scripts/reseed-exercises.ts"
+    "db:reseed-exercises": "tsx scripts/reseed-exercises.ts",
+    "api:validate": "tsx scripts/validate-routes.ts",
+    "api:generate": "tsx scripts/generate-openapi.ts",
+    "api:test": "tsx scripts/test-api.ts",
+    "api:sync": "tsx scripts/sync-apidog.ts",
+    "api:all": "npm run api:validate && npm run api:generate && npm run api:test"
   },
   "keywords": [],
   "author": "",

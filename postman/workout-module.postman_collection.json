@@ -43,7 +43,17 @@
                   "disabled": true
                 },
                 {
-                  "key": "primaryMuscle",
+                  "key": "bodyPart",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "target",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "secondaryMuscle",
                   "value": "",
                   "disabled": true
                 },
@@ -58,42 +68,17 @@
                   "disabled": true
                 },
                 {
-                  "key": "exerciseType",
+                  "key": "muscleGroup",
                   "value": "",
                   "disabled": true
                 },
                 {
-                  "key": "movementPattern",
+                  "key": "compound",
                   "value": "",
                   "disabled": true
                 },
                 {
-                  "key": "workoutLocation",
-                  "value": "",
-                  "disabled": true
-                },
-                {
-                  "key": "priority",
-                  "value": "",
-                  "disabled": true
-                },
-                {
-                  "key": "isDefault",
-                  "value": "",
-                  "disabled": true
-                },
-                {
-                  "key": "goal",
-                  "value": "",
-                  "disabled": true
-                },
-                {
-                  "key": "tag",
-                  "value": "",
-                  "disabled": true
-                },
-                {
-                  "key": "classification",
+                  "key": "unilateral",
                   "value": "",
                   "disabled": true
                 }
@@ -265,6 +250,29 @@
               "mode": "raw",
               "raw": "{\n  \"title\": \"Push Pull Legs V2\"\n}"
             },
+            "url": {
+              "raw": "{{baseUrl}}/templates/{{templateId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "templates",
+                "{{templateId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Template",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/templates/{{templateId}}",
               "host": [
@@ -1180,7 +1188,7 @@
   "variable": [
     {
       "key": "baseUrl",
-      "value": "http://localhost:3000/api/v1/workouts",
+      "value": "http://localhost:3000/api/v1/workout",
       "type": "string"
     },
     {

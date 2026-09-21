@@ -1,0 +1,937 @@
+{
+  "info": {
+    "_postman_id": "athletica-nutrition-collection",
+    "name": "Nutrition Module",
+    "description": "Athletica nutrition endpoints - food catalog, templates, plans, client views",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Food Catalog",
+      "description": "Food library endpoints - available to any authenticated user",
+      "item": [
+        {
+          "name": "List Foods",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/nutrition/foods?page=1&pageSize=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["nutrition", "foods"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "pageSize", "value": "20" },
+                { "key": "search", "value": "", "disabled": true },
+                { "key": "categoryId", "value": "", "disabled": true },
+                { "key": "isArchived", "value": "", "disabled": true },
+                { "key": "minCalories", "value": "", "disabled": true },
+                { "key": "maxCalories", "value": "", "disabled": true },
+                { "key": "minProtein", "value": "", "disabled": true },
+                { "key": "maxProtein", "value": "", "disabled": true },
+                { "key": "minCarbs", "value": "", "disabled": true },
+                { "key": "maxCarbs", "value": "", "disabled": true },
+                { "key": "minFat", "value": "", "disabled": true },
+                { "key": "maxFat", "value": "", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Food by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/nutrition/foods/{{foodId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["nutrition", "foods", "{{foodId}}"]
+            }
+          }
+        },
+        {
+          "name": "List Food Categories",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/nutrition/food-categories",
+              "host": ["{{baseUrl}}"],
+              "path": ["nutrition", "food-categories"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Nutrition Templates",
+      "description": "Template CRUD for coaches - create reusable meal plans",
+      "item": [
+        {
+          "name": "Create Template",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.template && jsonData.template.id) {",
+                  "    pm.collectionVariables.set('nutritionTemplateId', jsonData.template.id);",
+                  "    console.log('Saved nutritionTemplateId: ' + jsonData.template.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"High Protein Meal Plan\",\n  \"description\": \"4-week high protein nutrition plan\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/nutrition/templates",
+              "host": ["{{baseUrl}}"],
+              "path": ["nutrition", "templates"]
+            }
+          }
+        },
+        {
+          "name": "List Templates",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/nutrition/templates?page=1&pageSize=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["nutrition", "templates"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "pageSize", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Template",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/nutrition/templates/{{nutritionTemplateId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["nutrition", "templates", "{{nutritionTemplateId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Template",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"High Protein Meal Plan V2\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/nutrition/templates/{{nutritionTemplateId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["nutrition", "templates", "{{nutritionTemplateId}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Template",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/nutrition/templates/{{nutritionTemplateId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["nutrition", "templates", "{{nutritionTemplateId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Template Meals",
+      "description": "Manage meals within nutrition templates",
+      "item": [
+        {
+          "name": "Add Meal to Template",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.meals && jsonData.meals.length > 0) {",
+                  "    var lastMeal = jsonData.meals[jsonData.meals.length - 1];",
+                  "    pm.collectionVariables.set('templateMealId', lastMeal.id);",
+                  "    console.log('Saved templateMealId: ' + lastMeal.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"meal_type\": \"breakfast\",\n  \"notes\": \"High protein breakfast\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/nutrition/templates/{{nutritionTemplateId}}/meals",
+              "host": ["{{baseUrl}}"],
+              "path": ["nutrition", "templates", "{{nutritionTemplateId}}", "meals"]
+            }
+          }
+        },
+        {
+          "name": "Reorder Meals",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"meal_orders\": [\n    { \"meal_id\": \"{{templateMealId}}\", \"meal_order\": 1 }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/nutrition/templates/{{nutritionTemplateId}}/meals/reorder",
+              "host": ["{{baseUrl}}"],
+              "path": ["nutrition", "templates", "{{nutritionTemplateId}}", "meals", "reorder"]
+            }
+          }
+        },
+        {
+          "name": "Update Meal",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"meal_type\": \"lunch\",\n  \"notes\": \"Updated lunch notes\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/nutrition/templates/{{nutritionTemplateId}}/meals/{{templateMealId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["nutrition", "templates", "{{nutritionTemplateId}}", "meals", "{{templateMealId}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Meal",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/nutrition/templates/{{nutritionTemplateId}}/meals/{{templateMealId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["nutrition", "templates", "{{nutritionTemplateId}}", "meals", "{{templateMealId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Template Meal Foods",
+      "description": "Add/remove foods from template meals",
+      "item": [
+        {
+          "name": "Add Food to Meal",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.foods && jsonData.foods.length > 0) {",
+                  "    var lastFood = jsonData.foods[jsonData.foods.length - 1];",
+                  "    pm.collectionVariables.set('templateFoodId', lastFood.id);",
+                  "    console.log('Saved templateFoodId: ' + lastFood.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"food_id\": \"{{foodId}}\",\n  \"quantity\": 200\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/nutrition/templates/{{nutritionTemplateId}}/meals/{{templateMealId}}/foods",
+              "host": ["{{baseUrl}}"],
+              "path": ["nutrition", "templates", "{{nutritionTemplateId}}", "meals", "{{templateMealId}}", "foods"]
+            }
+          }
+        },
+        {
+          "name": "Update Food Quantity",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quantity\": 250\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/nutrition/templates/{{nutritionTemplateId}}/meals/{{templateMealId}}/foods/{{templateFoodId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["nutrition", "templates", "{{nutritionTemplateId}}", "meals", "{{templateMealId}}", "foods", "{{templateFoodId}}"]
+            }
+          }
+        },
+        {
+          "name": "Remove Food",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/nutrition/templates/{{nutritionTemplateId}}/meals/{{templateMealId}}/foods/{{templateFoodId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["nutrition", "templates", "{{nutritionTemplateId}}", "meals", "{{templateMealId}}", "foods", "{{templateFoodId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Template Assignment",
+      "description": "Assign template to client to create a plan",
+      "item": [
+        {
+          "name": "Assign Template to Client",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.plan && jsonData.plan.id) {",
+                  "    pm.collectionVariables.set('nutritionPlanId', jsonData.plan.id);",
+                  "    console.log('Saved nutritionPlanId: ' + jsonData.plan.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"coach_client_id\": \"{{coachClientId}}\",\n  \"title\": \"January Nutrition Plan\",\n  \"description\": \"4-week nutrition plan\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/nutrition/templates/{{nutritionTemplateId}}/assign",
+              "host": ["{{baseUrl}}"],
+              "path": ["nutrition", "templates", "{{nutritionTemplateId}}", "assign"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Nutrition Plans (Coach)",
+      "description": "Manage client nutrition plans",
+      "item": [
+        {
+          "name": "List Client Plans",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/nutrition/plans?page=1&pageSize=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["nutrition", "plans"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "pageSize", "value": "10" },
+                { "key": "client_id", "value": "", "disabled": true },
+                { "key": "is_active", "value": "", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Plan Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/nutrition/plans/{{nutritionPlanId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["nutrition", "plans", "{{nutritionPlanId}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Plan",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/nutrition/plans/{{nutritionPlanId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["nutrition", "plans", "{{nutritionPlanId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Plan Meals (Coach)",
+      "description": "Manage meals within nutrition plans",
+      "item": [
+        {
+          "name": "Add Meal to Plan",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.plan && jsonData.plan.meals && jsonData.plan.meals.length > 0) {",
+                  "    var lastMeal = jsonData.plan.meals[jsonData.plan.meals.length - 1];",
+                  "    pm.collectionVariables.set('planMealId', lastMeal.id);",
+                  "    console.log('Saved planMealId: ' + lastMeal.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"meal_type\": \"dinner\",\n  \"notes\": \"Light dinner\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/nutrition/plans/{{nutritionPlanId}}/meals",
+              "host": ["{{baseUrl}}"],
+              "path": ["nutrition", "plans", "{{nutritionPlanId}}", "meals"]
+            }
+          }
+        },
+        {
+          "name": "Reorder Plan Meals",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"meal_orders\": [\n    { \"meal_id\": \"{{planMealId}}\", \"meal_order\": 1 }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/nutrition/plans/{{nutritionPlanId}}/meals/reorder",
+              "host": ["{{baseUrl}}"],
+              "path": ["nutrition", "plans", "{{nutritionPlanId}}", "meals", "reorder"]
+            }
+          }
+        },
+        {
+          "name": "Update Plan Meal",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"meal_type\": \"snack\",\n  \"notes\": \"Healthy snack\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/nutrition/plans/{{nutritionPlanId}}/meals/{{planMealId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["nutrition", "plans", "{{nutritionPlanId}}", "meals", "{{planMealId}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Plan Meal",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/nutrition/plans/{{nutritionPlanId}}/meals/{{planMealId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["nutrition", "plans", "{{nutritionPlanId}}", "meals", "{{planMealId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Plan Meal Foods (Coach)",
+      "description": "Add/remove foods from plan meals",
+      "item": [
+        {
+          "name": "Add Food to Plan Meal",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.foods && jsonData.foods.length > 0) {",
+                  "    var lastFood = jsonData.foods[jsonData.foods.length - 1];",
+                  "    pm.collectionVariables.set('planFoodId', lastFood.id);",
+                  "    console.log('Saved planFoodId: ' + lastFood.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"food_id\": \"{{foodId}}\",\n  \"quantity\": 150\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/nutrition/plans/{{nutritionPlanId}}/meals/{{planMealId}}/foods",
+              "host": ["{{baseUrl}}"],
+              "path": ["nutrition", "plans", "{{nutritionPlanId}}", "meals", "{{planMealId}}", "foods"]
+            }
+          }
+        },
+        {
+          "name": "Update Plan Food",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quantity\": 200\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/nutrition/plans/{{nutritionPlanId}}/meals/{{planMealId}}/foods/{{planFoodId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["nutrition", "plans", "{{nutritionPlanId}}", "meals", "{{planMealId}}", "foods", "{{planFoodId}}"]
+            }
+          }
+        },
+        {
+          "name": "Remove Plan Food",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/nutrition/plans/{{nutritionPlanId}}/meals/{{planMealId}}/foods/{{planFoodId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["nutrition", "plans", "{{nutritionPlanId}}", "meals", "{{planMealId}}", "foods", "{{planFoodId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Client Endpoints",
+      "description": "Client nutrition views - today's meals, my plan, complete/uncomplete, history",
+      "item": [
+        {
+          "name": "Get Today's Meals",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/nutrition/today",
+              "host": ["{{baseUrl}}"],
+              "path": ["nutrition", "today"]
+            }
+          }
+        },
+        {
+          "name": "Get My Active Plan",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/nutrition/my/plans",
+              "host": ["{{baseUrl}}"],
+              "path": ["nutrition", "my", "plans"]
+            }
+          }
+        },
+        {
+          "name": "Get My Plan Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/nutrition/my/plans/{{nutritionPlanId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["nutrition", "my", "plans", "{{nutritionPlanId}}"]
+            }
+          }
+        },
+        {
+          "name": "Complete Meal",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/nutrition/meals/{{mealLogId}}/complete",
+              "host": ["{{baseUrl}}"],
+              "path": ["nutrition", "meals", "{{mealLogId}}", "complete"]
+            }
+          }
+        },
+        {
+          "name": "Uncomplete Meal",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/nutrition/meals/{{mealLogId}}/uncomplete",
+              "host": ["{{baseUrl}}"],
+              "path": ["nutrition", "meals", "{{mealLogId}}", "uncomplete"]
+            }
+          }
+        },
+        {
+          "name": "Get Nutrition History",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/nutrition/history?from=2026-01-01&to=2026-01-31",
+              "host": ["{{baseUrl}}"],
+              "path": ["nutrition", "history"],
+              "query": [
+                { "key": "from", "value": "2026-01-01" },
+                { "key": "to", "value": "2026-01-31" }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "authToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "foodId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "nutritionTemplateId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "templateMealId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "templateFoodId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "nutritionPlanId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "planMealId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "planFoodId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "mealLogId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "coachClientId",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}
