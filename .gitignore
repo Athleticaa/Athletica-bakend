@@ -9,7 +9,6 @@ dist
 /docs
 plan.md
 init_schema.txt
-package-lock.json
 
 *.log
 auth.postman_collection.json
