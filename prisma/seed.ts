@@ -1,5 +1,7 @@
 import "dotenv/config";
 import crypto from "crypto";
+import fs from "fs";
+import path from "path";
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 
@@ -7,6 +9,14 @@ const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
 const prisma = new PrismaClient({ adapter });
 
 const questions = [
+  {
+    en: "What is your gender?",
+    ar: "ما هو جنسك؟",
+    choices: {
+      en: ["Male", "Female"],
+      ar: ["ذكر", "أنثى"],
+    },
+  },
   {
     en: "Have you had any past injuries?",
     ar: "هل تعرضت لأي إصابات سابقة؟",
@@ -205,24 +215,140 @@ const questions = [
   },
 ];
 
+const textQuestions: Array<{ en: string; ar: string }> = [
+  {
+    en: "Type Your Height",
+    ar: "أدخل طولك",
+  },
+  {
+    en: "Type Your Weight",
+    ar: "أدخل وزنك",
+  },
+  {
+    en: "Add Food You Like & Dislike",
+    ar: "أضف الطعام الذي تحبه وتكرهه",
+  },
+];
+
 async function main() {
-  console.log("Seeding client questions...");
+  console.log("Starting seed...\n");
+
+  // 1. Client questions (choice)
+  console.log("1. Seeding client questions...");
+  let questionCount = 0;
   for (const q of questions) {
     const groupKey = crypto.randomUUID();
     for (const lang of ["en", "ar"] as const) {
       await prisma.client_questions.upsert({
         where: { question_language: { question: q[lang], language: lang } },
-        update: { choices: q.choices[lang], group_key: groupKey },
+        update: { choices: q.choices[lang], group_key: groupKey, question_type: "choice" },
         create: {
           group_key: groupKey,
           question: q[lang],
+          question_type: "choice",
           choices: q.choices[lang],
+          language: lang,
+        },
+      });
+      questionCount++;
+    }
+  }
+  console.log(`   Seeded ${questionCount} client questions (${questions.length} x 2)\n`);
+
+  console.log("Seeding open-text questions...");
+  for (const q of textQuestions) {
+    const groupKey = crypto.randomUUID();
+    for (const lang of ["en", "ar"] as const) {
+      await prisma.client_questions.upsert({
+        where: { question_language: { question: q[lang], language: lang } },
+        update: { choices: [], group_key: groupKey, question_type: "text" },
+        create: {
+          group_key: groupKey,
+          question: q[lang],
+          question_type: "text",
+          choices: [],
           language: lang,
         },
       });
     }
   }
-  console.log("Client questions seeded successfully.");
+  console.log("Client questions seeded successfully.\n");
+
+  // 2. Exercises from JSON file — clean replace (delete all, then insert fresh)
+  console.log("2. Seeding exercises (clean replace)...");
+  const exercisesPath = path.join(process.cwd(), "exercises.json");
+  if (fs.existsSync(exercisesPath)) {
+    const exercisesRaw = JSON.parse(fs.readFileSync(exercisesPath, "utf-8"));
+
+    // Delete child rows first to satisfy FK RESTRICT constraints, then clear exercises
+    console.log("   Clearing dependent rows...");
+    await prisma.workout_exercise_logs.deleteMany({});
+    await prisma.workout_day_exercises.deleteMany({});
+    await prisma.workout_template_exercises.deleteMany({});
+    await prisma.exercises.deleteMany({});
+    console.log("   All exercises and dependent rows deleted.");
+
+    // Bulk-insert fresh from exercises.json
+    await prisma.exercises.createMany({
+      data: exercisesRaw.map((e: any) => ({
+        id: e.id,
+        name_en: e.name_en,
+        name_ar: e.name_ar,
+        primary_muscle: e.primary_muscle,
+        secondary_muscles: e.secondary_muscles ?? [],
+        equipment: e.equipment,
+        difficulty: e.difficulty,
+        exercise_type: e.exercise_type,
+        classification: e.classification ?? [],
+        movement_pattern: e.movement_pattern,
+        fitness_goals: e.fitness_goals ?? [],
+        workout_location: e.workout_location,
+        media_type: e.media_type,
+        media_url: e.media_url ?? "",
+        video_url: e.video_url ?? "",
+        thumbnail_url: e.thumbnail_url ?? e.media_url ?? "",
+        tags: e.tags ?? [],
+        is_default: e.is_default,
+        priority: e.priority,
+      })),
+    });
+    console.log(`   Inserted ${exercisesRaw.length} exercises from exercises.json\n`);
+  } else {
+    console.log("   Skipped exercises (file not found)\n");
+  }
+
+  // 3. Food categories
+  console.log("3. Seeding food categories...");
+  const foodPath = path.join(process.cwd(), "prisma_seed_data-1 (1).json");
+  if (fs.existsSync(foodPath)) {
+    const foodRaw = JSON.parse(fs.readFileSync(foodPath, "utf-8"));
+    await prisma.food_categories.createMany({
+      data: foodRaw.foodCategories.map((c: any) => ({
+        id: c.id, name: c.name, name_en: c.name_en, name_ar: c.name_ar,
+      })),
+      skipDuplicates: true,
+    });
+    console.log(`   Seeded ${foodRaw.foodCategories.length} food categories\n`);
+
+    // 4. Foods
+    console.log("4. Seeding foods...");
+    await prisma.foods.createMany({
+      data: foodRaw.foods.map((f: any) => ({
+        id: f.id, category_id: f.categoryId, name: f.name, name_en: f.name_en, name_ar: f.name_ar,
+        base_grams: f.baseGrams, calories: f.calories, protein: f.protein, carbs: f.carbs, fat: f.fat,
+        serving_unit: "g", serving_unit_en: "g", serving_unit_ar: "جرام",
+      })),
+      skipDuplicates: true,
+    });
+    console.log(`   Seeded ${foodRaw.foods.length} foods\n`);
+  } else {
+    console.log("   Skipped food categories/foods (file not found)\n");
+  }
+
+  console.log("\nSeed completed!");
+  console.log("Summary:");
+  console.log(`  - ${questionCount + textQuestions.length * 2} client questions`);
+  console.log("  - Workout templates skipped (require existing coach_id)");
 }
 
 main()

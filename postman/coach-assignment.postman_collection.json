@@ -1,0 +1,382 @@
+{
+  "info": {
+    "name": "Coach Assignment",
+    "description": "API endpoints for coach-client assignment feature.\n\nAuthentication: All endpoints require a Bearer token in the Authorization header.\n\nWorkflow:\n1. Coach creates an invite code (POST /coach/invite)\n2. Client submits request with the code (POST /coach-requests)\n3. Coach lists pending requests (GET /coach/requests)\n4. Coach accepts or rejects (POST /coach/requests/:id/accept or /reject)\n5. Client can view assigned coach (GET /client/coach) or leave (POST /client/leave-coach)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000/api/v1"
+    },
+    {
+      "key": "coach_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "client_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "invite_code",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "request_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "client_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Coach",
+      "description": "Endpoints for coaches to manage invites, requests, and clients.",
+      "item": [
+        {
+          "name": "Create Invite",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.code) {",
+                  "    pm.collectionVariables.set('invite_code', json.code);",
+                  "    console.log('Saved invite_code:', json.code);",
+                  "}",
+                  "pm.test('Status is 201 or 200', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coach_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/coach/invite",
+              "host": ["{{base_url}}"],
+              "path": ["coach", "invite"]
+            }
+          }
+        },
+        {
+          "name": "Revoke Invite",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "pm.collectionVariables.set('invite_code', '');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coach_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/coach/invite",
+              "host": ["{{base_url}}"],
+              "path": ["coach", "invite"]
+            }
+          }
+        },
+        {
+          "name": "List Requests",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.requests && json.requests.length > 0) {",
+                  "    var pending = json.requests.find(r => r.status === 'pending');",
+                  "    if (pending) {",
+                  "        pm.collectionVariables.set('request_id', pending.id);",
+                  "        pm.collectionVariables.set('client_id', pending.client.id);",
+                  "        console.log('Saved request_id:', pending.id);",
+                  "        console.log('Saved client_id:', pending.client.id);",
+                  "    }",
+                  "}",
+                  "pm.test('Status is 200', function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coach_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/coach/requests",
+              "host": ["{{base_url}}"],
+              "path": ["coach", "requests"]
+            }
+          }
+        },
+        {
+          "name": "Accept Request",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coach_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/coach/requests/{{request_id}}/accept",
+              "host": ["{{base_url}}"],
+              "path": ["coach", "requests", "{{request_id}}", "accept"]
+            }
+          }
+        },
+        {
+          "name": "Reject Request",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coach_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/coach/requests/{{request_id}}/reject",
+              "host": ["{{base_url}}"],
+              "path": ["coach", "requests", "{{request_id}}", "reject"]
+            }
+          }
+        },
+        {
+          "name": "List Clients",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coach_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/coach/clients",
+              "host": ["{{base_url}}"],
+              "path": ["coach", "clients"]
+            }
+          }
+        },
+        {
+          "name": "Remove Client",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coach_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/coach/clients/{{client_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["coach", "clients", "{{client_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Client",
+      "description": "Endpoints for clients to view and manage their coach assignment.",
+      "item": [
+        {
+          "name": "Submit Request (Join Coach)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 201 or 200', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{client_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"{{invite_code}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/coach-requests",
+              "host": ["{{base_url}}"],
+              "path": ["coach-requests"]
+            }
+          }
+        },
+        {
+          "name": "Get My Coach",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{client_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/client/coach",
+              "host": ["{{base_url}}"],
+              "path": ["client", "coach"]
+            }
+          }
+        },
+        {
+          "name": "Leave Coach",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{client_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/client/leave-coach",
+              "host": ["{{base_url}}"],
+              "path": ["client", "leave-coach"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

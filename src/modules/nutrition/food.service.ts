@@ -7,10 +7,10 @@ import type { ListFoodsQuery } from "./nutrition.validation";
 
 export interface IFoodService {
   listFoods(query: ListFoodsQuery): Promise<{
-    items: Prisma.foodsGetPayload<{}>[];
+    items: Prisma.foodsGetPayload<{ include: { category: true } }>[];
     pagination: { page: number; pageSize: number; total: number; totalPages: number };
   }>;
-  getFood(id: string): Promise<Prisma.foodsGetPayload<{}>>;
+  getFood(id: string): Promise<Prisma.foodsGetPayload<{ include: { category: true } }>>;
   listFoodCategories(): Promise<Prisma.food_categoriesGetPayload<{ include: { _count: { select: { foods: true } } } }>[]>;
 }
 
@@ -53,6 +53,7 @@ export class FoodService implements IFoodService {
         orderBy: { name: "asc" },
         skip: (page - 1) * pageSize,
         take: pageSize,
+        include: { category: true },
       }),
       this.prisma.foods.count({ where }),
     ]);
@@ -64,7 +65,7 @@ export class FoodService implements IFoodService {
   }
 
   async getFood(id: string) {
-    const food = await this.prisma.foods.findUnique({ where: { id } });
+    const food = await this.prisma.foods.findUnique({ where: { id }, include: { category: true } });
     if (!food) throw new ServiceError("food_not_found", 404);
     return food;
   }

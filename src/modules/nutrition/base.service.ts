@@ -45,7 +45,7 @@ export abstract class NutritionBaseService {
 
   protected async getOwnedPlan(coachId: string, planId: string) {
     const plan = await this.prisma.nutrition_plans.findFirst({
-      where: { id: planId, coach_client: { coach_id: coachId } },
+      where: { id: planId, coach_client: { coach_id: coachId }, is_active: true },
     });
     if (!plan) throw new ServiceError("plan_not_found", 404);
     return plan;

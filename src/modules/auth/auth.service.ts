@@ -47,16 +47,28 @@ export class AuthService {
     return crypto.createHash("sha256").update(token).digest("hex");
   }
 
+  private normalizeEmail(email: unknown): string {
+    return typeof email === "string" ? email.trim().toLowerCase() : "";
+  }
+
+  private normalizeCode(code: unknown): string {
+    if (typeof code === "number" && Number.isInteger(code)) return String(code);
+    return typeof code === "string" ? code.trim() : "";
+  }
+
   async signup(input: SignupInput, lng = "en") {
-    const existing = await this.prisma.users.findUnique({ where: { email: input.email } });
+    const email = this.normalizeEmail(input.email);
+    const existing = await this.prisma.users.findFirst({
+      where: { email: { equals: email, mode: "insensitive" } },
+    });
     if (existing) throw new ServiceError("email_already_registered", 409);
 
+    const trimmedUsername = typeof input.username === "string" ? input.username.trim() : input.username;
     const hashedPassword = await this.hashPassword(input.password);
     const user = await this.prisma.users.create({
       data: {
-        first_name: input.first_name,
-        last_name: input.last_name,
-        email: input.email,
+        username: trimmedUsername,
+        email,
         password: hashedPassword,
         role: input.role,
         provider: "email",
@@ -99,7 +111,10 @@ export class AuthService {
   }
 
   async login(email: string, password: string) {
-    const user = await this.prisma.users.findUnique({ where: { email } });
+    const normalizedEmail = this.normalizeEmail(email);
+    const user = await this.prisma.users.findFirst({
+      where: { email: { equals: normalizedEmail, mode: "insensitive" } },
+    });
     if (!user) throw new ServiceError("invalid_email_or_password", 401);
 
     const valid = await this.comparePassword(password, user.password);
@@ -112,8 +127,7 @@ export class AuthService {
     return {
       user: {
         id: user.id,
-        first_name: user.first_name,
-        last_name: user.last_name,
+        username: user.username,
         email: user.email,
         role: user.role,
         email_verified: user.email_verified,
@@ -124,10 +138,14 @@ export class AuthService {
   }
 
   async verifyEmail(email: string, code: string) {
-    const user = await this.prisma.users.findUnique({ where: { email } });
+    const normalizedEmail = this.normalizeEmail(email);
+    const normalizedCode = this.normalizeCode(code);
+    const user = await this.prisma.users.findFirst({
+      where: { email: { equals: normalizedEmail, mode: "insensitive" } },
+    });
     if (!user) throw new ServiceError("invalid_request", 400);
 
-    const codeHash = this.hashToken(code);
+    const codeHash = this.hashToken(normalizedCode);
     const record = await this.prisma.verification_codes.findFirst({
       where: { user_id: user.id, code_hash: codeHash, used: false, expires_at: { gt: new Date() } },
     });
@@ -154,8 +172,7 @@ export class AuthService {
     return {
       user: {
         id: user.id,
-        first_name: user.first_name,
-        last_name: user.last_name,
+        username: user.username,
         email: user.email,
         role: user.role,
         email_verified: true,
@@ -167,7 +184,10 @@ export class AuthService {
   }
 
   async resendVerificationCode(email: string, lng = "en") {
-    const user = await this.prisma.users.findUnique({ where: { email } });
+    const normalizedEmail = this.normalizeEmail(email);
+    const user = await this.prisma.users.findFirst({
+      where: { email: { equals: normalizedEmail, mode: "insensitive" } },
+    });
     if (!user) return;
 
     const code = this.generateCode();
@@ -180,24 +200,43 @@ export class AuthService {
   }
 
   async requestPasswordReset(email: string, lng = "en"): Promise<void> {
-    const user = await this.prisma.users.findUnique({ where: { email } });
+    const normalizedEmail = this.normalizeEmail(email);
+    if (!normalizedEmail) return;
+    const user = await this.prisma.users.findFirst({
+      where: { email: { equals: normalizedEmail, mode: "insensitive" } },
+    });
     if (!user) return;
 
     const code = this.generateCode();
     const codeHash = this.hashToken(code);
 
-    await this.prisma.password_reset_tokens.create({
-      data: { user_id: user.id, token_hash: codeHash, expires_at: new Date(Date.now() + 60 * 60 * 1000) },
-    });
+    // Invalidate older unused codes so only the latest email works.
+    // Prevents "used old code from previous request" confusion.
+    await this.prisma.$transaction([
+      this.prisma.password_reset_tokens.updateMany({
+        where: { user_id: user.id, used: false },
+        data: { used: true },
+      }),
+      this.prisma.password_reset_tokens.create({
+        data: { user_id: user.id, token_hash: codeHash, expires_at: new Date(Date.now() + 60 * 60 * 1000) },
+      }),
+    ]);
 
     await this.emailService.sendPasswordResetCode(user.email, code, lng).catch(() => {});
   }
 
   async confirmPasswordReset(email: string, code: string, newPassword: string) {
-    const user = await this.prisma.users.findUnique({ where: { email } });
+    const normalizedEmail = this.normalizeEmail(email);
+    const normalizedCode = this.normalizeCode(code);
+    if (!normalizedEmail || !normalizedCode) {
+      throw new ServiceError("invalid_or_expired_reset_token", 400);
+    }
+    const user = await this.prisma.users.findFirst({
+      where: { email: { equals: normalizedEmail, mode: "insensitive" } },
+    });
     if (!user) throw new ServiceError("invalid_or_expired_reset_token", 400);
 
-    const codeHash = this.hashToken(code);
+    const codeHash = this.hashToken(normalizedCode);
     const record = await this.prisma.password_reset_tokens.findFirst({
       where: { user_id: user.id, token_hash: codeHash, used: false, expires_at: { gt: new Date() } },
     });
@@ -210,6 +249,10 @@ export class AuthService {
       this.prisma.users.update({ where: { id: record.user_id }, data: { password: hashedPassword } }),
       this.prisma.password_reset_tokens.update({ where: { id: record.id }, data: { used: true } }),
     ]);
+  }
+
+  async logout(userId: string) {
+    await this.prisma.refresh_tokens.deleteMany({ where: { user_id: userId } });
   }
 
   async changePassword(userId: string, oldPassword: string, newPassword: string) {

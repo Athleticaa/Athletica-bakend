@@ -13,11 +13,16 @@ import { CoachAssignmentService } from "./modules/coach-assignment/coach-assignm
 import { CoachAssignmentController } from "./modules/coach-assignment/coach-assignment.controller";
 import { WorkoutService } from "./modules/workout/workout.service";
 import { WorkoutController } from "./modules/workout/workout.controller";
+import { WorkoutTemplateService } from "./modules/workout/workout-template.service";
+import { WorkoutPlanService } from "./modules/workout/workout-plan.service";
+import { WorkoutClientService } from "./modules/workout/workout-client.service";
 import { NutritionTemplateService } from "./modules/nutrition/nutrition-template.service";
 import { FoodService } from "./modules/nutrition/food.service";
 import { NutritionPlanService } from "./modules/nutrition/nutrition-plan.service";
 import { NutritionClientService } from "./modules/nutrition/nutrition-client.service";
 import { NutritionController } from "./modules/nutrition/nutrition.controller";
+import { ProfileService } from "./modules/profile/profile.service";
+import { ProfileController } from "./modules/profile/profile.controller";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
 const prisma = new PrismaClient({ adapter });
@@ -33,10 +38,15 @@ container.registerSingleton(CoachAssignmentService);
 container.registerSingleton(CoachAssignmentController);
 container.registerSingleton(WorkoutService);
 container.registerSingleton(WorkoutController);
+container.registerSingleton(WorkoutTemplateService);
+container.registerSingleton(WorkoutPlanService);
+container.registerSingleton(WorkoutClientService);
 container.registerSingleton(NutritionTemplateService);
 container.registerSingleton(FoodService);
 container.registerSingleton(NutritionPlanService);
 container.registerSingleton(NutritionClientService);
 container.registerSingleton(NutritionController);
+container.registerSingleton(ProfileService);
+container.registerSingleton(ProfileController);
 
 export { container };

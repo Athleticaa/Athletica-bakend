@@ -25,7 +25,7 @@ export class ClientQuestionsController {
   getQuestions = async (req: Request, res: Response) => {
     try {
       const questions = await this.service.getQuestions(req.language);
-      res.status(200).json({ questions });
+      res.status(200).json({ questions, total: questions.length });
     } catch (err) {
       this.handleError(res, err);
     }
@@ -34,8 +34,11 @@ export class ClientQuestionsController {
   getAnswers = async (req: Request, res: Response) => {
     try {
       const clientId = await this.service.getClientProfileId(req.user!.sub);
-      const answers = await this.service.getAnswers(clientId, req.language);
-      res.status(200).json({ answers });
+      const [{ answers, total }, total_questions] = await Promise.all([
+        this.service.getAnswers(clientId, req.language),
+        this.service.getTotalQuestions(req.language),
+      ]);
+      res.status(200).json({ answers, total, total_questions });
     } catch (err) {
       this.handleError(res, err);
     }

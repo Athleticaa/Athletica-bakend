@@ -75,7 +75,14 @@ export class AuthController {
     }
 
     try {
-      await this.authService.confirmPasswordReset(req.body.email, req.body.code, req.body.password);
+      // Normalize: email + code are trimmed/lowercased in service too,
+      // but trim here so validation and service see the same values.
+      // Only email, code, password are used — extra fields ignored.
+      const email = typeof req.body.email === "string" ? req.body.email.trim() : req.body.email;
+      const rawCode = req.body.code;
+      const code =
+        typeof rawCode === "number" && Number.isInteger(rawCode) ? String(rawCode) : typeof rawCode === "string" ? rawCode.trim() : rawCode;
+      await this.authService.confirmPasswordReset(email, code, req.body.password);
       res.status(200).json({ message: req.t("password_updated") });
     } catch (err) {
       this.handleError(res, err);
@@ -122,6 +129,15 @@ export class AuthController {
     try {
       await this.authService.resendVerificationCode(req.body.email, req.language);
       res.status(200).json({ message: req.t("code_sent") });
+    } catch (err) {
+      this.handleError(res, err);
+    }
+  };
+
+  logout = async (req: Request, res: Response) => {
+    try {
+      await this.authService.logout(req.user!.sub);
+      res.status(200).json({ message: req.t("logged_out") });
     } catch (err) {
       this.handleError(res, err);
     }

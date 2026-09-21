@@ -1,0 +1,16 @@
+{
+  "projectId": "prj_i3Vp8eXRzpwoWAJpESlAgQBf4mBB",
+  "orgId": "team_RBMTspHeeM09FcIljYsQbv60",
+  "projectName": "athletica-bakend",
+  "settings": {
+    "createdAt": 1785332023340,
+    "framework": null,
+    "devCommand": null,
+    "installCommand": null,
+    "buildCommand": null,
+    "outputDirectory": null,
+    "rootDirectory": null,
+    "directoryListing": false,
+    "nodeVersion": "24.x"
+  }
+}

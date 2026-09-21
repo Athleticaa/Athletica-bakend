@@ -1,8 +1,9 @@
+import { isValidSpecialization } from "../profile/specializations";
+
 const VALID_ROLES = ["coach", "client"] as const;
 
 export interface SignupInput {
-  first_name: string;
-  last_name: string;
+  username: string;
   email: string;
   password: string;
   role: string;
@@ -47,16 +48,26 @@ function tFallback(key: string): string {
 
 export function validateSignup(input: SignupInput, t: (key: string) => string = tFallback): string[] {
   const errors: string[] = [];
-  if (!input.first_name || input.first_name.length < 1 || input.first_name.length > 100)
-    errors.push(t("first_name_length"));
-  if (!input.last_name || input.last_name.length < 1 || input.last_name.length > 100)
-    errors.push(t("last_name_length"));
+  if (
+    typeof input.username !== "string" ||
+    input.username.trim().length < 1 ||
+    input.username.trim().length > 100
+  ) {
+    errors.push(t("username_length"));
+  } else if (!/^\p{L}+(?:[ ]+\p{L}+)*$/u.test(input.username.trim())) {
+    errors.push(t("username_invalid"));
+  }
   if (!input.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.email))
     errors.push(t("email_invalid"));
   if (!input.password || input.password.length < 8)
     errors.push(t("password_min"));
   if (!VALID_ROLES.includes(input.role as any))
     errors.push(t("role_invalid"));
+  if (input.role === "coach" && input.specialization !== undefined) {
+    if (!isValidSpecialization(input.specialization)) {
+      errors.push(t("specialization_invalid"));
+    }
+  }
   return errors;
 }
 
@@ -68,16 +79,33 @@ export function validateLogin(input: LoginInput, t: (key: string) => string = tF
 }
 
 export function validateResetPassword(input: ResetPasswordInput, t: (key: string) => string = tFallback): string[] {
-  if (!input.email) return [t("email_required")];
+  const email = typeof input?.email === "string" ? input.email.trim() : "";
+  if (!email) return [t("email_required")];
   return [];
 }
 
 export function validateConfirmReset(input: ConfirmResetInput, t: (key: string) => string = tFallback): string[] {
   const errors: string[] = [];
-  if (!input.email) errors.push(t("email_required"));
-  if (!input.code) errors.push(t("code_required"));
-  if (!input.password) errors.push(t("password_required"));
-  else if (input.password.length < 8) errors.push(t("password_min"));
+  // Only three fields: email, code, password. Extra fields are ignored.
+  const email = typeof input?.email === "string" ? input.email.trim() : "";
+  const rawCode = (input as { code?: unknown })?.code;
+  const code =
+    typeof rawCode === "number" && Number.isInteger(rawCode)
+      ? String(rawCode)
+      : typeof rawCode === "string"
+        ? rawCode.trim()
+        : "";
+  const password = (input as { password?: unknown })?.password;
+
+  if (!email) errors.push(t("email_required"));
+  else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.push(t("email_invalid"));
+
+  if (!code) errors.push(t("code_required"));
+  else if (!/^\d{6}$/.test(code)) errors.push(t("validation_code_invalid"));
+
+  if (typeof password !== "string" || password.length === 0) errors.push(t("password_required"));
+  else if (password.length < 8) errors.push(t("password_min"));
+
   return errors;
 }
 
@@ -91,8 +119,11 @@ export function validateChangePassword(input: ChangePasswordInput, t: (key: stri
 
 export function validateVerifyEmail(input: VerifyEmailInput, t: (key: string) => string = tFallback): string[] {
   const errors: string[] = [];
-  if (!input.email) errors.push(t("email_required"));
-  if (!input.code) errors.push(t("code_required"));
+  const email = typeof input?.email === "string" ? input.email.trim() : "";
+  const rawCode = (input as { code?: unknown })?.code;
+  const code = typeof rawCode === "number" && Number.isInteger(rawCode) ? String(rawCode) : typeof rawCode === "string" ? rawCode.trim() : "";
+  if (!email) errors.push(t("email_required"));
+  if (!code) errors.push(t("code_required"));
   return errors;
 }
 

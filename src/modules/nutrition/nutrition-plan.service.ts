@@ -224,11 +224,11 @@ export class NutritionPlanService extends NutritionBaseService implements INutri
     const coachId = await this.getCoachProfileId(userId);
 
     const plan = await this.prisma.nutrition_plans.findFirst({
-      where: { id: planId, coach_client: { coach_id: coachId } },
+      where: { id: planId, coach_client: { coach_id: coachId }, is_active: true },
       include: {
         nutrition_meals: {
           orderBy: { meal_order: "asc" },
-          include: { nutrition_meal_foods: { include: { food: true } } },
+          include: { nutrition_meal_foods: { include: { food: { include: { category: true } } } } },
         },
       },
     });
@@ -274,7 +274,7 @@ export class NutritionPlanService extends NutritionBaseService implements INutri
     // Concurrent adds can compute the same maxOrder and one of them hits the
     // unique constraint — retry once with a freshly computed order.
     let meal: Prisma.nutrition_mealsGetPayload<{
-      include: { nutrition_meal_foods: { include: { food: true } } };
+      include: { nutrition_meal_foods: { include: { food: { include: { category: true } } } } };
     }> | null = null;
     for (let attempt = 0; attempt < 2 && !meal; attempt++) {
       try {
@@ -300,7 +300,7 @@ export class NutritionPlanService extends NutritionBaseService implements INutri
               meal_order: mealOrder,
               notes: (input.notes ?? "").trim(),
             },
-            include: { nutrition_meal_foods: { include: { food: true } } },
+            include: { nutrition_meal_foods: { include: { food: { include: { category: true } } } } },
           });
         });
       } catch (err) {
@@ -368,7 +368,7 @@ export class NutritionPlanService extends NutritionBaseService implements INutri
           ...(newOrder !== undefined ? { meal_order: newOrder } : {}),
           ...(input.notes !== undefined ? { notes: input.notes.trim() } : {}),
         },
-        include: { nutrition_meal_foods: { include: { food: true } } },
+        include: { nutrition_meal_foods: { include: { food: { include: { category: true } } } } },
       });
     });
     return { meal: this.toPlanMealResponse(meal, lang) };
@@ -442,7 +442,7 @@ export class NutritionPlanService extends NutritionBaseService implements INutri
     const meals = await this.prisma.nutrition_meals.findMany({
       where: { nutrition_plan_id: planId },
       orderBy: { meal_order: "asc" },
-      include: { nutrition_meal_foods: { include: { food: true } } },
+      include: { nutrition_meal_foods: { include: { food: { include: { category: true } } } } },
     });
     return { meals: meals.map((m) => this.toPlanMealResponse(m, lang)) };
   }
@@ -471,7 +471,7 @@ export class NutritionPlanService extends NutritionBaseService implements INutri
     });
     if (existing) throw new ServiceError("food_already_in_meal", 400);
 
-    let food: Prisma.nutrition_meal_foodsGetPayload<{ include: { food: true } }>;
+    let food: Prisma.nutrition_meal_foodsGetPayload<{ include: { food: { include: { category: true } } } }>;
     try {
       food = await this.prisma.nutrition_meal_foods.create({
         data: {
@@ -479,7 +479,7 @@ export class NutritionPlanService extends NutritionBaseService implements INutri
           food_id: input.food_id,
           quantity: input.quantity,
         },
-        include: { food: true },
+        include: { food: { include: { category: true } } },
       });
     } catch (err) {
       // Unique constraint: a concurrent request added the same food first
@@ -513,7 +513,7 @@ export class NutritionPlanService extends NutritionBaseService implements INutri
     const food = await this.prisma.nutrition_meal_foods.update({
       where: { id: foodId },
       data: { quantity: input.quantity },
-      include: { food: true },
+      include: { food: { include: { category: true } } },
     });
     return { food: toFoodPayload(food, lang) };
   }

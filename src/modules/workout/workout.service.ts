@@ -18,27 +18,23 @@ export class WorkoutService {
 
     if (filters.search) {
       where.OR = [
-        { name_en: { contains: filters.search, mode: "insensitive" } },
-        { name_ar: { contains: filters.search, mode: "insensitive" } },
+        { name: { contains: filters.search, mode: "insensitive" } },
+        { aliases: { has: filters.search } },
       ];
     }
-    if (filters.primaryMuscle) where.primary_muscle = filters.primaryMuscle;
-    if (filters.secondaryMuscle) where.secondary_muscles = { has: filters.secondaryMuscle };
+    if (filters.bodyPart) where.bodyPart = filters.bodyPart;
+    if (filters.target) where.target = filters.target;
+    if (filters.secondaryMuscle) where.secondaryMuscles = { has: filters.secondaryMuscle };
     if (filters.equipment) where.equipment = filters.equipment;
     if (filters.difficulty) where.difficulty = filters.difficulty;
-    if (filters.exerciseType) where.exercise_type = filters.exerciseType;
-    if (filters.movementPattern) where.movement_pattern = filters.movementPattern;
-    if (filters.workoutLocation) where.workout_location = filters.workoutLocation;
-    if (filters.priority) where.priority = filters.priority;
-    if (filters.isDefault !== undefined) where.is_default = filters.isDefault;
-    if (filters.goal) where.fitness_goals = { has: filters.goal };
-    if (filters.tag) where.tags = { has: filters.tag };
-    if (filters.classification) where.classification = { has: filters.classification };
+    if (filters.muscleGroup) where.muscleGroup = filters.muscleGroup;
+    if (filters.compound !== undefined) where.compound = filters.compound;
+    if (filters.unilateral !== undefined) where.unilateral = filters.unilateral;
 
     const [items, total] = await Promise.all([
       this.prisma.exercises.findMany({
         where,
-        orderBy: { name_en: "asc" },
+        orderBy: { name: "asc" },
         skip: (page - 1) * pageSize,
         take: pageSize,
       }),
