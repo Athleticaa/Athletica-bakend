@@ -193,6 +193,7 @@ export class CoachAssignmentController {
           user: coach.user,
           bio: coach.bio,
           specialization: coach.specialization,
+          profile_image: coach.profile_image ?? null,
         },
         assigned_at,
       });

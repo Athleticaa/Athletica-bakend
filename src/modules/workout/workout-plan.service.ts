@@ -183,7 +183,6 @@ export class WorkoutPlanService extends WorkoutBaseService {
   async addDayToPlan(planId: string, coachId: string, input: { title: string; note?: string }) {
     await this.getOwnedPlan(coachId, planId);
 
-    let day;
     for (let attempt = 0; attempt < 3; attempt++) {
       const maxDay = await this.prisma.workout_days.findFirst({
         where: { workout_plan_id: planId },
@@ -193,7 +192,7 @@ export class WorkoutPlanService extends WorkoutBaseService {
       const nextDayNumber = (maxDay?.day_number ?? 0) + 1;
 
       try {
-        day = await this.prisma.workout_days.create({
+        await this.prisma.workout_days.create({
           data: {
             workout_plan_id: planId,
             title: input.title,
@@ -332,7 +331,6 @@ export class WorkoutPlanService extends WorkoutBaseService {
 
     await this.validateExerciseExists(input.exercise_id);
 
-    let exercise;
     for (let attempt = 0; attempt < 3; attempt++) {
       const maxEx = await this.prisma.workout_day_exercises.findFirst({
         where: { workout_day_id: dayId },
@@ -342,7 +340,7 @@ export class WorkoutPlanService extends WorkoutBaseService {
       const nextOrder = (maxEx?.order_number ?? 0) + 1;
 
       try {
-        exercise = await this.prisma.workout_day_exercises.create({
+        await this.prisma.workout_day_exercises.create({
           data: {
             workout_day_id: dayId,
             exercise_id: input.exercise_id,

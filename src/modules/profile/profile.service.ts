@@ -64,6 +64,29 @@ export class ProfileService {
     const profile = await this.prisma.client_profiles.findFirst({ where: { user_id: userId } });
     if (!profile) throw new ServiceError("client_profile_not_found", 404);
 
+    const coachClient = await this.prisma.coach_clients.findFirst({
+      where: { client_id: profile.id },
+      select: { id: true, created_at: true },
+    });
+
+    let workoutPlan = null;
+    let nutritionPlan = null;
+
+    if (coachClient) {
+      [workoutPlan, nutritionPlan] = await Promise.all([
+        this.prisma.workout_plans.findFirst({
+          where: { coach_client_id: coachClient.id, is_active: true, deleted_at: null },
+          orderBy: { created_at: "desc" },
+          select: { id: true, title: true, description: true, is_active: true, created_at: true, start_date: true, cycle_days: true },
+        }),
+        this.prisma.nutrition_plans.findFirst({
+          where: { coach_client_id: coachClient.id, is_active: true },
+          orderBy: { created_at: "desc" },
+          select: { id: true, title: true, description: true, is_active: true, created_at: true },
+        }),
+      ]);
+    }
+
     return {
       user: {
         id: user.id,
@@ -84,6 +107,9 @@ export class ProfileService {
         location: profile.location,
         profile_image: profile.profile_image,
       },
+      assigned_at: coachClient?.created_at ?? null,
+      workout_plan: workoutPlan,
+      nutrition_plan: nutritionPlan,
     };
   }
 

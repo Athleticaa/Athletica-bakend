@@ -124,9 +124,7 @@ export class CoachAssignmentService {
       throw new ServiceError("cannot_assign_self", 400);
     }
 
-    // Build coach info for response (name/email) — include is requested above,
-    // with fallback to a direct users lookup for resilience (e.g. legacy mocks).
-    let coach: { id: string; username: string; name: string; email: string } | undefined;
+    let coach: { id: string; username: string; name: string; email: string; profile_image: string | null } | undefined;
     const embeddedUser = (coachProfile as any).user;
     if (embeddedUser?.username && embeddedUser?.email) {
       coach = {
@@ -134,6 +132,7 @@ export class CoachAssignmentService {
         username: embeddedUser.username,
         name: embeddedUser.username,
         email: embeddedUser.email,
+        profile_image: coachProfile.profile_image ?? null,
       };
     } else {
       try {
@@ -147,6 +146,7 @@ export class CoachAssignmentService {
             username: fallbackUser.username,
             name: fallbackUser.username,
             email: fallbackUser.email,
+            profile_image: coachProfile.profile_image ?? null,
           };
         }
       } catch {
