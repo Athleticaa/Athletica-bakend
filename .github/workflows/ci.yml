@@ -1,14 +1,15 @@
 name: CI
 
 on:
-  push:
-    branches: [main]
   pull_request:
     branches: [main]
 
 jobs:
   ci:
     runs-on: ubuntu-latest
+
+    env:
+      DATABASE_URL: postgresql://user:password@localhost:5432/dummy
 
     steps:
       - uses: actions/checkout@v4
