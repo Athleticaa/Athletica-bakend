@@ -15,6 +15,9 @@ import workoutRoutes from "./modules/workout/workout.routes";
 import nutritionRoutes from "./modules/nutrition/nutrition.routes";
 import profileRoutes from "./modules/profile/profile.routes";
 import { coachCheckInRouter, clientCheckInRouter } from "./modules/checkin/checkin.routes";
+import messagingRoutes from "./modules/messaging/messaging.routes";
+import realtimeRoutes from "./modules/realtime/realtime.routes";
+import outboxRoutes from "./modules/internal/outbox.routes";
 
 const app = express();
 
@@ -33,10 +36,24 @@ app.use("/api/v1/nutrition", nutritionRoutes);
 app.use("/api/v1/profile", profileRoutes);
 app.use("/api/v1/coach/checkin", coachCheckInRouter);
 app.use("/api/v1/client/checkin", clientCheckInRouter);
+app.use("/api/v1/messaging", messagingRoutes);
+app.use("/api/v1/realtime", realtimeRoutes);
+app.use("/api/v1/internal/outbox", outboxRoutes);
 
 app.get("/api/v1/health", (_req, res) => {
   res.json({ status: "ok" });
 });
+
+// Vercel deploy diagnostics: logs which required env vars are PRESENT at cold
+// start (never their values). Only runs on Vercel to keep local/test logs clean.
+if (process.env.VERCEL === "1") {
+  console.log("[config] messaging env present:", {
+    database_url: Boolean(process.env.DATABASE_URL),
+    jwt_secret: Boolean(process.env.JWT_SECRET),
+    ably_api_key: Boolean(process.env.ABLY_API_KEY),
+    outbox_cron_secret: Boolean(process.env.OUTBOX_CRON_SECRET),
+  });
+}
 
 app.use((err: unknown, req: Request, res: Response, _next: NextFunction) => {
   if (err instanceof ServiceError) {

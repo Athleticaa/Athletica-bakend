@@ -21,6 +21,7 @@ model users {
   password_reset_tokens password_reset_tokens[]
   verification_codes    verification_codes[]
   refresh_tokens        refresh_tokens[]
+  messages              messages[]
 }
 
 model verification_codes {
@@ -81,6 +82,7 @@ model coach_profiles {
   checkin_questions   checkin_questions[]
   checkin_submissions checkin_submissions[]
   checkin_assignments checkin_assignments[]
+  conversations       conversations[]       @relation("conversations_coach_id")
 
   @@index([active_invite_code])
 }
@@ -106,6 +108,7 @@ model client_profiles {
   client_answers client_answers[]
   checkin_submissions checkin_submissions[]
   checkin_assignments checkin_assignments[]
+  conversations       conversations[]       @relation("conversations_client_id")
 }
 
 model coach_requests {
@@ -136,9 +139,63 @@ model coach_clients {
   nutrition_plans nutrition_plans[]
   checkin_assignments checkin_assignments[]
   checkin_submissions   checkin_submissions[]
+  conversation    conversations?
 
   @@unique([client_id])
   @@index([coach_id])
+}
+
+model conversations {
+  id              String    @id @default(uuid()) @db.Uuid
+  coach_client_id String    @unique @db.Uuid
+  coach_id        String    @db.Uuid
+  client_id       String    @db.Uuid
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+  last_message_at DateTime?
+
+  coach_client coach_clients   @relation(fields: [coach_client_id], references: [id], onDelete: Cascade)
+  coach        coach_profiles  @relation("conversations_coach_id", fields: [coach_id], references: [id], onDelete: Cascade)
+  client       client_profiles @relation("conversations_client_id", fields: [client_id], references: [id], onDelete: Cascade)
+  messages     messages[]
+
+  @@unique([coach_id, client_id])
+  @@index([coach_id])
+  @@index([client_id])
+}
+
+model messages {
+  id              String    @id @default(uuid()) @db.Uuid
+  conversation_id String    @db.Uuid
+  sender_user_id  String    @db.Uuid
+  sender_role     String    @db.VarChar
+  content         String    @db.Text
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+  deleted_at      DateTime?
+
+  conversation conversations @relation(fields: [conversation_id], references: [id], onDelete: Cascade)
+  sender       users         @relation(fields: [sender_user_id], references: [id])
+
+  @@index([conversation_id, created_at, id])
+  @@index([sender_user_id])
+}
+
+model outbox_events {
+  id             String    @id @default(uuid()) @db.Uuid
+  event_type     String    @db.VarChar
+  aggregate_type String    @db.VarChar
+  aggregate_id   String    @db.Uuid
+  channel        String    @db.VarChar
+  payload        Json
+  created_at     DateTime  @default(now())
+  processed_at   DateTime?
+  attempts       Int       @default(0)
+  last_error     String?   @db.Text
+  locked_at      DateTime?
+
+  @@index([processed_at, created_at])
+  @@index([event_type, created_at])
 }
 
 model exercises {

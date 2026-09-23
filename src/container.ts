@@ -25,6 +25,11 @@ import { ProfileService } from "./modules/profile/profile.service";
 import { ProfileController } from "./modules/profile/profile.controller";
 import { CheckInService } from "./modules/checkin/checkin.service";
 import { CheckInController } from "./modules/checkin/checkin.controller";
+import { MessagingService } from "./modules/messaging/messaging.service";
+import { MessagingController } from "./modules/messaging/messaging.controller";
+import { RealtimeService } from "./modules/realtime/realtime.service";
+import { RealtimeController } from "./modules/realtime/realtime.controller";
+import { OutboxService } from "./events/outbox.service";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
 const prisma = new PrismaClient({ adapter });
@@ -52,5 +57,10 @@ container.registerSingleton(ProfileService);
 container.registerSingleton(ProfileController);
 container.registerSingleton(CheckInService);
 container.registerSingleton(CheckInController);
+container.registerSingleton(MessagingService);
+container.registerSingleton(MessagingController);
+container.registerSingleton(RealtimeService);
+container.registerSingleton(RealtimeController);
+container.registerSingleton(OutboxService);
 
 export { container };
