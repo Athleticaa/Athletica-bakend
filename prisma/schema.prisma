@@ -78,6 +78,9 @@ model coach_profiles {
   workout_templates   workout_templates[]
   workout_plans       workout_plans[]
   nutrition_templates nutrition_templates[]
+  checkin_questions   checkin_questions[]
+  checkin_submissions checkin_submissions[]
+  checkin_assignments checkin_assignments[]
 
   @@index([active_invite_code])
 }
@@ -101,6 +104,8 @@ model client_profiles {
   workout_exercise_logs workout_exercise_logs[]
   nutrition_meal_logs nutrition_meal_logs[]
   client_answers client_answers[]
+  checkin_submissions checkin_submissions[]
+  checkin_assignments checkin_assignments[]
 }
 
 model coach_requests {
@@ -119,16 +124,18 @@ model coach_requests {
 }
 
 model coach_clients {
-  id         String   @id @default(uuid()) @db.Uuid
-  coach_id   String   @db.Uuid
-  client_id  String   @db.Uuid
-  created_at DateTime @default(now())
+  id              String              @id @default(uuid()) @db.Uuid
+  coach_id        String              @db.Uuid
+  client_id       String              @db.Uuid
+  created_at      DateTime            @default(now())
 
   coach  coach_profiles  @relation("coach_clients_coach_id", fields: [coach_id], references: [id])
   client client_profiles @relation("coach_clients_client_id", fields: [client_id], references: [id])
 
   workout_plans   workout_plans[]
   nutrition_plans nutrition_plans[]
+  checkin_assignments checkin_assignments[]
+  checkin_submissions   checkin_submissions[]
 
   @@unique([client_id])
   @@index([coach_id])
@@ -449,3 +456,80 @@ model client_answers {
 
   @@unique([client_id, question_id])
 }
+
+// ── Check-in module ─────────────────────────────────────────────────────────
+
+enum checkin_question_type {
+  NUMBER
+  TEXT
+  SINGLE_CHOICE
+  YES_NO
+  RATING
+  IMAGE
+}
+
+model checkin_questions {
+  id         String                @id @default(uuid()) @db.Uuid
+  coach_id   String                @db.Uuid
+  question   String                @db.VarChar(500)
+  type       checkin_question_type
+  options    String[]
+  required   Boolean               @default(true)
+  order      Int
+  created_at DateTime              @default(now())
+  updated_at DateTime              @updatedAt
+
+  coach   coach_profiles    @relation(fields: [coach_id], references: [id], onDelete: Cascade)
+  answers checkin_answers[]
+
+  @@index([coach_id, order])
+}
+
+model checkin_submissions {
+  id            String   @id @default(uuid()) @db.Uuid
+  coach_id      String   @db.Uuid
+  client_id     String   @db.Uuid
+  coach_client_id String? @db.Uuid
+  submitted_at  DateTime @default(now())
+
+  coach        coach_profiles  @relation(fields: [coach_id], references: [id], onDelete: Cascade)
+  client       client_profiles @relation(fields: [client_id], references: [id], onDelete: Cascade)
+  coach_client coach_clients? @relation(fields: [coach_client_id], references: [id], onDelete: SetNull)
+  answers      checkin_answers[]
+
+  @@index([coach_id, client_id])
+  @@index([coach_client_id])
+  @@index([client_id])
+}
+
+model checkin_answers {
+  id                String  @id @default(uuid()) @db.Uuid
+  submission_id     String  @db.Uuid
+  question_id       String? @db.Uuid
+  answer_value      String  @db.Text
+  question_snapshot Json
+
+  submission checkin_submissions  @relation(fields: [submission_id], references: [id], onDelete: Cascade)
+  question   checkin_questions?   @relation(fields: [question_id], references: [id], onDelete: SetNull)
+
+  @@index([submission_id])
+}
+
+model checkin_assignments {
+  id              String   @id @default(uuid()) @db.Uuid
+  coach_id        String   @db.Uuid
+  client_id       String   @db.Uuid
+  coach_client_id String? @db.Uuid
+  status          String   @default("pending") @db.VarChar
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  coach  coach_profiles  @relation(fields: [coach_id], references: [id], onDelete: Cascade)
+  client client_profiles @relation(fields: [client_id], references: [id], onDelete: Cascade)
+  coach_client coach_clients? @relation(fields: [coach_client_id], references: [id], onDelete: Cascade)
+
+  @@unique([coach_client_id])
+  @@index([coach_id])
+  @@index([client_id])
+}
+
