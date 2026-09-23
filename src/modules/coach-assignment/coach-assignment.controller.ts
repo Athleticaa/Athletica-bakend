@@ -187,7 +187,7 @@ export class CoachAssignmentController {
 
   getMyCoach = async (req: Request, res: Response) => {
     try {
-      const { coach, assigned_at } = await this.service.getMyCoach(req.user!.sub);
+      const { coach, assigned_at, assignment_id } = await this.service.getMyCoach(req.user!.sub);
       res.status(200).json({
         coach: {
           id: coach.id,
@@ -197,6 +197,7 @@ export class CoachAssignmentController {
           profile_image: coach.profile_image ?? null,
         },
         assigned_at,
+        assignment_id,
       });
     } catch (err) {
       this.handleError(res, err);
