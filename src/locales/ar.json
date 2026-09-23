@@ -204,5 +204,13 @@
   "checkin_text_answer_empty": "يجب ألا تكون الإجابة النصية فارغة",
   "checkin_submission_not_found": "تسليم تسجيل الدخول غير موجود",
   "checkin_no_pending_assignment": "لا يوجد تكليف تسجيل دخول معلق",
-  "checkin_assigned": "تم تعيين تسجيل الدخول بنجاح"
+  "checkin_assigned": "تم تعيين تسجيل الدخول بنجاح",
+  "conversation_not_found": "المحادثة غير موجودة",
+  "forbidden": "ممنوع",
+  "message_content_required": "محتوى الرسالة مطلوب",
+  "message_content_too_long": "محتوى الرسالة طويل جدًا",
+  "invalid_limit": "يجب أن يكون الحد عددًا صحيحًا موجبًا ضمن النطاق المسموح",
+  "invalid_cursor": "المؤشر غير صالح",
+  "ably_not_configured": "خدمة الوقت الحقيقي غير مهيأة",
+  "outbox_not_configured": "معالج الأحداث غير مهيأ"
 }
