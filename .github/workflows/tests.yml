@@ -43,6 +43,11 @@ jobs:
           - workout-maintenance
           - checkin
           - checkin-questions-gate
+          - messaging-validation
+          - messaging-authorization
+          - realtime-token
+          - ably-publisher
+          - outbox
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

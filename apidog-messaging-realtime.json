@@ -1,0 +1,695 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Athletica - Messaging + Realtime (Apidog import)",
+    "version": "1.0.0",
+    "description": "Chat routers for Apidog. Import: Apidog > Import > OpenAPI. BaseURL: https://api.athletica.app/api/v1 (or localhost:3000)"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Local"
+    },
+    {
+      "url": "https://api.athletica.app",
+      "description": "Production"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/api/v1/messaging/conversations": {
+      "get": {
+        "tags": [
+          "Messaging"
+        ],
+        "summary": "List my conversations",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 50
+            },
+            "example": 50
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "Bearer <coach|client JWT>"
+          },
+          {
+            "name": "Accept",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "application/json"
+            },
+            "example": "application/json"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": true,
+                  "data": {
+                    "conversations": [
+                      {
+                        "id": "uuid",
+                        "coach_client_id": "uuid",
+                        "coach_id": "uuid",
+                        "client_id": "uuid",
+                        "created_at": "2026-09-23T12:00:00.000Z",
+                        "updated_at": "2026-09-23T12:00:00.000Z",
+                        "last_message_at": "2026-09-23T12:05:00.000Z"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid limit -> { error, details: [\"invalid_limit\"] }"
+          },
+          "401": {
+            "description": "Missing/expired JWT"
+          },
+          "403": {
+            "description": "Wrong role"
+          }
+        }
+      }
+    },
+    "/api/v1/messaging/conversations/{conversationId}": {
+      "get": {
+        "tags": [
+          "Messaging"
+        ],
+        "summary": "Get one conversation",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "conversationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "Bearer <coach|client JWT>"
+          },
+          {
+            "name": "Accept",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "application/json"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": true,
+                  "data": {
+                    "conversation": {
+                      "id": "uuid",
+                      "coach_client_id": "uuid",
+                      "coach_id": "uuid",
+                      "client_id": "uuid",
+                      "created_at": "2026-09-23T12:00:00.000Z",
+                      "updated_at": "2026-09-23T12:00:00.000Z",
+                      "last_message_at": null
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed UUID -> details: [\"invalid_uuid\"]"
+          },
+          "403": {
+            "description": "Not a member"
+          },
+          "404": {
+            "description": "Unknown id"
+          }
+        }
+      }
+    },
+    "/api/v1/messaging/conversations/{conversationId}/messages": {
+      "post": {
+        "tags": [
+          "Messaging"
+        ],
+        "summary": "Send message to conversation (coach + client)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "conversationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "Bearer <coach|client JWT>"
+          },
+          {
+            "name": "Content-Type",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": "application/json"
+            },
+            "example": "application/json"
+          },
+          {
+            "name": "Accept",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "application/json"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "content"
+                ],
+                "properties": {
+                  "content": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2000,
+                    "description": "Trimmed server-side. Empty -> message_content_required, >2000 -> message_content_too_long"
+                  }
+                }
+              },
+              "example": {
+                "content": "Hello, how was your workout today?"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created - render immediately, Ably push follows best-effort",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": true,
+                  "data": {
+                    "message": {
+                      "id": "uuid",
+                      "conversation_id": "uuid",
+                      "sender_user_id": "uuid",
+                      "sender_role": "coach",
+                      "content": "Hello, how was your workout today?",
+                      "created_at": "2026-09-23T12:00:00.000Z",
+                      "updated_at": "2026-09-23T12:00:00.000Z"
+                    },
+                    "conversation": {
+                      "id": "uuid",
+                      "last_message_at": "2026-09-23T12:00:00.000Z"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_uuid | message_content_required | message_content_too_long"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Not a member"
+          },
+          "404": {
+            "description": "Conversation not found"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Messaging"
+        ],
+        "summary": "Get message history (Neon source of truth)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "conversationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 50
+            }
+          },
+          {
+            "name": "before",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "base64url cursor {createdAt, id} from previous page nextCursor. Empty = first page."
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "Bearer <coach|client JWT>"
+          },
+          {
+            "name": "Accept",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "application/json"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success - messages newest first",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": true,
+                  "data": {
+                    "messages": [
+                      {
+                        "id": "uuid",
+                        "conversation_id": "uuid",
+                        "sender_user_id": "uuid",
+                        "sender_role": "coach",
+                        "content": "Hello",
+                        "created_at": "2026-09-23T12:00:00.000Z",
+                        "updated_at": "2026-09-23T12:00:00.000Z"
+                      }
+                    ],
+                    "nextCursor": "base64url-string | null",
+                    "hasMore": false
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_uuid | invalid_limit | invalid_cursor"
+          },
+          "403": {
+            "description": "Not a member"
+          }
+        }
+      }
+    },
+    "/api/v1/messaging/conversations/by-coach-client/{coachClientId}/messages": {
+      "post": {
+        "tags": [
+          "Messaging"
+        ],
+        "summary": "First message / lazy-create conversation by assignment (coach + client) [CANONICAL]",
+        "description": "Canonical path. Either coach or client can start. :coachClientId = coach_clients.id. Coach must own the row via coach_id, client must own it via client_id, else 403. Coach gets the id from GET /coach/clients, client gets assignment_id from GET /client/coach or conversation.coach_client_id.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "coachClientId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "coach_clients.id (assignment row). Coach: from GET /coach/clients. Client: assignment_id from GET /client/coach."
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "Bearer <coach|client JWT>"
+          },
+          {
+            "name": "Content-Type",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": "application/json"
+            },
+            "example": "application/json"
+          },
+          {
+            "name": "Accept",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "application/json"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "content"
+                ],
+                "properties": {
+                  "content": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2000
+                  }
+                }
+              },
+              "example": {
+                "content": "Hello, how was your workout today?"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created (conversation created on first use, race-safe)",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": true,
+                  "data": {
+                    "message": {
+                      "id": "uuid",
+                      "conversation_id": "uuid",
+                      "sender_user_id": "uuid",
+                      "sender_role": "coach|client",
+                      "content": "Hello",
+                      "created_at": "2026-09-23T12:00:00.000Z",
+                      "updated_at": "2026-09-23T12:00:00.000Z"
+                    },
+                    "conversation": {
+                      "id": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_uuid | message_content_required | message_content_too_long"
+          },
+          "403": {
+            "description": "Forbidden. Body now includes code + details: assignment_not_found (wrong/unknown coach_clients.id) | not_assignment_owner (id belongs to another coach/client) | not_conversation_member | assignment_missing_for_conversation"
+          }
+        }
+      }
+    },
+    "/api/v1/messaging/conversations/by-client/{clientId}/messages": {
+      "post": {
+        "tags": [
+          "Messaging"
+        ],
+        "summary": "[DEPRECATED] Coach first message by client_profiles.id \u00e2\u20ac\u201d use by-coach-client instead",
+        "deprecated": true,
+        "description": "Deprecated alias kept for backward compat. Prefer POST by-coach-client/{coachClientId}/messages with coach_clients.id.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "clientId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "DEPRECATED: client_profiles.id. Use by-coach-client with coach_clients.id instead."
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "Bearer <coach JWT>"
+          },
+          {
+            "name": "Content-Type",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": "application/json"
+            },
+            "example": "application/json"
+          },
+          {
+            "name": "Accept",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "application/json"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "content"
+                ],
+                "properties": {
+                  "content": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2000
+                  }
+                }
+              },
+              "example": {
+                "content": "Hello, how was your workout today?"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created (conversation created on first use, race-safe)",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": true,
+                  "data": {
+                    "message": {
+                      "id": "uuid",
+                      "conversation_id": "uuid",
+                      "sender_user_id": "uuid",
+                      "sender_role": "coach",
+                      "content": "Hello",
+                      "created_at": "2026-09-23T12:00:00.000Z",
+                      "updated_at": "2026-09-23T12:00:00.000Z"
+                    },
+                    "conversation": {
+                      "id": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_uuid | message_content_required | message_content_too_long"
+          },
+          "403": {
+            "description": "Client gets 403, unassigned client -> 403"
+          }
+        }
+      }
+    },
+    "/api/v1/realtime/ably-token": {
+      "get": {
+        "tags": [
+          "Realtime"
+        ],
+        "summary": "Mint Ably TokenRequest for Flutter direct connection",
+        "description": "Serverless-safe: mints short-lived subscribe+history token. Flutter passes tokenRequest straight to ably.ClientOptions authCallback. Channel = conversation:{conversationId}, event = message.created.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "conversationId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "Bearer <coach|client JWT>"
+          },
+          {
+            "name": "Accept",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "application/json"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": true,
+                  "data": {
+                    "tokenRequest": {
+                      "keyName": "...",
+                      "mac": "...",
+                      "nonce": "...",
+                      "timestamp": 0,
+                      "capability": "{\"conversation:uuid\":[\"subscribe\",\"history\"]}",
+                      "clientId": "user-uuid"
+                    },
+                    "channel": "conversation:uuid",
+                    "conversationId": "uuid"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing/malformed conversationId -> details: [\"invalid_uuid\"]"
+          },
+          "403": {
+            "description": "Not a member"
+          },
+          "404": {
+            "description": "Conversation not found"
+          },
+          "500": {
+            "description": "ably_not_configured (ABLY_API_KEY missing)"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {}
+  }
+}

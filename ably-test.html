@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Athletica — Ably Realtime Test</title>
+<script src="https://cdn.ably.com/lib/ably.min-2.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 0; background: #0f172a; color: #e2e8f0; }
+  .wrap { max-width: 900px; margin: 0 auto; padding: 20px; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  p.sub { color: #94a3b8; font-size: 13px; margin: 0 0 16px; }
+  .card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 16px; margin-bottom: 14px; }
+  .card h2 { font-size: 14px; margin: 0 0 10px; color: #7dd3fc; text-transform: uppercase; letter-spacing: .06em; }
+  label { display: block; font-size: 12px; color: #94a3b8; margin: 10px 0 4px; }
+  input, textarea { width: 100%; background: #0f172a; border: 1px solid #334155; color: #e2e8f0; border-radius: 8px; padding: 9px 10px; font-size: 13px; font-family: ui-monospace, Consolas, monospace; }
+  textarea { min-height: 140px; resize: vertical; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  button { cursor: pointer; border: 0; border-radius: 8px; padding: 9px 14px; font-size: 13px; font-weight: 600; }
+  .btn-connect { background: #22c55e; color: #052e16; }
+  .btn-disconnect { background: #ef4444; color: #fff; }
+  .btn-fetch { background: #38bdf8; color: #082f49; }
+  .btn-ghost { background: #334155; color: #e2e8f0; }
+  .btn-send { background: #a78bfa; color: #1e1b4b; }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  .status { display: flex; gap: 16px; font-size: 13px; margin-top: 10px; }
+  .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #64748b; margin-right: 6px; vertical-align: middle; }
+  .dot.ok { background: #22c55e; } .dot.warn { background: #f59e0b; } .dot.err { background: #ef4444; }
+  #messages { list-style: none; padding: 0; margin: 10px 0 0; display: flex; flex-direction: column; gap: 8px; }
+  #messages li { background: #0f172a; border: 1px solid #334155; border-left: 4px solid #22c55e; border-radius: 8px; padding: 10px; font-size: 13px; }
+  #messages li .meta { color: #94a3b8; font-size: 11px; margin-top: 6px; font-family: ui-monospace, monospace; word-break: break-all; }
+  #messages li.realtime { border-left-color: #22c55e; }
+  #messages li.history { border-left-color: #38bdf8; }
+  #log { background: #020617; border: 1px solid #334155; border-radius: 8px; padding: 10px; height: 220px; overflow-y: auto; font-family: ui-monospace, Consolas, monospace; font-size: 12px; white-space: pre-wrap; }
+  .ok-text { color: #22c55e; } .err-text { color: #f87171; } .info-text { color: #7dd3fc; }
+  ol.howto { font-size: 13px; color: #cbd5e1; padding-left: 18px; margin: 0; }
+  ol.howto li { margin: 4px 0; }
+  code { background: #020617; padding: 1px 6px; border-radius: 6px; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>⚡ Athletica — Ably Realtime Test</h1>
+  <p class="sub">Subscribe to <code>conversation:{id}</code> / event <code>message.created</code> and verify a message sent via REST arrives live.</p>
+
+  <div class="card">
+    <h2>How to test "does realtime work when I send a message?"</h2>
+    <ol class="howto">
+      <li>Fill <b>API Base URL + JWT + Conversation ID</b>, click <b>Fetch fresh token</b> (tokens expire fast — don't reuse the old pasted one).</li>
+      <li>Click <b>Connect &amp; Subscribe</b>. Wait for Connection = connected, Channel = attached.</li>
+      <li>Keep this tab open. In another tab/Postman — or with the <b>Send box below</b> — POST a message to <code>/api/v1/messaging/conversations/{id}/messages</code>.</li>
+      <li>A green card should appear below within 1–3s. If not, check the log for errors.</li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <h2>1 — Backend access</h2>
+    <label>API Base URL (root only — <code>/api/v1</code> is added automatically)</label>
+    <input id="baseUrl" value="https://athletica-bakend.vercel.app" />
+    <label>JWT (Bearer token — coach or client that belongs to this conversation)</label>
+    <input id="jwt" placeholder="eyJhbGciOi..." />
+    <label>Conversation ID</label>
+    <input id="convId" value="70bb24e2-9750-4017-8ac2-abd8439c71b1" />
+    <div class="row">
+      <button class="btn-fetch" id="btnFetch">Fetch fresh token from backend</button>
+      <button class="btn-ghost" id="btnFillSample">Refill sample JSON</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>2 — TokenRequest (paste or fetched)</h2>
+    <label>Paste the full <code>{ success, data: { tokenRequest, channel, conversationId } }</code> JSON here</label>
+    <textarea id="tokenJson"></textarea>
+    <div class="row">
+      <button class="btn-connect" id="btnConnect">Connect &amp; Subscribe</button>
+      <button class="btn-disconnect" id="btnDisconnect" disabled>Disconnect</button>
+      <button class="btn-ghost" id="btnHistory" disabled>Load Ably history</button>
+    </div>
+    <div class="status">
+      <div><span class="dot" id="dotConn"></span>Connection: <b id="txtConn">disconnected</b></div>
+      <div><span class="dot" id="dotChan"></span>Channel: <b id="txtChan">detached</b></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>3 — Send a message (via REST, triggers Ably publish server-side)</h2>
+    <label>Message content</label>
+    <input id="msgContent" value="Hello realtime 👋" />
+    <div class="row">
+      <button class="btn-send" id="btnSend">POST message via API</button>
+    </div>
+    <p class="sub" style="margin:8px 0 0">POSTs to <code>{baseUrl}/api/v1/messaging/conversations/{id}/messages</code> with <code>{"content": "..."}</code>. Your capability is subscribe-only, so publishing directly from Ably will (correctly) fail — always send via REST.</p>
+  </div>
+
+  <div class="card">
+    <h2>Live messages (<span id="msgCount">0</span>) — green = realtime, blue = history</h2>
+    <ul id="messages"></ul>
+  </div>
+
+  <div class="card">
+    <h2>Log</h2>
+    <div id="log"></div>
+    <div class="row"><button class="btn-ghost" id="btnClear">Clear log + messages</button></div>
+  </div>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const logEl = $('log'), msgList = $('messages');
+let realtime = null, channel = null;
+const seenIds = new Set();
+let msgCount = 0;
+
+const SAMPLE = {
+  "success": true,
+  "data": {
+    "tokenRequest": {
+      "keyName": "gGJdQw.3Np0IQ",
+      "clientId": "cc8f88bb-8aca-4ade-bc50-bd876563be6e",
+      "capability": "{\"conversation:70bb24e2-9750-4017-8ac2-abd8439c71b1\":[\"history\",\"subscribe\"]}",
+      "timestamp": 1790174112837,
+      "nonce": "5133333793382828",
+      "mac": "tIo0FX5I+hVtKH6YXyPAZocnKeow7O0Lm2z1KUp7uEM="
+    },
+    "channel": "conversation:70bb24e2-9750-4017-8ac2-abd8439c71b1",
+    "conversationId": "70bb24e2-9750-4017-8ac2-abd8439c71b1"
+  }
+};
+
+function log(msg, cls) {
+  const t = new Date().toLocaleTimeString();
+  const div = document.createElement('div');
+  if (cls) div.className = cls;
+  div.textContent = `[${t}] ${msg}`;
+  logEl.appendChild(div);
+  logEl.scrollTop = logEl.scrollHeight;
+  console.log(msg);
+}
+function setConn(state) {
+  $('txtConn').textContent = state;
+  $('dotConn').className = 'dot ' + (state === 'connected' ? 'ok' : state === 'disconnected' || state === 'failed' ? 'err' : 'warn');
+}
+function setChan(state) {
+  $('txtChan').textContent = state;
+  $('dotChan').className = 'dot ' + (state === 'attached' ? 'ok' : state === 'detached' || state === 'failed' ? 'err' : 'warn');
+}
+function addMessage(data, kind) {
+  // data = Ably payload: { id, type, occurredAt, payload: { messageId, conversationId, senderUserId, senderRole, content, createdAt } }
+  const inner = data && data.payload ? data.payload : {};
+  const dedupeKey = data && data.id ? data.id : inner.messageId;
+  if (dedupeKey && seenIds.has(dedupeKey)) { log('Duplicate ignored (dedupe key ' + dedupeKey + ')', 'info-text'); return; }
+  if (dedupeKey) seenIds.add(dedupeKey);
+  msgCount++;
+  $('msgCount').textContent = msgCount;
+  const li = document.createElement('li');
+  li.className = kind;
+  const content = inner.content ?? JSON.stringify(data);
+  li.innerHTML = '';
+  const body = document.createElement('div');
+  body.textContent = (kind === 'history' ? '📜 HISTORY  ' : '⚡ LIVE  ') + content;
+  const meta = document.createElement('div');
+  meta.className = 'meta';
+  meta.textContent = `eventId=${data.id || '-'} | messageId=${inner.messageId || '-'} | sender=${inner.senderRole || '-'} | at=${inner.createdAt || data.occurredAt || '-'}`;
+  li.appendChild(body); li.appendChild(meta);
+  msgList.prepend(li);
+  log(`⬇ ${kind} message: ${content}`, 'ok-text');
+}
+
+function apiRoot() {
+  // Accept both "https://host" and "https://host/api/v1" — strip trailing /api/v1 if present
+  return $('baseUrl').value.trim().replace(/\/+$/, '').replace(/\/api\/v1\/?$/, '');
+}
+
+$('btnFillSample').onclick = () => {
+  $('tokenJson').value = JSON.stringify(SAMPLE, null, 2);
+  $('convId').value = SAMPLE.data.conversationId;
+  log('Sample JSON refilled. NOTE: its timestamp is old — it will likely be rejected as expired. Fetch a fresh token instead.', 'info-text');
+};
+
+$('btnFetch').onclick = async () => {
+  const base = apiRoot();
+  const jwt = $('jwt').value.trim();
+  const conv = $('convId').value.trim();
+  if (!jwt) { log('Paste a JWT first (Authorization Bearer).', 'err-text'); return; }
+  if (!conv) { log('Conversation ID missing.', 'err-text'); return; }
+  log(`GET ${base}/api/v1/realtime/ably-token?conversationId=${conv} ...`);
+  try {
+    const res = await fetch(`${base}/api/v1/realtime/ably-token?conversationId=${encodeURIComponent(conv)}`, {
+      headers: { 'Authorization': 'Bearer ' + jwt, 'Accept': 'application/json' }
+    });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) { log(`Token fetch failed HTTP ${res.status}: ${JSON.stringify(body)}`, 'err-text'); return; }
+    $('tokenJson').value = JSON.stringify(body, null, 2);
+    if (body.data?.conversationId) $('convId').value = body.data.conversationId;
+    log('✅ Fresh token received — now click Connect & Subscribe.', 'ok-text');
+  } catch (e) {
+    log('Token fetch error: ' + e.message, 'err-text');
+  }
+};
+
+$('btnConnect').onclick = async () => {
+  let parsed;
+  try { parsed = JSON.parse($('tokenJson').value); }
+  catch (e) { log('Invalid JSON in token box: ' + e.message, 'err-text'); return; }
+  const tokenRequest = parsed?.data?.tokenRequest || parsed?.tokenRequest;
+  const channelName = parsed?.data?.channel || parsed?.channel;
+  if (!tokenRequest || !channelName) { log('JSON must contain data.tokenRequest and data.channel', 'err-text'); return; }
+
+  disconnect(false);
+  log(`Connecting to Ably with tokenRequest (clientId=${tokenRequest.clientId}) ...`);
+  setConn('connecting'); setChan('attaching');
+
+  try {
+    realtime = new Ably.Realtime({
+      authCallback: (_params, callback) => callback(null, tokenRequest)
+    });
+    realtime.connection.on('connected', () => { setConn('connected'); log('✅ Ably connected (clientId=' + realtime.auth.clientId + ')', 'ok-text'); });
+    realtime.connection.on('connecting', () => setConn('connecting'));
+    realtime.connection.on('disconnected', () => { setConn('disconnected'); log('Ably disconnected (will retry)', 'err-text'); });
+    realtime.connection.on('suspended', () => { setConn('suspended'); log('Ably suspended', 'err-text'); });
+    realtime.connection.on('failed', (err) => { setConn('failed'); log('Ably failed: ' + JSON.stringify(err && err.reason || err), 'err-text'); });
+    realtime.connection.on('update', (s) => log('connection update: ' + (s && s.current), 'info-text'));
+
+    channel = realtime.channels.get(channelName);
+    channel.on('attached', () => { setChan('attached'); log(`✅ Channel attached: ${channelName}`, 'ok-text'); });
+    channel.on('detached', () => { setChan('detached'); log('Channel detached', 'err-text'); });
+    channel.on('failed', (e) => { setChan('failed'); log('Channel failed: ' + JSON.stringify(e && e.reason || e), 'err-text'); });
+
+    await channel.attach();
+    await channel.subscribe('message.created', (msg) => {
+      log(`RAW event message.created: ${JSON.stringify(msg.data).slice(0, 300)}`, 'info-text');
+      addMessage(msg.data, 'realtime');
+    });
+    log('✅ Subscribed to event "message.created". Send a message now (box below or Postman) and watch it arrive.', 'ok-text');
+    $('btnDisconnect').disabled = false;
+    $('btnHistory').disabled = false;
+    $('btnConnect').disabled = true;
+  } catch (e) {
+    log('Connect error: ' + (e && e.message || e), 'err-text');
+    setConn('failed'); setChan('failed');
+  }
+};
+
+function disconnect(withLog = true) {
+  try { if (channel) channel.unsubscribe(); } catch {}
+  try { if (channel) channel.detach(); } catch {}
+  try { if (realtime) realtime.close(); } catch {}
+  realtime = null; channel = null;
+  setConn('disconnected'); setChan('detached');
+  $('btnDisconnect').disabled = true;
+  $('btnHistory').disabled = true;
+  $('btnConnect').disabled = false;
+  if (withLog) log('Disconnected.');
+}
+$('btnDisconnect').onclick = () => disconnect(true);
+
+$('btnHistory').onclick = async () => {
+  if (!channel) return;
+  log('Fetching Ably channel history (last 20, tests "history" capability)...', 'info-text');
+  try {
+    const page = await channel.history({ limit: 20 });
+    log(`History page: ${page.items.length} item(s), hasNext=${page.hasNext()}`, 'info-text');
+    [...page.items].reverse().forEach(m => addMessage(m.data, 'history'));
+    if (!page.items.length) log('History empty — normal if no messages were published yet via REST.', 'info-text');
+  } catch (e) {
+    log('History error (likely capability/expiry): ' + (e && e.message || JSON.stringify(e)), 'err-text');
+  }
+};
+
+$('btnSend').onclick = async () => {
+  const base = apiRoot();
+  const jwt = $('jwt').value.trim();
+  const conv = $('convId').value.trim();
+  const content = $('msgContent').value;
+  if (!jwt) { log('Paste a JWT first to send.', 'err-text'); return; }
+  log(`POST ${base}/api/v1/messaging/conversations/${conv}/messages ...`);
+  try {
+    const res = await fetch(`${base}/api/v1/messaging/conversations/${encodeURIComponent(conv)}/messages`, {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + jwt, 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({ content })
+    });
+    const body = await res.json().catch(() => ({}));
+    if (res.status === 201 || res.ok) {
+      log(`✅ Message saved (id=${body.data?.message?.id}). Realtime push should arrive above in 1–3s...`, 'ok-text');
+    } else {
+      log(`Send failed HTTP ${res.status}: ${JSON.stringify(body)}`, 'err-text');
+    }
+  } catch (e) {
+    log('Send error: ' + e.message, 'err-text');
+  }
+};
+
+$('btnClear').onclick = () => { logEl.innerHTML = ''; msgList.innerHTML = ''; seenIds.clear(); msgCount = 0; $('msgCount').textContent = '0'; };
+
+// init
+$('tokenJson').value = JSON.stringify(SAMPLE, null, 2);
+log('Ready. Tip: tokens expire — click "Fetch fresh token" before connecting.', 'info-text');
+</script>
+</body>
+</html>
