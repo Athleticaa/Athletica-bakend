@@ -204,5 +204,13 @@
   "checkin_text_answer_empty": "Text answer must not be empty",
   "checkin_submission_not_found": "Check-in submission not found",
   "checkin_no_pending_assignment": "No pending check-in assignment",
-  "checkin_assigned": "Check-in assigned successfully"
+  "checkin_assigned": "Check-in assigned successfully",
+  "conversation_not_found": "Conversation not found",
+  "forbidden": "Forbidden",
+  "message_content_required": "Message content is required",
+  "message_content_too_long": "Message content is too long",
+  "invalid_limit": "limit must be a positive integer within the allowed range",
+  "invalid_cursor": "Cursor is invalid",
+  "ably_not_configured": "Realtime service is not configured",
+  "outbox_not_configured": "Outbox processor is not configured"
 }

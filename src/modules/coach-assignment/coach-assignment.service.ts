@@ -434,7 +434,7 @@ export class CoachAssignmentService {
       },
     });
     if (!assignment) throw new ServiceError("no_coach_assigned", 404);
-    return { coach: assignment.coach, assigned_at: assignment.created_at };
+    return { coach: assignment.coach, assigned_at: assignment.created_at, assignment_id: assignment.id };
   }
 
   private async deleteCoachClientCascade(tx: Prisma.TransactionClient, coachClientId: string) {
