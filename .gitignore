@@ -1,11 +1,11 @@
 node_modules
 .env
 .opencode
-# .specify
+.specify
 .agents
 specs
 dist
-# prisma/*
+prisma/*
 /docs
 plan.md
 init_schema.txt
@@ -18,3 +18,5 @@ auth.postman_collection.json
 .env.local
 .gitignore
 .vercel/.env.development.local
+tmp/
+reports/apidog-sync-report.md

@@ -9,6 +9,8 @@
     "test": "jest",
     "lint": "eslint src/",
     "build": "prisma generate && tsc",
+    "postinstall": "prisma generate",
+    "vercel-build": "prisma generate && prisma migrate deploy && tsc",
     "db:reseed-exercises": "tsx scripts/reseed-exercises.ts",
     "api:validate": "tsx scripts/validate-routes.ts",
     "api:generate": "tsx scripts/generate-openapi.ts",
