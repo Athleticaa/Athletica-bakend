@@ -14,6 +14,7 @@ import { coachRouter, clientCoachRouter, requestsRouter } from "./modules/coach-
 import workoutRoutes from "./modules/workout/workout.routes";
 import nutritionRoutes from "./modules/nutrition/nutrition.routes";
 import profileRoutes from "./modules/profile/profile.routes";
+import { coachCheckInRouter, clientCheckInRouter } from "./modules/checkin/checkin.routes";
 
 const app = express();
 
@@ -30,6 +31,8 @@ app.use("/api/v1/client", clientCoachRouter);
 app.use("/api/v1/workout", workoutRoutes);
 app.use("/api/v1/nutrition", nutritionRoutes);
 app.use("/api/v1/profile", profileRoutes);
+app.use("/api/v1/coach/checkin", coachCheckInRouter);
+app.use("/api/v1/client/checkin", clientCheckInRouter);
 
 app.get("/api/v1/health", (_req, res) => {
   res.json({ status: "ok" });

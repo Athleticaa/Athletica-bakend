@@ -33,7 +33,7 @@ function mapRequestRecord(record: any) {
 
 @injectable()
 export class CoachAssignmentController {
-  constructor(@inject(CoachAssignmentService) private service: CoachAssignmentService) {}
+  constructor(@inject(CoachAssignmentService) private service: CoachAssignmentService) { }
 
   private handleError(res: Response, err: unknown) {
     if (err instanceof ServiceError) {
@@ -97,6 +97,7 @@ export class CoachAssignmentController {
             id: r.client.id,
             user: r.client.user,
             goal: formatGoal(r.client.goal),
+            profile_image: r.client.profile_image
           },
           status: r.status,
           created_at: r.created_at,

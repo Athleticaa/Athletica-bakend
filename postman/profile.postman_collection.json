@@ -173,7 +173,7 @@
                 "exec": [
                   "pm.test('Status is 200', function () { pm.expect(pm.response.code).to.eql(200); });",
                   "var json = pm.response.json();",
-                  "pm.test('Returns specialization_display', function () { pm.expect(json).to.have.property('specialization_display'); });"
+                  "pm.test('Returns specialization_display', function () { pm.expect(json.profile).to.have.property('specialization_display'); });"
                 ],
                 "type": "text/javascript"
               }
@@ -230,7 +230,7 @@
               "_postman_previewlanguage": "json",
               "header": [],
               "cookie": [],
-              "body": "{\n  \"id\": \"uuid\",\n  \"username\": \"coach_mike_updated\",\n  \"bio\": \"Updated bio - max 500 chars\",\n  \"specialization\": \"strength_training\",\n  \"specialization_display\": { \"en\": \"Strength Training\", \"ar\": \"تدريب القوة\" },\n  \"phone_number\": \"+201012345678\",\n  \"location\": \"Cairo, Egypt\",\n  \"profile_image\": null\n}"
+              "body": "{\n  \"user\": {\n    \"id\": \"uuid\",\n    \"username\": \"coach_mike_updated\",\n    \"email\": \"coach@example.com\",\n    \"role\": \"coach\",\n    \"email_verified\": true,\n    \"created_at\": \"2026-09-02T00:00:00.000Z\"\n  },\n  \"profile\": {\n    \"id\": \"uuid\",\n    \"bio\": \"Updated bio - max 500 chars\",\n    \"specialization\": \"strength_training\",\n    \"specialization_display\": { \"en\": \"Strength Training\", \"ar\": \"تدريب القوة\" },\n    \"phone_number\": \"+201012345678\",\n    \"location\": \"Cairo, Egypt\",\n    \"profile_image\": null\n  }\n}"
             }
           ]
         },
@@ -354,7 +354,7 @@
               "_postman_previewlanguage": "json",
               "header": [],
               "cookie": [],
-              "body": "{\n  \"id\": \"uuid\",\n  \"username\": \"ahmed_updated\",\n  \"gender\": \"female\",\n  \"birth_date\": \"1998-05-12T00:00:00.000Z\",\n  \"height\": 176,\n  \"weight\": 79,\n  \"goal\": \"weight_loss\",\n  \"phone_number\": \"+201112223333\",\n  \"location\": \"Alexandria, Egypt\",\n  \"profile_image\": null\n}"
+              "body": "{\n  \"user\": {\n    \"id\": \"uuid\",\n    \"username\": \"ahmed_updated\",\n    \"email\": \"client@example.com\",\n    \"role\": \"client\"\n  },\n  \"profile\": {\n    \"id\": \"uuid\",\n    \"gender\": \"female\",\n    \"birth_date\": \"1998-05-12T00:00:00.000Z\",\n    \"height\": 176,\n    \"weight\": 79,\n    \"goal\": \"weight_loss\",\n    \"phone_number\": \"+201112223333\",\n    \"location\": \"Alexandria, Egypt\",\n    \"profile_image\": null\n  }\n}"
             }
           ]
         },

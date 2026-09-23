@@ -23,6 +23,8 @@ import { NutritionClientService } from "./modules/nutrition/nutrition-client.ser
 import { NutritionController } from "./modules/nutrition/nutrition.controller";
 import { ProfileService } from "./modules/profile/profile.service";
 import { ProfileController } from "./modules/profile/profile.controller";
+import { CheckInService } from "./modules/checkin/checkin.service";
+import { CheckInController } from "./modules/checkin/checkin.controller";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
 const prisma = new PrismaClient({ adapter });
@@ -48,5 +50,7 @@ container.registerSingleton(NutritionClientService);
 container.registerSingleton(NutritionController);
 container.registerSingleton(ProfileService);
 container.registerSingleton(ProfileController);
+container.registerSingleton(CheckInService);
+container.registerSingleton(CheckInController);
 
 export { container };
