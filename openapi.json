@@ -12,7 +12,7 @@
     }
   ],
   "paths": {
-    "/api/v1/signup": {
+    "/api/v1/auth/signup": {
       "post": {
         "tags": [
           "Auth"
@@ -22,6 +22,9 @@
         "responses": {
           "200": {
             "description": "Success"
+          },
+          "201": {
+            "description": "Created"
           },
           "400": {
             "description": "Bad request"
@@ -88,7 +91,7 @@
         }
       }
     },
-    "/api/v1/login": {
+    "/api/v1/auth/login": {
       "post": {
         "tags": [
           "Auth"
@@ -98,6 +101,9 @@
         "responses": {
           "200": {
             "description": "Success"
+          },
+          "201": {
+            "description": "Created"
           },
           "400": {
             "description": "Bad request"
@@ -137,7 +143,7 @@
         }
       }
     },
-    "/api/v1/reset-password": {
+    "/api/v1/auth/reset-password": {
       "post": {
         "tags": [
           "Auth"
@@ -147,6 +153,9 @@
         "responses": {
           "200": {
             "description": "Success"
+          },
+          "201": {
+            "description": "Created"
           },
           "400": {
             "description": "Bad request"
@@ -173,7 +182,7 @@
         }
       }
     },
-    "/api/v1/reset-password/confirm": {
+    "/api/v1/auth/reset-password/confirm": {
       "post": {
         "tags": [
           "Auth"
@@ -183,6 +192,9 @@
         "responses": {
           "200": {
             "description": "Success"
+          },
+          "201": {
+            "description": "Created"
           },
           "400": {
             "description": "Bad request"
@@ -209,7 +221,7 @@
         }
       }
     },
-    "/api/v1/verify-email": {
+    "/api/v1/auth/verify-email": {
       "post": {
         "tags": [
           "Auth"
@@ -219,6 +231,9 @@
         "responses": {
           "200": {
             "description": "Success"
+          },
+          "201": {
+            "description": "Created"
           },
           "400": {
             "description": "Bad request"
@@ -245,7 +260,7 @@
         }
       }
     },
-    "/api/v1/resend-verification": {
+    "/api/v1/auth/resend-verification": {
       "post": {
         "tags": [
           "Auth"
@@ -255,6 +270,9 @@
         "responses": {
           "200": {
             "description": "Success"
+          },
+          "201": {
+            "description": "Created"
           },
           "400": {
             "description": "Bad request"
@@ -281,7 +299,7 @@
         }
       }
     },
-    "/api/v1/change-password": {
+    "/api/v1/auth/change-password": {
       "post": {
         "tags": [
           "Auth"
@@ -296,6 +314,9 @@
           "200": {
             "description": "Success"
           },
+          "201": {
+            "description": "Created"
+          },
           "400": {
             "description": "Bad request"
           },
@@ -321,7 +342,7 @@
         }
       }
     },
-    "/api/v1/logout": {
+    "/api/v1/auth/logout": {
       "post": {
         "tags": [
           "Auth"
@@ -336,6 +357,9 @@
           "200": {
             "description": "Success"
           },
+          "201": {
+            "description": "Created"
+          },
           "400": {
             "description": "Bad request"
           },
@@ -361,7 +385,7 @@
         }
       }
     },
-    "/api/v1/me": {
+    "/api/v1/auth/me": {
       "get": {
         "tags": [
           "Auth"
@@ -376,6 +400,9 @@
           "200": {
             "description": "Success"
           },
+          "201": {
+            "description": "Created"
+          },
           "400": {
             "description": "Bad request"
           },
@@ -391,7 +418,7 @@
         }
       }
     },
-    "/api/v1/exercises": {
+    "/api/v1/workout/exercises": {
       "get": {
         "tags": [
           "Workout"
@@ -486,6 +513,9 @@
           "200": {
             "description": "Success"
           },
+          "201": {
+            "description": "Created"
+          },
           "400": {
             "description": "Bad request"
           },
@@ -501,7 +531,7 @@
         }
       }
     },
-    "/api/v1/exercises/{id}": {
+    "/api/v1/workout/exercises/{id}": {
       "get": {
         "tags": [
           "Workout"
@@ -605,6 +635,9 @@
           "200": {
             "description": "Success"
           },
+          "201": {
+            "description": "Created"
+          },
           "400": {
             "description": "Bad request"
           },
@@ -620,10 +653,10 @@
         }
       }
     },
-    "/api/v1/templates": {
+    "/api/v1/workout/templates": {
       "post": {
         "tags": [
-          "Nutrition"
+          "Workout"
         ],
         "security": [
           {
@@ -634,6 +667,9 @@
         "responses": {
           "200": {
             "description": "Success"
+          },
+          "201": {
+            "description": "Created"
           },
           "400": {
             "description": "Bad request"
@@ -675,7 +711,7 @@
       },
       "get": {
         "tags": [
-          "Nutrition"
+          "Workout"
         ],
         "security": [
           {
@@ -686,6 +722,9 @@
         "responses": {
           "200": {
             "description": "Success"
+          },
+          "201": {
+            "description": "Created"
           },
           "400": {
             "description": "Bad request"
@@ -702,10 +741,10 @@
         }
       }
     },
-    "/api/v1/templates/{id}": {
+    "/api/v1/workout/templates/{id}": {
       "get": {
         "tags": [
-          "Nutrition"
+          "Workout"
         ],
         "security": [
           {
@@ -726,6 +765,9 @@
         "responses": {
           "200": {
             "description": "Success"
+          },
+          "201": {
+            "description": "Created"
           },
           "400": {
             "description": "Bad request"
@@ -743,7 +785,7 @@
       },
       "put": {
         "tags": [
-          "Nutrition"
+          "Workout"
         ],
         "security": [
           {
@@ -764,6 +806,9 @@
         "responses": {
           "200": {
             "description": "Success"
+          },
+          "201": {
+            "description": "Created"
           },
           "400": {
             "description": "Bad request"
@@ -805,7 +850,7 @@
       },
       "delete": {
         "tags": [
-          "Nutrition"
+          "Workout"
         ],
         "security": [
           {
@@ -827,6 +872,9 @@
           "200": {
             "description": "Success"
           },
+          "201": {
+            "description": "Created"
+          },
           "400": {
             "description": "Bad request"
           },
@@ -842,71 +890,7 @@
         }
       }
     },
-    "/api/v1/templates/{tid}/assign": {
-      "post": {
-        "tags": [
-          "Nutrition"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "tid",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success"
-          },
-          "400": {
-            "description": "Bad request"
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "403": {
-            "description": "Forbidden"
-          },
-          "404": {
-            "description": "Not found"
-          }
-        },
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "title": {
-                    "type": "string",
-                    "maxLength": 100
-                  },
-                  "description": {
-                    "type": "string",
-                    "maxLength": 500
-                  }
-                },
-                "required": [
-                  "title",
-                  "description"
-                ]
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/templates/{tid}/days": {
+    "/api/v1/workout/templates/{tid}/assign": {
       "post": {
         "tags": [
           "Workout"
@@ -930,6 +914,77 @@
         "responses": {
           "200": {
             "description": "Success"
+          },
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "coach_client_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "title": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "coach_client_id"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workout/templates/{tid}/days": {
+      "post": {
+        "tags": [
+          "Workout"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "tid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "201": {
+            "description": "Created"
           },
           "400": {
             "description": "Bad request"
@@ -956,7 +1011,7 @@
         }
       }
     },
-    "/api/v1/templates/{tid}/days/reorder": {
+    "/api/v1/workout/templates/{tid}/days/reorder": {
       "put": {
         "tags": [
           "Workout"
@@ -980,6 +1035,9 @@
         "responses": {
           "200": {
             "description": "Success"
+          },
+          "201": {
+            "description": "Created"
           },
           "400": {
             "description": "Bad request"
@@ -1018,7 +1076,7 @@
         }
       }
     },
-    "/api/v1/templates/{tid}/days/{did}": {
+    "/api/v1/workout/templates/{tid}/days/{did}": {
       "put": {
         "tags": [
           "Workout"
@@ -1051,6 +1109,9 @@
         "responses": {
           "200": {
             "description": "Success"
+          },
+          "201": {
+            "description": "Created"
           },
           "400": {
             "description": "Bad request"
@@ -1109,6 +1170,9 @@
           "200": {
             "description": "Success"
           },
+          "201": {
+            "description": "Created"
+          },
           "400": {
             "description": "Bad request"
           },
@@ -1124,7 +1188,7 @@
         }
       }
     },
-    "/api/v1/templates/{tid}/days/{did}/exercises": {
+    "/api/v1/workout/templates/{tid}/days/{did}/exercises": {
       "post": {
         "tags": [
           "Workout"
@@ -1157,6 +1221,9 @@
         "responses": {
           "200": {
             "description": "Success"
+          },
+          "201": {
+            "description": "Created"
           },
           "400": {
             "description": "Bad request"
@@ -1199,7 +1266,7 @@
         }
       }
     },
-    "/api/v1/templates/{tid}/days/{did}/exercises/{eid}": {
+    "/api/v1/workout/templates/{tid}/days/{did}/exercises/{eid}": {
       "put": {
         "tags": [
           "Workout"
@@ -1241,6 +1308,9 @@
         "responses": {
           "200": {
             "description": "Success"
+          },
+          "201": {
+            "description": "Created"
           },
           "400": {
             "description": "Bad request"
@@ -1324,6 +1394,9 @@
           "200": {
             "description": "Success"
           },
+          "201": {
+            "description": "Created"
+          },
           "400": {
             "description": "Bad request"
           },
@@ -1339,7 +1412,7 @@
         }
       }
     },
-    "/api/v1/plans/{pid}/days": {
+    "/api/v1/workout/plans/{pid}/days": {
       "post": {
         "tags": [
           "Workout"
@@ -1363,6 +1436,9 @@
         "responses": {
           "200": {
             "description": "Success"
+          },
+          "201": {
+            "description": "Created"
           },
           "400": {
             "description": "Bad request"
@@ -1389,7 +1465,7 @@
         }
       }
     },
-    "/api/v1/plans/{pid}/days/reorder": {
+    "/api/v1/workout/plans/{pid}/days/reorder": {
       "put": {
         "tags": [
           "Workout"
@@ -1413,6 +1489,9 @@
         "responses": {
           "200": {
             "description": "Success"
+          },
+          "201": {
+            "description": "Created"
           },
           "400": {
             "description": "Bad request"
@@ -1451,7 +1530,7 @@
         }
       }
     },
-    "/api/v1/plans/{pid}/days/{did}": {
+    "/api/v1/workout/plans/{pid}/days/{did}": {
       "put": {
         "tags": [
           "Workout"
@@ -1484,6 +1563,9 @@
         "responses": {
           "200": {
             "description": "Success"
+          },
+          "201": {
+            "description": "Created"
           },
           "400": {
             "description": "Bad request"
@@ -1542,6 +1624,9 @@
           "200": {
             "description": "Success"
           },
+          "201": {
+            "description": "Created"
+          },
           "400": {
             "description": "Bad request"
           },
@@ -1557,7 +1642,7 @@
         }
       }
     },
-    "/api/v1/plans/{pid}/days/{did}/exercises": {
+    "/api/v1/workout/plans/{pid}/days/{did}/exercises": {
       "post": {
         "tags": [
           "Workout"
@@ -1590,6 +1675,9 @@
         "responses": {
           "200": {
             "description": "Success"
+          },
+          "201": {
+            "description": "Created"
           },
           "400": {
             "description": "Bad request"
@@ -1632,7 +1720,7 @@
         }
       }
     },
-    "/api/v1/plans/{pid}/days/{did}/exercises/{eid}": {
+    "/api/v1/workout/plans/{pid}/days/{did}/exercises/{eid}": {
       "put": {
         "tags": [
           "Workout"
@@ -1674,6 +1762,9 @@
         "responses": {
           "200": {
             "description": "Success"
+          },
+          "201": {
+            "description": "Created"
           },
           "400": {
             "description": "Bad request"
@@ -1757,6 +1848,9 @@
           "200": {
             "description": "Success"
           },
+          "201": {
+            "description": "Created"
+          },
           "400": {
             "description": "Bad request"
           },
@@ -1772,10 +1866,10 @@
         }
       }
     },
-    "/api/v1/plans": {
+    "/api/v1/workout/plans": {
       "get": {
         "tags": [
-          "Nutrition"
+          "Workout"
         ],
         "security": [
           {
@@ -1787,6 +1881,9 @@
           "200": {
             "description": "Success"
           },
+          "201": {
+            "description": "Created"
+          },
           "400": {
             "description": "Bad request"
           },
@@ -1802,10 +1899,10 @@
         }
       }
     },
-    "/api/v1/plans/{pid}": {
+    "/api/v1/workout/plans/{pid}": {
       "get": {
         "tags": [
-          "Nutrition"
+          "Workout"
         ],
         "security": [
           {
@@ -1826,6 +1923,9 @@
         "responses": {
           "200": {
             "description": "Success"
+          },
+          "201": {
+            "description": "Created"
           },
           "400": {
             "description": "Bad request"
@@ -1865,6 +1965,9 @@
           "200": {
             "description": "Success"
           },
+          "201": {
+            "description": "Created"
+          },
           "400": {
             "description": "Bad request"
           },
@@ -1886,6 +1989,1476 @@
                 "type": "object"
               }
             }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Workout"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "pid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/v1/workout/today": {
+      "get": {
+        "tags": [
+          "Workout"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/v1/workout/my/plans": {
+      "get": {
+        "tags": [
+          "Workout"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/v1/workout/my/plans/{pid}": {
+      "get": {
+        "tags": [
+          "Workout"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "pid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/v1/workout/exercises/{elid}/complete": {
+      "post": {
+        "tags": [
+          "Workout"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "elid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workout/exercises/{elid}/uncomplete": {
+      "post": {
+        "tags": [
+          "Workout"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "elid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workout/history": {
+      "get": {
+        "tags": [
+          "Workout"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/v1/nutrition/foods": {
+      "get": {
+        "tags": [
+          "Nutrition"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "categoryId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "isArchived",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "minCalories",
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "maxCalories",
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "minProtein",
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "maxProtein",
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "minCarbs",
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "maxCarbs",
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "minFat",
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "maxFat",
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/v1/nutrition/foods/{id}": {
+      "get": {
+        "tags": [
+          "Nutrition"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "categoryId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "isArchived",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "minCalories",
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "maxCalories",
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "minProtein",
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "maxProtein",
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "minCarbs",
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "maxCarbs",
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "minFat",
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "maxFat",
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/v1/nutrition/food-categories": {
+      "get": {
+        "tags": [
+          "Nutrition"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/v1/nutrition/templates": {
+      "post": {
+        "tags": [
+          "Nutrition"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "description": {
+                    "type": "string",
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "title",
+                  "description"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Nutrition"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/v1/nutrition/templates/{id}": {
+      "get": {
+        "tags": [
+          "Nutrition"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Nutrition"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "description": {
+                    "type": "string",
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "title",
+                  "description"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Nutrition"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/v1/nutrition/templates/{tid}/meals": {
+      "post": {
+        "tags": [
+          "Nutrition"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "tid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "meal_type": {
+                    "type": "string"
+                  },
+                  "meal_order": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "notes": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "meal_type"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/nutrition/templates/{tid}/meals/reorder": {
+      "put": {
+        "tags": [
+          "Nutrition"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "tid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "meal_type": {
+                    "type": "string"
+                  },
+                  "meal_order": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "notes": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "meal_type"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/nutrition/templates/{tid}/meals/{mid}": {
+      "put": {
+        "tags": [
+          "Nutrition"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "tid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "mid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "meal_type": {
+                    "type": "string"
+                  },
+                  "meal_order": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "notes": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "meal_type"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Nutrition"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "tid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "mid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/v1/nutrition/templates/{tid}/meals/{mid}/foods": {
+      "post": {
+        "tags": [
+          "Nutrition"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "tid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "mid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "food_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "quantity": {
+                    "type": "number",
+                    "minimum": 0
+                  }
+                },
+                "required": [
+                  "food_id",
+                  "quantity"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/nutrition/templates/{tid}/meals/{mid}/foods/{fid}": {
+      "put": {
+        "tags": [
+          "Nutrition"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "tid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "mid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "fid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "food_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "quantity": {
+                    "type": "number",
+                    "minimum": 0
+                  }
+                },
+                "required": [
+                  "food_id",
+                  "quantity"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Nutrition"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "tid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "mid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "fid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/v1/nutrition/templates/{tid}/assign": {
+      "post": {
+        "tags": [
+          "Nutrition"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "tid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "coach_client_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "title": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "coach_client_id"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/nutrition/plans": {
+      "get": {
+        "tags": [
+          "Nutrition"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/v1/nutrition/plans/{pid}": {
+      "get": {
+        "tags": [
+          "Nutrition"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "pid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
           }
         }
       },
@@ -1913,6 +3486,9 @@
           "200": {
             "description": "Success"
           },
+          "201": {
+            "description": "Created"
+          },
           "400": {
             "description": "Bad request"
           },
@@ -1928,7 +3504,490 @@
         }
       }
     },
-    "/api/v1/today": {
+    "/api/v1/nutrition/plans/{pid}/meals": {
+      "post": {
+        "tags": [
+          "Nutrition"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "pid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "meal_type": {
+                    "type": "string"
+                  },
+                  "meal_order": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "notes": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "meal_type"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/nutrition/plans/{pid}/meals/reorder": {
+      "put": {
+        "tags": [
+          "Nutrition"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "pid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "meal_type": {
+                    "type": "string"
+                  },
+                  "meal_order": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "notes": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "meal_type"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/nutrition/plans/{pid}/meals/{mid}": {
+      "put": {
+        "tags": [
+          "Nutrition"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "pid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "mid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "meal_type": {
+                    "type": "string"
+                  },
+                  "meal_order": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "notes": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "meal_type"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Nutrition"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "pid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "mid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/v1/nutrition/plans/{pid}/meals/{mid}/foods": {
+      "post": {
+        "tags": [
+          "Nutrition"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "pid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "mid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "food_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "quantity": {
+                    "type": "number",
+                    "minimum": 0
+                  }
+                },
+                "required": [
+                  "food_id",
+                  "quantity"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/nutrition/plans/{pid}/meals/{mid}/foods/{fid}": {
+      "put": {
+        "tags": [
+          "Nutrition"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "pid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "mid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "fid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "food_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "quantity": {
+                    "type": "number",
+                    "minimum": 0
+                  }
+                },
+                "required": [
+                  "food_id",
+                  "quantity"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Nutrition"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "pid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "mid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "fid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/v1/nutrition/today": {
       "get": {
         "tags": [
           "Nutrition"
@@ -1943,6 +4002,9 @@
           "200": {
             "description": "Success"
           },
+          "201": {
+            "description": "Created"
+          },
           "400": {
             "description": "Bad request"
           },
@@ -1958,7 +4020,7 @@
         }
       }
     },
-    "/api/v1/my/plans": {
+    "/api/v1/nutrition/my/plans": {
       "get": {
         "tags": [
           "Nutrition"
@@ -1973,6 +4035,9 @@
           "200": {
             "description": "Success"
           },
+          "201": {
+            "description": "Created"
+          },
           "400": {
             "description": "Bad request"
           },
@@ -1988,7 +4053,7 @@
         }
       }
     },
-    "/api/v1/my/plans/{pid}": {
+    "/api/v1/nutrition/my/plans/{pid}": {
       "get": {
         "tags": [
           "Nutrition"
@@ -2013,6 +4078,9 @@
           "200": {
             "description": "Success"
           },
+          "201": {
+            "description": "Created"
+          },
           "400": {
             "description": "Bad request"
           },
@@ -2028,10 +4096,10 @@
         }
       }
     },
-    "/api/v1/exercises/{elid}/complete": {
+    "/api/v1/nutrition/meals/{mlid}/complete": {
       "post": {
         "tags": [
-          "Workout"
+          "Nutrition"
         ],
         "security": [
           {
@@ -2040,7 +4108,7 @@
         ],
         "parameters": [
           {
-            "name": "elid",
+            "name": "mlid",
             "in": "path",
             "required": true,
             "schema": {
@@ -2052,6 +4120,9 @@
         "responses": {
           "200": {
             "description": "Success"
+          },
+          "201": {
+            "description": "Created"
           },
           "400": {
             "description": "Bad request"
@@ -2071,17 +4142,32 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object"
+                "type": "object",
+                "properties": {
+                  "meal_type": {
+                    "type": "string"
+                  },
+                  "meal_order": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "notes": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "meal_type"
+                ]
               }
             }
           }
         }
       }
     },
-    "/api/v1/exercises/{elid}/uncomplete": {
+    "/api/v1/nutrition/meals/{mlid}/uncomplete": {
       "post": {
         "tags": [
-          "Workout"
+          "Nutrition"
         ],
         "security": [
           {
@@ -2090,7 +4176,7 @@
         ],
         "parameters": [
           {
-            "name": "elid",
+            "name": "mlid",
             "in": "path",
             "required": true,
             "schema": {
@@ -2102,6 +4188,9 @@
         "responses": {
           "200": {
             "description": "Success"
+          },
+          "201": {
+            "description": "Created"
           },
           "400": {
             "description": "Bad request"
@@ -2121,14 +4210,29 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object"
+                "type": "object",
+                "properties": {
+                  "meal_type": {
+                    "type": "string"
+                  },
+                  "meal_order": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "notes": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "meal_type"
+                ]
               }
             }
           }
         }
       }
     },
-    "/api/v1/history": {
+    "/api/v1/nutrition/history": {
       "get": {
         "tags": [
           "Nutrition"
@@ -2162,130 +4266,8 @@
           "200": {
             "description": "Success"
           },
-          "400": {
-            "description": "Bad request"
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "403": {
-            "description": "Forbidden"
-          },
-          "404": {
-            "description": "Not found"
-          }
-        }
-      }
-    },
-    "/api/v1/foods": {
-      "get": {
-        "tags": [
-          "Nutrition"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "search",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "categoryId",
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "isArchived",
-            "in": "query",
-            "schema": {
-              "type": "boolean"
-            }
-          },
-          {
-            "name": "minCalories",
-            "in": "query",
-            "schema": {
-              "type": "number"
-            }
-          },
-          {
-            "name": "maxCalories",
-            "in": "query",
-            "schema": {
-              "type": "number"
-            }
-          },
-          {
-            "name": "minProtein",
-            "in": "query",
-            "schema": {
-              "type": "number"
-            }
-          },
-          {
-            "name": "maxProtein",
-            "in": "query",
-            "schema": {
-              "type": "number"
-            }
-          },
-          {
-            "name": "minCarbs",
-            "in": "query",
-            "schema": {
-              "type": "number"
-            }
-          },
-          {
-            "name": "maxCarbs",
-            "in": "query",
-            "schema": {
-              "type": "number"
-            }
-          },
-          {
-            "name": "minFat",
-            "in": "query",
-            "schema": {
-              "type": "number"
-            }
-          },
-          {
-            "name": "maxFat",
-            "in": "query",
-            "schema": {
-              "type": "number"
-            }
-          },
-          {
-            "name": "page",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "default": 1
-            }
-          },
-          {
-            "name": "pageSize",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "default": 20
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success"
+          "201": {
+            "description": "Created"
           },
           "400": {
             "description": "Bad request"
@@ -2302,1222 +4284,7 @@
         }
       }
     },
-    "/api/v1/foods/{id}": {
-      "get": {
-        "tags": [
-          "Nutrition"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "search",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "categoryId",
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "isArchived",
-            "in": "query",
-            "schema": {
-              "type": "boolean"
-            }
-          },
-          {
-            "name": "minCalories",
-            "in": "query",
-            "schema": {
-              "type": "number"
-            }
-          },
-          {
-            "name": "maxCalories",
-            "in": "query",
-            "schema": {
-              "type": "number"
-            }
-          },
-          {
-            "name": "minProtein",
-            "in": "query",
-            "schema": {
-              "type": "number"
-            }
-          },
-          {
-            "name": "maxProtein",
-            "in": "query",
-            "schema": {
-              "type": "number"
-            }
-          },
-          {
-            "name": "minCarbs",
-            "in": "query",
-            "schema": {
-              "type": "number"
-            }
-          },
-          {
-            "name": "maxCarbs",
-            "in": "query",
-            "schema": {
-              "type": "number"
-            }
-          },
-          {
-            "name": "minFat",
-            "in": "query",
-            "schema": {
-              "type": "number"
-            }
-          },
-          {
-            "name": "maxFat",
-            "in": "query",
-            "schema": {
-              "type": "number"
-            }
-          },
-          {
-            "name": "page",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "default": 1
-            }
-          },
-          {
-            "name": "pageSize",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "default": 20
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success"
-          },
-          "400": {
-            "description": "Bad request"
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "403": {
-            "description": "Forbidden"
-          },
-          "404": {
-            "description": "Not found"
-          }
-        }
-      }
-    },
-    "/api/v1/food-categories": {
-      "get": {
-        "tags": [
-          "Nutrition"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "Success"
-          },
-          "400": {
-            "description": "Bad request"
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "403": {
-            "description": "Forbidden"
-          },
-          "404": {
-            "description": "Not found"
-          }
-        }
-      }
-    },
-    "/api/v1/templates/{tid}/meals": {
-      "post": {
-        "tags": [
-          "Nutrition"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "tid",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success"
-          },
-          "400": {
-            "description": "Bad request"
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "403": {
-            "description": "Forbidden"
-          },
-          "404": {
-            "description": "Not found"
-          }
-        },
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "title": {
-                    "type": "string",
-                    "maxLength": 100
-                  },
-                  "description": {
-                    "type": "string",
-                    "maxLength": 500
-                  }
-                },
-                "required": [
-                  "title",
-                  "description"
-                ]
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/templates/{tid}/meals/reorder": {
-      "put": {
-        "tags": [
-          "Nutrition"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "tid",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success"
-          },
-          "400": {
-            "description": "Bad request"
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "403": {
-            "description": "Forbidden"
-          },
-          "404": {
-            "description": "Not found"
-          }
-        },
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "title": {
-                    "type": "string",
-                    "maxLength": 100
-                  },
-                  "description": {
-                    "type": "string",
-                    "maxLength": 500
-                  }
-                },
-                "required": [
-                  "title",
-                  "description"
-                ]
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/templates/{tid}/meals/{mid}": {
-      "put": {
-        "tags": [
-          "Nutrition"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "tid",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "mid",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success"
-          },
-          "400": {
-            "description": "Bad request"
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "403": {
-            "description": "Forbidden"
-          },
-          "404": {
-            "description": "Not found"
-          }
-        },
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "title": {
-                    "type": "string",
-                    "maxLength": 100
-                  },
-                  "description": {
-                    "type": "string",
-                    "maxLength": 500
-                  }
-                },
-                "required": [
-                  "title",
-                  "description"
-                ]
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "Nutrition"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "tid",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "mid",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success"
-          },
-          "400": {
-            "description": "Bad request"
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "403": {
-            "description": "Forbidden"
-          },
-          "404": {
-            "description": "Not found"
-          }
-        }
-      }
-    },
-    "/api/v1/templates/{tid}/meals/{mid}/foods": {
-      "post": {
-        "tags": [
-          "Nutrition"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "tid",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "mid",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success"
-          },
-          "400": {
-            "description": "Bad request"
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "403": {
-            "description": "Forbidden"
-          },
-          "404": {
-            "description": "Not found"
-          }
-        },
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "title": {
-                    "type": "string",
-                    "maxLength": 100
-                  },
-                  "description": {
-                    "type": "string",
-                    "maxLength": 500
-                  }
-                },
-                "required": [
-                  "title",
-                  "description"
-                ]
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/templates/{tid}/meals/{mid}/foods/{fid}": {
-      "put": {
-        "tags": [
-          "Nutrition"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "tid",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "mid",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "fid",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success"
-          },
-          "400": {
-            "description": "Bad request"
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "403": {
-            "description": "Forbidden"
-          },
-          "404": {
-            "description": "Not found"
-          }
-        },
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "title": {
-                    "type": "string",
-                    "maxLength": 100
-                  },
-                  "description": {
-                    "type": "string",
-                    "maxLength": 500
-                  }
-                },
-                "required": [
-                  "title",
-                  "description"
-                ]
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "Nutrition"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "tid",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "mid",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "fid",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success"
-          },
-          "400": {
-            "description": "Bad request"
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "403": {
-            "description": "Forbidden"
-          },
-          "404": {
-            "description": "Not found"
-          }
-        }
-      }
-    },
-    "/api/v1/plans/{pid}/meals": {
-      "post": {
-        "tags": [
-          "Nutrition"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "pid",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success"
-          },
-          "400": {
-            "description": "Bad request"
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "403": {
-            "description": "Forbidden"
-          },
-          "404": {
-            "description": "Not found"
-          }
-        },
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "meal_type": {
-                    "type": "string"
-                  },
-                  "meal_order": {
-                    "type": "integer",
-                    "minimum": 1
-                  },
-                  "notes": {
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "meal_type"
-                ]
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/plans/{pid}/meals/reorder": {
-      "put": {
-        "tags": [
-          "Nutrition"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "pid",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success"
-          },
-          "400": {
-            "description": "Bad request"
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "403": {
-            "description": "Forbidden"
-          },
-          "404": {
-            "description": "Not found"
-          }
-        },
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "meal_type": {
-                    "type": "string"
-                  },
-                  "meal_order": {
-                    "type": "integer",
-                    "minimum": 1
-                  },
-                  "notes": {
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "meal_type"
-                ]
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/plans/{pid}/meals/{mid}": {
-      "put": {
-        "tags": [
-          "Nutrition"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "pid",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "mid",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success"
-          },
-          "400": {
-            "description": "Bad request"
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "403": {
-            "description": "Forbidden"
-          },
-          "404": {
-            "description": "Not found"
-          }
-        },
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "meal_type": {
-                    "type": "string"
-                  },
-                  "meal_order": {
-                    "type": "integer",
-                    "minimum": 1
-                  },
-                  "notes": {
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "meal_type"
-                ]
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "Nutrition"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "pid",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "mid",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success"
-          },
-          "400": {
-            "description": "Bad request"
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "403": {
-            "description": "Forbidden"
-          },
-          "404": {
-            "description": "Not found"
-          }
-        }
-      }
-    },
-    "/api/v1/plans/{pid}/meals/{mid}/foods": {
-      "post": {
-        "tags": [
-          "Nutrition"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "pid",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "mid",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success"
-          },
-          "400": {
-            "description": "Bad request"
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "403": {
-            "description": "Forbidden"
-          },
-          "404": {
-            "description": "Not found"
-          }
-        },
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "food_id": {
-                    "type": "string",
-                    "format": "uuid"
-                  },
-                  "quantity": {
-                    "type": "number",
-                    "minimum": 0
-                  }
-                },
-                "required": [
-                  "food_id",
-                  "quantity"
-                ]
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/plans/{pid}/meals/{mid}/foods/{fid}": {
-      "put": {
-        "tags": [
-          "Nutrition"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "pid",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "mid",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "fid",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success"
-          },
-          "400": {
-            "description": "Bad request"
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "403": {
-            "description": "Forbidden"
-          },
-          "404": {
-            "description": "Not found"
-          }
-        },
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "food_id": {
-                    "type": "string",
-                    "format": "uuid"
-                  },
-                  "quantity": {
-                    "type": "number",
-                    "minimum": 0
-                  }
-                },
-                "required": [
-                  "food_id",
-                  "quantity"
-                ]
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "Nutrition"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "pid",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "mid",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "fid",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success"
-          },
-          "400": {
-            "description": "Bad request"
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "403": {
-            "description": "Forbidden"
-          },
-          "404": {
-            "description": "Not found"
-          }
-        }
-      }
-    },
-    "/api/v1/meals/{mlid}/complete": {
-      "post": {
-        "tags": [
-          "Nutrition"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "mlid",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success"
-          },
-          "400": {
-            "description": "Bad request"
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "403": {
-            "description": "Forbidden"
-          },
-          "404": {
-            "description": "Not found"
-          }
-        },
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "meal_type": {
-                    "type": "string"
-                  },
-                  "meal_order": {
-                    "type": "integer",
-                    "minimum": 1
-                  },
-                  "notes": {
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "meal_type"
-                ]
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/meals/{mlid}/uncomplete": {
-      "post": {
-        "tags": [
-          "Nutrition"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "mlid",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success"
-          },
-          "400": {
-            "description": "Bad request"
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "403": {
-            "description": "Forbidden"
-          },
-          "404": {
-            "description": "Not found"
-          }
-        },
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "meal_type": {
-                    "type": "string"
-                  },
-                  "meal_order": {
-                    "type": "integer",
-                    "minimum": 1
-                  },
-                  "notes": {
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "meal_type"
-                ]
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/": {
+    "/api/v1/profile": {
       "get": {
         "tags": [
           "Profile"
@@ -3531,6 +4298,9 @@
         "responses": {
           "200": {
             "description": "Success"
+          },
+          "201": {
+            "description": "Created"
           },
           "400": {
             "description": "Bad request"
@@ -3560,6 +4330,9 @@
           "200": {
             "description": "Success"
           },
+          "201": {
+            "description": "Created"
+          },
           "400": {
             "description": "Bad request"
           },
@@ -3585,7 +4358,7 @@
         }
       }
     },
-    "/api/v1/image": {
+    "/api/v1/profile/image": {
       "post": {
         "tags": [
           "Profile"
@@ -3600,6 +4373,9 @@
           "200": {
             "description": "Success"
           },
+          "201": {
+            "description": "Created"
+          },
           "400": {
             "description": "Bad request"
           },
@@ -3638,6 +4414,9 @@
           "200": {
             "description": "Success"
           },
+          "201": {
+            "description": "Created"
+          },
           "400": {
             "description": "Bad request"
           },
@@ -3653,7 +4432,7 @@
         }
       }
     },
-    "/api/v1/invite": {
+    "/api/v1/coach/invite": {
       "post": {
         "tags": [
           "Coach-assignment"
@@ -3667,6 +4446,9 @@
         "responses": {
           "200": {
             "description": "Success"
+          },
+          "201": {
+            "description": "Created"
           },
           "400": {
             "description": "Bad request"
@@ -3706,6 +4488,9 @@
           "200": {
             "description": "Success"
           },
+          "201": {
+            "description": "Created"
+          },
           "400": {
             "description": "Bad request"
           },
@@ -3721,7 +4506,7 @@
         }
       }
     },
-    "/api/v1/requests": {
+    "/api/v1/coach/requests": {
       "get": {
         "tags": [
           "Coach-assignment"
@@ -3736,6 +4521,9 @@
           "200": {
             "description": "Success"
           },
+          "201": {
+            "description": "Created"
+          },
           "400": {
             "description": "Bad request"
           },
@@ -3751,7 +4539,7 @@
         }
       }
     },
-    "/api/v1/requests/{id}/accept": {
+    "/api/v1/coach/requests/{id}/accept": {
       "post": {
         "tags": [
           "Coach-assignment"
@@ -3775,6 +4563,9 @@
         "responses": {
           "200": {
             "description": "Success"
+          },
+          "201": {
+            "description": "Created"
           },
           "400": {
             "description": "Bad request"
@@ -3801,7 +4592,7 @@
         }
       }
     },
-    "/api/v1/requests/{id}/reject": {
+    "/api/v1/coach/requests/{id}/reject": {
       "post": {
         "tags": [
           "Coach-assignment"
@@ -3825,6 +4616,9 @@
         "responses": {
           "200": {
             "description": "Success"
+          },
+          "201": {
+            "description": "Created"
           },
           "400": {
             "description": "Bad request"
@@ -3851,7 +4645,7 @@
         }
       }
     },
-    "/api/v1/clients": {
+    "/api/v1/coach/clients": {
       "get": {
         "tags": [
           "Coach-assignment"
@@ -3865,6 +4659,9 @@
         "responses": {
           "200": {
             "description": "Success"
+          },
+          "201": {
+            "description": "Created"
           },
           "400": {
             "description": "Bad request"
@@ -3881,7 +4678,7 @@
         }
       }
     },
-    "/api/v1/clients/{id}": {
+    "/api/v1/coach/clients/{id}": {
       "get": {
         "tags": [
           "Coach-assignment"
@@ -3905,6 +4702,9 @@
         "responses": {
           "200": {
             "description": "Success"
+          },
+          "201": {
+            "description": "Created"
           },
           "400": {
             "description": "Bad request"
@@ -3944,6 +4744,9 @@
           "200": {
             "description": "Success"
           },
+          "201": {
+            "description": "Created"
+          },
           "400": {
             "description": "Bad request"
           },
@@ -3959,7 +4762,7 @@
         }
       }
     },
-    "/api/v1/coach": {
+    "/api/v1/client/coach": {
       "get": {
         "tags": [
           "Coach-assignment"
@@ -3974,6 +4777,9 @@
           "200": {
             "description": "Success"
           },
+          "201": {
+            "description": "Created"
+          },
           "400": {
             "description": "Bad request"
           },
@@ -3989,7 +4795,7 @@
         }
       }
     },
-    "/api/v1/leave-coach": {
+    "/api/v1/client/leave-coach": {
       "post": {
         "tags": [
           "Coach-assignment"
@@ -4003,6 +4809,9 @@
         "responses": {
           "200": {
             "description": "Success"
+          },
+          "201": {
+            "description": "Created"
           },
           "400": {
             "description": "Bad request"
@@ -4044,6 +4853,9 @@
           "200": {
             "description": "Success"
           },
+          "201": {
+            "description": "Created"
+          },
           "400": {
             "description": "Bad request"
           },
@@ -4069,7 +4881,7 @@
         }
       }
     },
-    "/api/v1/questions": {
+    "/api/v1/client/questions": {
       "get": {
         "tags": [
           "Client-questions"
@@ -4079,6 +4891,9 @@
         "responses": {
           "200": {
             "description": "Success"
+          },
+          "201": {
+            "description": "Created"
           },
           "400": {
             "description": "Bad request"
@@ -4095,7 +4910,7 @@
         }
       }
     },
-    "/api/v1/answers": {
+    "/api/v1/client/answers": {
       "get": {
         "tags": [
           "Client-questions"
@@ -4109,6 +4924,9 @@
         "responses": {
           "200": {
             "description": "Success"
+          },
+          "201": {
+            "description": "Created"
           },
           "400": {
             "description": "Bad request"
@@ -4137,6 +4955,9 @@
         "responses": {
           "200": {
             "description": "Success"
+          },
+          "201": {
+            "description": "Created"
           },
           "400": {
             "description": "Bad request"
@@ -4176,6 +4997,9 @@
           "200": {
             "description": "Success"
           },
+          "201": {
+            "description": "Created"
+          },
           "400": {
             "description": "Bad request"
           },
@@ -4197,6 +5021,636 @@
                 "type": "object"
               }
             }
+          }
+        }
+      }
+    },
+    "/api/v1/coach/checkin/questions": {
+      "get": {
+        "tags": [
+          "CheckIn"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "CheckIn"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "question": {
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "NUMBER",
+                      "TEXT",
+                      "SINGLE_CHOICE",
+                      "YES_NO",
+                      "RATING",
+                      "IMAGE"
+                    ]
+                  },
+                  "options": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "required": {
+                    "type": "boolean"
+                  },
+                  "order": {
+                    "type": "integer",
+                    "minimum": 1
+                  }
+                },
+                "required": [
+                  "question",
+                  "type"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/coach/checkin/questions/reorder": {
+      "patch": {
+        "tags": [
+          "CheckIn"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "question_ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                },
+                "required": [
+                  "question_ids"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/coach/checkin/questions/{id}": {
+      "patch": {
+        "tags": [
+          "CheckIn"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "question": {
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "NUMBER",
+                      "TEXT",
+                      "SINGLE_CHOICE",
+                      "YES_NO",
+                      "RATING",
+                      "IMAGE"
+                    ]
+                  },
+                  "options": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "required": {
+                    "type": "boolean"
+                  },
+                  "order": {
+                    "type": "integer",
+                    "minimum": 1
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "CheckIn"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/v1/coach/checkin/assign": {
+      "post": {
+        "tags": [
+          "CheckIn"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "coach_client_id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "coach_clients.id (must be assigned via coach_clients)"
+                  }
+                },
+                "required": [
+                  "coach_client_id"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/coach/checkin/clients/{coachClientId}/submissions": {
+      "get": {
+        "tags": [
+          "CheckIn"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "coachClientId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/v1/coach/checkin/clients/{coachClientId}/submissions/{submissionId}": {
+      "get": {
+        "tags": [
+          "CheckIn"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "coachClientId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "submissionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/v1/client/checkin/questions": {
+      "get": {
+        "tags": [
+          "CheckIn"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/v1/client/checkin/submit": {
+      "post": {
+        "tags": [
+          "CheckIn"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "answers": {
+                    "type": "string",
+                    "description": "JSON string array of { question_id (uuid), answer_value (string) }. Example: [{\"question_id\":\"uuid\",\"answer_value\":\"76.4\"}]"
+                  }
+                },
+                "required": [
+                  "answers"
+                ],
+                "description": "Image answers: attach one file per IMAGE question with the field name = question_id (jpeg/png/webp, max 5MB each)."
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/client/checkin/hasassign": {
+      "get": {
+        "tags": [
+          "CheckIn"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/v1/client/checkin/submissions": {
+      "get": {
+        "tags": [
+          "CheckIn"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/v1/client/checkin/submissions/{submissionId}": {
+      "get": {
+        "tags": [
+          "CheckIn"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "submissionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
           }
         }
       }

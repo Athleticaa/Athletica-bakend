@@ -75,7 +75,7 @@ function syncToApidog(config: SyncConfig): void {
     };
 
     execSync(
-      `apidog import --project-id=${config.projectId} --file=${config.specPath}`,
+      `apidog import --project ${config.projectId} --format openapi --file "${config.specPath}" --access-token ${config.token}`,
       {
         stdio: "inherit",
         env,
@@ -99,10 +99,13 @@ function validateSync(config: SyncConfig): void {
       APIDOG_ACCESS_TOKEN: config.token,
     };
 
-    execSync(`apidog validate --project-id=${config.projectId}`, {
-      stdio: "inherit",
-      env,
-    });
+    execSync(
+      `apidog project get ${config.projectId} --access-token ${config.token}`,
+      {
+        stdio: "inherit",
+        env,
+      }
+    );
 
     console.log("\n✓ Validation passed");
   } catch (error) {

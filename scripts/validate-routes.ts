@@ -7,6 +7,7 @@ interface RouteInfo {
   middleware: string[];
   file: string;
   lineNumber: number;
+  routerVar: string;
 }
 
 interface ValidationSchema {
@@ -33,12 +34,14 @@ function extractRoutes(filePath: string): RouteInfo[] {
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     const match = line.match(
-      /router\.(get|post|put|delete|patch)\s*\(\s*["'`]([^"'`]+)["'`]\s*(?:,\s*(.+))?\)/i
+      /(\w+)\.(get|post|put|delete|patch)\s*\(\s*["'`]([^"'`]+)["'`]\s*(?:,\s*(.+))?\)/i
     );
     if (match) {
-      const method = match[1].toUpperCase();
-      const routePath = match[2];
-      const middlewareStr = match[3] || "";
+      const routerVar = match[1];
+      if (routerVar.toLowerCase() === "express") continue;
+      const method = match[2].toUpperCase();
+      const routePath = match[3];
+      const middlewareStr = match[4] || "";
       const middleware = middlewareStr
         .split(",")
         .map((m) => m.trim())
@@ -50,6 +53,7 @@ function extractRoutes(filePath: string): RouteInfo[] {
         middleware,
         file: filePath,
         lineNumber: i + 1,
+        routerVar,
       });
     }
   }
@@ -96,6 +100,7 @@ function validateRoutes(): ValidationResult[] {
     "profile/profile.routes.ts",
     "coach-assignment/coach-assignment.routes.ts",
     "client-questions/client-questions.routes.ts",
+    "checkin/checkin.routes.ts",
   ];
 
   const allRoutes: RouteInfo[] = [];
@@ -110,7 +115,9 @@ function validateRoutes(): ValidationResult[] {
 
   const routeGroups: Record<string, RouteInfo[]> = {};
   for (const route of allRoutes) {
-    const key = `${route.method}:${route.path}`;
+    // Include file + router var so coach/client check-in routers sharing
+    // the same sub-path (e.g. GET /questions) are not flagged as duplicates.
+    const key = `${route.method}:${path.basename(route.file)}:${route.routerVar}:${route.path}`;
     if (!routeGroups[key]) {
       routeGroups[key] = [];
     }

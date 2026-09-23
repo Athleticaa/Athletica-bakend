@@ -21,6 +21,16 @@ interface RouteInfo {
   path: string;
   middleware: string[];
   file: string;
+  routerVar: string;
+}
+
+interface RouteFileConfig {
+  file: string;
+  /** Default mount prefix from src/app.ts (e.g. "/api/v1/workout") */
+  mount: string;
+  tag: string;
+  /** Optional per-router-var mount overrides (for files exporting multiple routers) */
+  routers?: Record<string, string>;
 }
 
 const ROUTES_DIR = path.join(__dirname, "../src/modules");
@@ -34,22 +44,27 @@ function extractRoutes(filePath: string): RouteInfo[] {
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     const match = line.match(
-      /router\.(get|post|put|delete|patch)\s*\(\s*["'`]([^"'`]+)["'`]\s*(?:,\s*(.+))?\)/i
+      /(\w+)\.(get|post|put|delete|patch)\s*\(\s*["'`]([^"'`]+)["'`]\s*(?:,\s*(.+))?\)/i
     );
     if (match) {
-      const method = match[1].toLowerCase();
-      const routePath = match[2];
-      const middlewareStr = match[3] || "";
+      const routerVar = match[1];
+      // Skip the `Router()` factory call itself (e.g. `Router()` has no method prefix match,
+      // but guard against false positives like `express.Router` noise).
+      if (routerVar.toLowerCase() === "express") continue;
+      const method = match[2].toLowerCase();
+      const routePath = match[3];
+      const middlewareStr = match[4] || "";
       const middleware = middlewareStr
         .split(",")
         .map((m) => m.trim())
-        .filter((m) => m && !m.includes("controller"));
+        .filter((m) => m && !m.includes("controller") && !m.includes("upload"));
 
       routes.push({
         method,
         path: routePath,
         middleware,
         file: filePath,
+        routerVar,
       });
     }
   }
@@ -68,87 +83,257 @@ function getAuthRequirements(middleware: string[]): any {
   return [];
 }
 
-function getTags(filePath: string): string[] {
-  const fileName = path.basename(filePath, ".routes.ts");
-  return [fileName.charAt(0).toUpperCase() + fileName.slice(1)];
-}
-
-function generateRequestBody(method: string, routePath: string): any {
+function getRequestBodySpec(
+  method: string,
+  fullPath: string,
+  routePath: string
+): { contentType: string; schema: any } | undefined {
   if (method === "get" || method === "delete") {
     return undefined;
   }
 
-  const schema: any = {
-    type: "object",
-    properties: {},
-  };
+  const JSON = "application/json";
 
+  // ── Check-In (coach) ───────────────────────────────────────────
+  if (fullPath === "/api/v1/coach/checkin/questions" && method === "post") {
+    return {
+      contentType: JSON,
+      schema: {
+        type: "object",
+        properties: {
+          question: { type: "string", maxLength: 500 },
+          type: {
+            type: "string",
+            enum: ["NUMBER", "TEXT", "SINGLE_CHOICE", "YES_NO", "RATING", "IMAGE"],
+          },
+          options: { type: "array", items: { type: "string" } },
+          required: { type: "boolean" },
+          order: { type: "integer", minimum: 1 },
+        },
+        required: ["question", "type"],
+      },
+    };
+  }
+
+  if (fullPath === "/api/v1/coach/checkin/questions/reorder" && method === "patch") {
+    return {
+      contentType: JSON,
+      schema: {
+        type: "object",
+        properties: {
+          question_ids: {
+            type: "array",
+            items: { type: "string", format: "uuid" },
+          },
+        },
+        required: ["question_ids"],
+      },
+    };
+  }
+
+  if (
+    fullPath.startsWith("/api/v1/coach/checkin/questions/") &&
+    method === "patch"
+  ) {
+    return {
+      contentType: JSON,
+      schema: {
+        type: "object",
+        properties: {
+          question: { type: "string", maxLength: 500 },
+          type: {
+            type: "string",
+            enum: ["NUMBER", "TEXT", "SINGLE_CHOICE", "YES_NO", "RATING", "IMAGE"],
+          },
+          options: { type: "array", items: { type: "string" } },
+          required: { type: "boolean" },
+          order: { type: "integer", minimum: 1 },
+        },
+      },
+    };
+  }
+
+  // ── Check-In: assign ───────────────────────────────────────────────
+  if (fullPath === "/api/v1/coach/checkin/assign" && method === "post") {
+    return {
+      contentType: JSON,
+      schema: {
+        type: "object",
+        properties: {
+          coach_client_id: { type: "string", format: "uuid", description: "coach_clients.id (must be assigned via coach_clients)" },
+        },
+        required: ["coach_client_id"],
+      },
+    };
+  }
+
+  // ── Check-In (client submit — multipart/form-data) ─────────────
+  if (fullPath === "/api/v1/client/checkin/submit" && method === "post") {
+    return {
+      contentType: "multipart/form-data",
+      schema: {
+        type: "object",
+        properties: {
+          answers: {
+            type: "string",
+            description:
+              'JSON string array of { question_id (uuid), answer_value (string) }. Example: [{"question_id":"uuid","answer_value":"76.4"}]',
+          },
+        },
+        required: ["answers"],
+        description:
+          "Image answers: attach one file per IMAGE question with the field name = question_id (jpeg/png/webp, max 5MB each).",
+      },
+    };
+  }
+
+  // ── Auth ───────────────────────────────────────────────────────
   if (routePath.includes("/signup")) {
-    schema.properties = {
-      username: { type: "string", minLength: 1, maxLength: 100 },
-      email: { type: "string", format: "email" },
-      password: { type: "string", minLength: 8 },
-      role: { type: "string", enum: ["coach", "client"] },
-      gender: { type: "string" },
-      goal: { type: "string" },
-      bio: { type: "string" },
-      specialization: { type: "string" },
+    return {
+      contentType: JSON,
+      schema: {
+        type: "object",
+        properties: {
+          username: { type: "string", minLength: 1, maxLength: 100 },
+          email: { type: "string", format: "email" },
+          password: { type: "string", minLength: 8 },
+          role: { type: "string", enum: ["coach", "client"] },
+          gender: { type: "string" },
+          goal: { type: "string" },
+          bio: { type: "string" },
+          specialization: { type: "string" },
+        },
+        required: ["username", "email", "password", "role"],
+      },
     };
-    schema.required = ["username", "email", "password", "role"];
   } else if (routePath.includes("/login")) {
-    schema.properties = {
-      email: { type: "string", format: "email" },
-      password: { type: "string" },
+    return {
+      contentType: JSON,
+      schema: {
+        type: "object",
+        properties: {
+          email: { type: "string", format: "email" },
+          password: { type: "string" },
+        },
+        required: ["email", "password"],
+      },
     };
-    schema.required = ["email", "password"];
-  } else if (routePath.includes("/templates") && !routePath.includes("/days") && !routePath.includes("/exercises")) {
-    schema.properties = {
-      title: { type: "string", maxLength: 100 },
-      description: { type: "string", maxLength: 500 },
+  }
+
+  // ── Workout / Nutrition templates ──────────────────────────────
+  if (
+    routePath.includes("/templates") &&
+    !routePath.includes("/days") &&
+    !routePath.includes("/exercises") &&
+    !routePath.includes("/meals") &&
+    !routePath.includes("/foods")
+  ) {
+    // POST /templates/:tid/assign has its own shape
+    if (routePath.includes("/assign")) {
+      return {
+        contentType: JSON,
+        schema: {
+          type: "object",
+          properties: {
+            coach_client_id: { type: "string", format: "uuid" },
+            title: { type: "string" },
+            description: { type: "string" },
+          },
+          required: ["coach_client_id"],
+        },
+      };
+    }
+    return {
+      contentType: JSON,
+      schema: {
+        type: "object",
+        properties: {
+          title: { type: "string", maxLength: 100 },
+          description: { type: "string", maxLength: 500 },
+        },
+        required: ["title", "description"],
+      },
     };
-    schema.required = ["title", "description"];
   } else if (routePath.includes("/assign")) {
-    schema.properties = {
-      coach_client_id: { type: "string", format: "uuid" },
-      title: { type: "string" },
-      description: { type: "string" },
+    return {
+      contentType: JSON,
+      schema: {
+        type: "object",
+        properties: {
+          coach_client_id: { type: "string", format: "uuid" },
+          title: { type: "string" },
+          description: { type: "string" },
+        },
+        required: ["coach_client_id"],
+      },
     };
-    schema.required = ["coach_client_id"];
-  } else if (routePath.includes("/exercises") && !routePath.includes("/complete") && !routePath.includes("/uncomplete")) {
-    schema.properties = {
-      exercise_id: { type: "string", format: "uuid" },
-      exercise_order: { type: "integer", minimum: 1 },
-      notes: { type: "string" },
+  } else if (
+    routePath.includes("/exercises") &&
+    !routePath.includes("/complete") &&
+    !routePath.includes("/uncomplete")
+  ) {
+    return {
+      contentType: JSON,
+      schema: {
+        type: "object",
+        properties: {
+          exercise_id: { type: "string", format: "uuid" },
+          exercise_order: { type: "integer", minimum: 1 },
+          notes: { type: "string" },
+        },
+        required: ["exercise_id"],
+      },
     };
-    schema.required = ["exercise_id"];
   } else if (routePath.includes("/meals") && !routePath.includes("/foods")) {
-    schema.properties = {
-      meal_type: { type: "string" },
-      meal_order: { type: "integer", minimum: 1 },
-      notes: { type: "string" },
+    return {
+      contentType: JSON,
+      schema: {
+        type: "object",
+        properties: {
+          meal_type: { type: "string" },
+          meal_order: { type: "integer", minimum: 1 },
+          notes: { type: "string" },
+        },
+        required: ["meal_type"],
+      },
     };
-    schema.required = ["meal_type"];
-  } else if (routePath.includes("/foods") && !routePath.includes("/complete") && !routePath.includes("/uncomplete")) {
-    schema.properties = {
-      food_id: { type: "string", format: "uuid" },
-      quantity: { type: "number", minimum: 0 },
+  } else if (
+    routePath.includes("/foods") &&
+    !routePath.includes("/complete") &&
+    !routePath.includes("/uncomplete")
+  ) {
+    return {
+      contentType: JSON,
+      schema: {
+        type: "object",
+        properties: {
+          food_id: { type: "string", format: "uuid" },
+          quantity: { type: "number", minimum: 0 },
+        },
+        required: ["food_id", "quantity"],
+      },
     };
-    schema.required = ["food_id", "quantity"];
   } else if (routePath.includes("/reorder")) {
-    schema.properties = {
-      day_ids: { type: "array", items: { type: "string", format: "uuid" } },
+    return {
+      contentType: JSON,
+      schema: {
+        type: "object",
+        properties: {
+          day_ids: { type: "array", items: { type: "string", format: "uuid" } },
+        },
+        required: ["day_ids"],
+      },
     };
-    schema.required = ["day_ids"];
   }
 
-  if (Object.keys(schema.properties).length === 0) {
-    return { type: "object" };
-  }
-
-  return schema;
+  return { contentType: JSON, schema: { type: "object" } };
 }
 
-function generateParameters(routePath: string, method: string): any[] {
+function generateParameters(
+  routePath: string,
+  method: string,
+  fullPath: string
+): any[] {
   const params: any[] = [];
 
   const uuidParams = routePath.match(/:([a-zA-Z]+)/g);
@@ -164,7 +349,7 @@ function generateParameters(routePath: string, method: string): any[] {
     }
   }
 
-  if (method === "get" && routePath.includes("/exercises")) {
+  if (method === "get" && fullPath.includes("/workout/exercises")) {
     params.push(
       { name: "search", in: "query", schema: { type: "string" } },
       { name: "bodyPart", in: "query", schema: { type: "string" } },
@@ -180,7 +365,7 @@ function generateParameters(routePath: string, method: string): any[] {
     );
   }
 
-  if (method === "get" && routePath.includes("/foods")) {
+  if (method === "get" && fullPath.includes("/nutrition/foods")) {
     params.push(
       { name: "search", in: "query", schema: { type: "string" } },
       { name: "categoryId", in: "query", schema: { type: "string", format: "uuid" } },
@@ -230,49 +415,72 @@ function generateOpenAPISpec(): OpenAPISchema {
     },
   };
 
-  const routeFiles = [
-    "auth/auth.routes.ts",
-    "workout/workout.routes.ts",
-    "nutrition/nutrition.routes.ts",
-    "profile/profile.routes.ts",
-    "coach-assignment/coach-assignment.routes.ts",
-    "client-questions/client-questions.routes.ts",
+  // Mount prefixes mirror src/app.ts
+  const routeFiles: RouteFileConfig[] = [
+    { file: "auth/auth.routes.ts", mount: "/api/v1/auth", tag: "Auth" },
+    { file: "workout/workout.routes.ts", mount: "/api/v1/workout", tag: "Workout" },
+    { file: "nutrition/nutrition.routes.ts", mount: "/api/v1/nutrition", tag: "Nutrition" },
+    { file: "profile/profile.routes.ts", mount: "/api/v1/profile", tag: "Profile" },
+    {
+      file: "coach-assignment/coach-assignment.routes.ts",
+      mount: "/api/v1",
+      tag: "Coach-assignment",
+      routers: {
+        coachRouter: "/api/v1/coach",
+        clientCoachRouter: "/api/v1/client",
+        requestsRouter: "/api/v1",
+      },
+    },
+    { file: "client-questions/client-questions.routes.ts", mount: "/api/v1/client", tag: "Client-questions" },
+    {
+      file: "checkin/checkin.routes.ts",
+      mount: "/api/v1",
+      tag: "CheckIn",
+      routers: {
+        coachCheckInRouter: "/api/v1/coach/checkin",
+        clientCheckInRouter: "/api/v1/client/checkin",
+      },
+    },
   ];
 
   for (const routeFile of routeFiles) {
-    const filePath = path.join(ROUTES_DIR, routeFile);
+    const filePath = path.join(ROUTES_DIR, routeFile.file);
     if (!fs.existsSync(filePath)) continue;
 
     const routes = extractRoutes(filePath);
-    const tags = getTags(filePath);
 
     for (const route of routes) {
-      const openAPIPath = convertExpressPathToOpenAPI(route.path);
-      const fullPath = `/api/v1${openAPIPath}`;
+      const mount =
+        (routeFile.routers && routeFile.routers[route.routerVar]) ||
+        routeFile.mount;
+      const routeSuffix = route.path === "/" ? "" : route.path;
+      const openAPIPath = convertExpressPathToOpenAPI(routeSuffix);
+      const fullPath = `${mount}${openAPIPath}`;
 
       if (!spec.paths[fullPath]) {
         spec.paths[fullPath] = {};
       }
 
       const operation: any = {
-        tags,
+        tags: [routeFile.tag],
         security: getAuthRequirements(route.middleware),
-        parameters: generateParameters(route.path, route.method),
+        parameters: generateParameters(route.path, route.method, fullPath),
         responses: {
-          "200": { description: "Success" },
-          "400": { description: "Bad request" },
-          "401": { description: "Unauthorized" },
-          "403": { description: "Forbidden" },
-          "404": { description: "Not found" },
+          "200": { description: "Success", content: getResponseContent(route.method, fullPath, "200") },
+          "201": { description: "Created", content: getResponseContent(route.method, fullPath, "201") },
+          "400": { description: "Bad request", content: errorBody },
+          "401": { description: "Unauthorized", content: errorBody },
+          "403": { description: "Forbidden", content: errorBody },
+          "404": { description: "Not found", content: errorBody },
         },
       };
 
-      const requestBody = generateRequestBody(route.method, route.path);
-      if (requestBody) {
+      const bodySpec = getRequestBodySpec(route.method, fullPath, route.path);
+      if (bodySpec) {
         operation.requestBody = {
           required: true,
           content: {
-            "application/json": { schema: requestBody },
+            [bodySpec.contentType]: { schema: bodySpec.schema },
           },
         };
       }
