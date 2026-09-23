@@ -6,6 +6,7 @@ import { JwtService } from "../../lib/jwt";
 import { EmailService } from "../../services/email";
 import { PrismaClientToken } from "../../di/tokens";
 import type { SignupInput } from "./auth.validation";
+import { createDefaultCheckInQuestions } from "../checkin/checkin-defaults";
 
 const SALT_ROUNDS = 12;
 
@@ -65,45 +66,54 @@ export class AuthService {
 
     const trimmedUsername = typeof input.username === "string" ? input.username.trim() : input.username;
     const hashedPassword = await this.hashPassword(input.password);
-    const user = await this.prisma.users.create({
-      data: {
-        username: trimmedUsername,
-        email,
-        password: hashedPassword,
-        role: input.role,
-        provider: "email",
-      },
-    });
-
-    if (input.role === "client") {
-      await this.prisma.client_profiles.create({
-        data: {
-          user_id: user.id,
-          gender: input.gender || "unspecified",
-          goal: input.goal || "not_set",
-        },
-      });
-    } else if (input.role === "coach") {
-      await this.prisma.coach_profiles.create({
-        data: {
-          user_id: user.id,
-          bio: input.bio || "",
-          specialization: input.specialization || "general",
-        },
-      });
-    }
 
     const code = this.generateCode();
     const codeHash = this.hashToken(code);
-    await this.prisma.verification_codes.create({
-      data: {
-        user_id: user.id,
-        code_hash: codeHash,
-        expires_at: new Date(Date.now() + 10 * 60 * 1000),
-      },
+
+    // All writes in one transaction: user + profile + defaults + verification code.
+    // Prevents orphaned user if coach profile/defaults seeding fails.
+    let createdUserEmail = email;
+    await this.prisma.$transaction(async (tx) => {
+      const user = await tx.users.create({
+        data: {
+          username: trimmedUsername,
+          email,
+          password: hashedPassword,
+          role: input.role,
+          provider: "email",
+        },
+      });
+      createdUserEmail = user.email;
+
+      if (input.role === "client") {
+        await tx.client_profiles.create({
+          data: {
+            user_id: user.id,
+            gender: input.gender || "unspecified",
+            goal: input.goal || "not_set",
+          },
+        });
+      } else if (input.role === "coach") {
+        const coachProfile = await tx.coach_profiles.create({
+          data: {
+            user_id: user.id,
+            bio: input.bio || "",
+            specialization: input.specialization || "general",
+          },
+        });
+        await createDefaultCheckInQuestions(tx, coachProfile.id);
+      }
+
+      await tx.verification_codes.create({
+        data: {
+          user_id: user.id,
+          code_hash: codeHash,
+          expires_at: new Date(Date.now() + 10 * 60 * 1000),
+        },
+      });
     });
 
-    await this.emailService.sendVerificationCode(user.email, code, lng).catch(() => {});
+    await this.emailService.sendVerificationCode(createdUserEmail, code, lng).catch(() => {});
   }
 
   private generateRefreshToken(): string {
