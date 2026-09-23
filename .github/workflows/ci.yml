@@ -4,29 +4,46 @@ on:
   pull_request:
     branches: [main]
 
+# Cancel superseded runs on the same branch/PR
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   ci:
     runs-on: ubuntu-latest
 
     env:
       DATABASE_URL: postgresql://user:password@localhost:5432/dummy
+      JWT_SECRET: ci-test-secret
 
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
-      - run: npm ci
+      - name: Install dependencies
+        run: npm ci
 
-      - run: npx prisma generate
+      # postinstall already runs `prisma generate` (with dummy DATABASE_URL fallback
+      # in prisma.config.ts), this step is a no-op but kept for explicitness
+      - name: Generate Prisma Client
+        run: npx prisma generate
 
-      - run: npm run lint
+      - name: Lint
+        run: npm run lint
 
-      - run: npx tsc --noEmit
+      - name: Typecheck
+        run: npx tsc --noEmit
 
-      - run: npm test
+      # Only unit tests here — integration tests need a real postgres service
+      # (see tests.yml `integration` job). Running `npm test` without a DB would
+      # try to connect to the dummy DATABASE_URL and fail.
+      - name: Unit tests
+        run: npm test -- tests/unit -- --forceExit
 
-      - run: npm run build
+      - name: Build
+        run: npm run build

@@ -5,34 +5,54 @@ on:
   pull_request:
   workflow_dispatch:
 
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   typecheck:
     name: Typecheck (tsc)
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql://user:password@localhost:5432/dummy
+      JWT_SECRET: ci-test-secret
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-      - run: npm ci
-      - run: npx tsc --noEmit
+      - name: Install dependencies
+        run: npm ci
+      - name: Typecheck
+        run: npx tsc --noEmit
 
   unit:
     name: Unit (${{ matrix.suite }})
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql://user:password@localhost:5432/dummy
+      JWT_SECRET: ci-test-secret
     strategy:
       fail-fast: false
       matrix:
-        suite: [auth, coach-assignment, workout-exercise-logs, workout-maintenance]
+        suite:
+          - auth
+          - coach-assignment
+          - workout-exercise-logs
+          - workout-maintenance
+          - checkin
+          - checkin-questions-gate
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-      - run: npm ci
-      - run: npm test -- tests/unit/${{ matrix.suite }}.test.ts
+      - name: Install dependencies
+        run: npm ci
+      - name: Run unit suite — ${{ matrix.suite }}
+        run: npm test -- tests/unit/${{ matrix.suite }}.test.ts -- --forceExit
 
   integration:
     name: Integration (auth + postgres)
@@ -46,7 +66,7 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd pg_isready
+          --health-cmd pg_isready -U postgres
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -59,6 +79,9 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - run: npm ci
-      - run: npx prisma migrate deploy
-      - run: npm test -- tests/integration
+      - name: Install dependencies
+        run: npm ci
+      - name: Apply migrations
+        run: npx prisma migrate deploy
+      - name: Integration tests
+        run: npm test -- tests/integration -- --forceExit
