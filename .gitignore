@@ -5,8 +5,9 @@ node_modules
 .agents
 specs
 dist
-prisma/*
-/docs
+prisma/migrations/.tmp
+/docs/*
+!/docs/COACH_ACHIEVEMENTS_APIDOG.md
 plan.md
 init_schema.txt
 
