@@ -57,7 +57,11 @@ router.get("/my/plans/:pid", authenticate, authorize("client"), controller.getPl
 router.post("/exercises/:elid/complete", authenticate, authorize("client"), controller.completeExercise);
 router.post("/exercises/:elid/uncomplete", authenticate, authorize("client"), controller.uncompleteExercise);
 
-// Client History (US9) - Client only
-router.get("/history", authenticate, authorize("client"), controller.getHistory);
+  // Client History (US9) - Client only
+  router.get("/history", authenticate, authorize("client"), controller.getHistory);
+
+  // Streak (assignment start → today)
+  router.get("/streak", authenticate, authorize("client"), controller.getStreak);
+  router.get("/clients/:coachClientId/streak", authenticate, authorize("coach"), controller.getClientStreak);
 
 export default router;

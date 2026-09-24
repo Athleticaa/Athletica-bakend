@@ -107,6 +107,7 @@
   "coach_client_id_required": "معرف علاقة المدرب بالعميل مطلوب ويجب أن يكون UUID صالحاً",
   "invalid_client_id": "يجب أن يكون معرف العميل UUID صالحاً",
   "client_not_assigned_to_coach": "العميل غير معين لهذا المدرب",
+  "assignment_not_found": "لا يوجد ارتباط بين المدرب والعميل",
   "plan_not_found": "الخطة غير موجودة",
   "template_has_no_meals": "القالب لا يحتوي على وجبات للتخصيص",
   "no_active_plan_found": "لا توجد خطة تغذية نشطة",
@@ -212,5 +213,13 @@
   "invalid_limit": "يجب أن يكون الحد عددًا صحيحًا موجبًا ضمن النطاق المسموح",
   "invalid_cursor": "المؤشر غير صالح",
   "ably_not_configured": "خدمة الوقت الحقيقي غير مهيأة",
-  "outbox_not_configured": "معالج الأحداث غير مهيأ"
+  "outbox_not_configured": "معالج الأحداث غير مهيأ",
+  "pdf_required": "ملف PDF مطلوب",
+  "title_required": "العنوان مطلوب",
+  "title_too_long": "يجب ألا يتجاوز العنوان 200 حرف",
+  "achievement_not_found": "الإنجاز غير موجود",
+  "achievement_deleted": "تم حذف الإنجاز بنجاح",
+  "achievement_invalid_file_type": "نوع الملف غير صالح. يُسمح فقط بملفات PDF للإنجازات",
+  "achievement_file_too_large": "الملف كبير جداً (الحد الأقصى 10 ميجابايت)",
+  "achievement_limit_reached": "تم الوصول للحد الأقصى للإنجازات (50)"
 }

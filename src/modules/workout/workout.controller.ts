@@ -598,4 +598,27 @@ export class WorkoutController {
       this.handleError(res, err);
     }
   };
+
+  // =========================================================================
+  // Streak (assignment start → today)
+  // =========================================================================
+
+  getStreak = async (req: Request, res: Response) => {
+    try {
+      const data = await this.clientService.getStreakSelf(this.userId(req));
+      res.status(200).json({ success: true, data });
+    } catch (err) {
+      this.handleError(res, err);
+    }
+  };
+
+  getClientStreak = async (req: Request, res: Response) => {
+    try {
+      const coachClientId = this.param(req, "coachClientId");
+      const data = await this.clientService.getStreakByCoachClient(this.userId(req), coachClientId);
+      res.status(200).json({ success: true, data });
+    } catch (err) {
+      this.handleError(res, err);
+    }
+  };
 }

@@ -873,6 +873,48 @@
               ]
             }
           }
+        },
+        {
+          "name": "Get My Nutrition Streak",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/nutrition/streak",
+              "host": ["{{baseUrl}}"],
+              "path": ["nutrition", "streak"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Client Streak - Coach only",
+      "description": "Coach view of a client nutrition streak (keyed by coach_clients.id)",
+      "item": [
+        {
+          "name": "Get Client Nutrition Streak",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/nutrition/clients/{{coachClientId}}/streak",
+              "host": ["{{baseUrl}}"],
+              "path": ["nutrition", "clients", "{{coachClientId}}", "streak"]
+            }
+          }
         }
       ]
     }

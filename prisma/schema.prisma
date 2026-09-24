@@ -83,6 +83,7 @@ model coach_profiles {
   checkin_submissions checkin_submissions[]
   checkin_assignments checkin_assignments[]
   conversations       conversations[]       @relation("conversations_coach_id")
+  coach_achievements  coach_achievements[]
 
   @@index([active_invite_code])
 }
@@ -588,5 +589,20 @@ model checkin_assignments {
   @@unique([coach_client_id])
   @@index([coach_id])
   @@index([client_id])
+}
+
+model coach_achievements {
+  id         String   @id @default(uuid()) @db.Uuid
+  coach_id   String   @db.Uuid
+  title      String   @db.VarChar(200)
+  file_url   String   @db.VarChar
+  file_name  String?  @db.VarChar
+  file_size  Int?
+  mime_type  String   @default("application/pdf") @db.VarChar
+  created_at DateTime @default(now())
+
+  coach coach_profiles @relation(fields: [coach_id], references: [id], onDelete: Cascade)
+
+  @@index([coach_id, created_at])
 }
 

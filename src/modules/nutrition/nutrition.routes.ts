@@ -45,8 +45,12 @@ router.delete("/plans/:pid/meals/:mid/foods/:fid", authenticate, authorize("coac
 router.get("/today", authenticate, authorize("client"), controller.getTodayMeals);
 router.get("/my/plans", authenticate, authorize("client"), controller.getMyPlan);
 router.get("/my/plans/:pid", authenticate, authorize("client"), controller.getPlanDetails);
-router.post("/meals/:mlid/complete", authenticate, authorize("client"), controller.completeMeal);
-router.post("/meals/:mlid/uncomplete", authenticate, authorize("client"), controller.uncompleteMeal);
-router.get("/history", authenticate, authorize("client"), controller.getHistory);
+  router.post("/meals/:mlid/complete", authenticate, authorize("client"), controller.completeMeal);
+  router.post("/meals/:mlid/uncomplete", authenticate, authorize("client"), controller.uncompleteMeal);
+  router.get("/history", authenticate, authorize("client"), controller.getHistory);
+
+  // Streak (assignment start → today)
+  router.get("/streak", authenticate, authorize("client"), controller.getStreak);
+  router.get("/clients/:coachClientId/streak", authenticate, authorize("coach"), controller.getClientStreak);
 
 export default router;
