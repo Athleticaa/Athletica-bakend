@@ -3,7 +3,7 @@ import { PrismaClientToken } from "../../di/tokens";
 import { PrismaClient } from "@prisma/client";
 import { ServiceError } from "../../lib/service-error";
 import { WorkoutBaseService } from "./workout.base.service";
-import { todayDateOnly, daysBetween, formatDateOnly, toDateOnly, addDays } from "../nutrition/nutrition.utils";
+import { todayDateOnly, daysBetween, formatDateOnly, toDateOnly, toCairoDateOnly, addDays, calcStreak } from "../nutrition/nutrition.utils";
 
 @injectable()
 export class WorkoutClientService extends WorkoutBaseService {
@@ -401,5 +401,137 @@ export class WorkoutClientService extends WorkoutBaseService {
     }
 
     return { history };
+  }
+
+  // =========================================================================
+  // Streak (assignment start → today, rest days surface as "rest")
+  // =========================================================================
+
+  private async resolveAssignmentByClient(clientId: string) {
+    const assignment = await this.prisma.coach_clients.findFirst({ where: { client_id: clientId } });
+    if (!assignment) throw new ServiceError("assignment_not_found", 404);
+    return assignment;
+  }
+
+  private async resolveAssignmentForCoach(coachUserId: string, coachClientId: string) {
+    const coach = await this.prisma.coach_profiles.findFirst({ where: { user_id: coachUserId } });
+    if (!coach) throw new ServiceError("coach_profile_not_found", 404);
+    const assignment = await this.prisma.coach_clients.findFirst({
+      where: { id: coachClientId, coach_id: coach.id },
+    });
+    if (!assignment) throw new ServiceError("client_not_assigned_to_coach", 404);
+    return assignment;
+  }
+
+  async getStreakSelf(userId: string) {
+    const clientId = await this.getClientProfileId(userId);
+    const assignment = await this.resolveAssignmentByClient(clientId);
+    return this.buildStreak(assignment.id, clientId, toCairoDateOnly(new Date(assignment.created_at)));
+  }
+
+  async getStreakByCoachClient(coachUserId: string, coachClientId: string) {
+    const assignment = await this.resolveAssignmentForCoach(coachUserId, coachClientId);
+    return this.buildStreak(assignment.id, assignment.client_id, toCairoDateOnly(new Date(assignment.created_at)));
+  }
+
+  private async buildStreak(coachClientId: string, clientId: string, rangeStart: Date) {
+    const today = todayDateOnly();
+    // Guard against future-dated assignments (clock skew): clamp to a 1-day window.
+    if (rangeStart.getTime() > today.getTime()) rangeStart = today;
+
+    const plan = await this.prisma.workout_plans.findFirst({
+      where: { coach_client: { client_id: clientId }, is_active: true, deleted_at: null },
+      orderBy: { created_at: "desc" },
+      include: {
+        workout_days: {
+          orderBy: { day_number: "asc" },
+          include: { _count: { select: { workout_day_exercises: true } } },
+        },
+      },
+    });
+
+    const logs = await this.prisma.workout_exercise_logs.findMany({
+      where: { client_id: clientId, workout_date: { gte: rangeStart, lte: today } },
+      select: { workout_date: true, completed: true, workout_day_id: true },
+    });
+
+    const logsByDate = new Map<string, { total: number; done: number; dayId: string | null }>();
+    for (const log of logs) {
+      const key = formatDateOnly(new Date(log.workout_date));
+      const bucket = logsByDate.get(key);
+      if (bucket) {
+        bucket.total += 1;
+        if (log.completed) bucket.done += 1;
+      } else {
+        logsByDate.set(key, { total: 1, done: log.completed ? 1 : 0, dayId: log.workout_day_id ?? null });
+      }
+    }
+
+    const cycleDayForDate = (date: Date) => {
+      if (!plan) return null;
+      const dayNumber = (daysBetween(new Date(plan.start_date), date) % plan.cycle_days) + 1;
+      return plan.workout_days.find((d: any) => d.day_number === dayNumber) ?? null;
+    };
+
+    const days = [];
+    const statuses: Array<"completed" | "missed" | "rest"> = [];
+    for (let cursor = new Date(rangeStart); cursor.getTime() <= today.getTime(); cursor = addDays(cursor, 1)) {
+      const dateKey = formatDateOnly(cursor);
+      const bucket = logsByDate.get(dateKey);
+      const expected = cycleDayForDate(cursor);
+      const isRest = expected ? (expected as any).is_rest === true : false;
+
+      if (isRest) {
+        statuses.push("rest");
+        days.push({
+          date: dateKey,
+          status: "rest",
+          day_number: (expected as any).day_number,
+          day_id: (expected as any).id,
+          title: (expected as any).title,
+          is_rest: true,
+          total_exercises: 0,
+          completed_exercises: 0,
+        });
+        continue;
+      }
+
+      if (bucket && bucket.total > 0) {
+        const completed = bucket.done >= bucket.total;
+        statuses.push(completed ? "completed" : "missed");
+        days.push({
+          date: dateKey,
+          status: completed ? "completed" : "missed",
+          day_number: (expected as any)?.day_number ?? null,
+          day_id: bucket.dayId ?? (expected as any)?.id ?? null,
+          title: (expected as any)?.title ?? "",
+          is_rest: false,
+          total_exercises: bucket.total,
+          completed_exercises: bucket.done,
+        });
+        continue;
+      }
+
+      statuses.push("missed");
+      days.push({
+        date: dateKey,
+        status: "missed",
+        day_number: (expected as any)?.day_number ?? null,
+        day_id: (expected as any)?.id ?? null,
+        title: (expected as any)?.title ?? "",
+        is_rest: false,
+        total_exercises: (expected as any)?._count?.workout_day_exercises ?? 0,
+        completed_exercises: 0,
+      });
+    }
+
+    return {
+      client_id: clientId,
+      coach_client_id: coachClientId,
+      from: formatDateOnly(rangeStart),
+      to: formatDateOnly(today),
+      ...calcStreak(statuses),
+      days,
+    };
   }
 }
