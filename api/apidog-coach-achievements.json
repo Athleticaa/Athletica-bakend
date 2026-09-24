@@ -1,0 +1,189 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Athletica - Coach Achievements (Apidog import)",
+    "version": "1.0.0",
+    "description": "PDF + title achievements linked to coach_profiles. Import: Apidog > Import > OpenAPI (paste JSON or file). BaseURL: https://api.athletica.app/api/v1 or http://localhost:3000/api/v1. Auth: Bearer JWT (role-guarded). See docs/COACH_ACHIEVEMENTS_APIDOG.md for manual."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Local"
+    },
+    {
+      "url": "https://api.athletica.app",
+      "description": "Production"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/api/v1/coach/achievements": {
+      "post": {
+        "tags": ["CoachAchievements"],
+        "summary": "Upload achievement PDF + title (coach)",
+        "description": "Coach uploads one PDF with required title. File: field `pdf` (application/pdf, max 10MB). Text: field `title` (1..200 chars, trimmed). Storage: Cloudinary athletica/achievements resource_type raw. Quota: max 50 per coach. Returns 201 with created row.",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "Authorization", "in": "header", "required": true, "schema": { "type": "string" }, "example": "Bearer <coach JWT>" },
+          { "name": "Accept", "in": "header", "required": false, "schema": { "type": "string", "default": "application/json" }, "example": "application/json" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["title", "pdf"],
+                "properties": {
+                  "title": { "type": "string", "minLength": 1, "maxLength": 200, "description": "Trimmed; empty -> title_required, >200 -> title_too_long", "example": "IFBB Pro Certificate 2024" },
+                  "pdf": { "type": "string", "format": "binary", "description": "application/pdf, max 10MB, non-empty. Wrong MIME -> achievement_invalid_file_type 400, >10MB -> achievement_file_too_large 413" }
+                }
+              },
+              "encoding": {
+                "pdf": { "contentType": "application/pdf" },
+                "title": { "contentType": "text/plain" }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "example": {
+                  "id": "b2c3d4e5-f6a7-4890-9bcd-ef1234567890",
+                  "coach_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+                  "title": "IFBB Pro Certificate 2024",
+                  "file_url": "https://res.cloudinary.com/demo/raw/upload/v1234567890/athletica/achievements/coach-a1b2c3d4-1234567890123.pdf",
+                  "file_name": "certificate.pdf",
+                  "file_size": 245760,
+                  "mime_type": "application/pdf",
+                  "created_at": "2026-09-24T15:30:00.000Z"
+                }
+              }
+            }
+          },
+          "400": { "description": "title_required | title_too_long | pdf_required | achievement_invalid_file_type | achievement_limit_reached | coach_profile_not_found" },
+          "401": { "description": "Missing/expired JWT" },
+          "403": { "description": "Not a coach" },
+          "413": { "description": "achievement_file_too_large (max 10MB)" }
+        }
+      },
+      "get": {
+        "tags": ["CoachAchievements"],
+        "summary": "List my achievements (coach)",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "Authorization", "in": "header", "required": true, "schema": { "type": "string" }, "example": "Bearer <coach JWT>" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success - newest first, take 100",
+            "content": {
+              "application/json": {
+                "example": {
+                  "achievements": [
+                    {
+                      "id": "b2c3d4e5-f6a7-4890-9bcd-ef1234567890",
+                      "coach_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+                      "title": "IFBB Pro Certificate 2024",
+                      "file_url": "https://res.cloudinary.com/demo/raw/upload/v123/athletica/achievements/coach-xxx.pdf",
+                      "file_name": "certificate.pdf",
+                      "file_size": 245760,
+                      "mime_type": "application/pdf",
+                      "created_at": "2026-09-24T15:30:00.000Z"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" },
+          "403": { "description": "Not a coach" },
+          "404": { "description": "coach_profile_not_found" }
+        }
+      }
+    },
+    "/api/v1/coach/achievements/{id}": {
+      "delete": {
+        "tags": ["CoachAchievements"],
+        "summary": "Delete my achievement (coach)",
+        "description": "Deletes only own row. Foreign/missing id -> 404 achievement_not_found (no existence oracle). Cloudinary destroy best-effort (resource_type raw).",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" }, "example": "b2c3d4e5-f6a7-4890-9bcd-ef1234567890" },
+          { "name": "Authorization", "in": "header", "required": true, "schema": { "type": "string" }, "example": "Bearer <coach JWT>" }
+        ],
+        "responses": {
+          "200": { "description": "Deleted", "content": { "application/json": { "example": { "message": "Achievement deleted successfully" } } } },
+          "400": { "description": "invalid_uuid" },
+          "401": { "description": "Unauthorized" },
+          "403": { "description": "Not a coach" },
+          "404": { "description": "achievement_not_found" }
+        }
+      }
+    },
+    "/api/v1/client/coach/achievements": {
+      "get": {
+        "tags": ["CoachAchievements"],
+        "summary": "List assigned coach achievements (client, read-only)",
+        "description": "Client lists achievements of their assigned coach via coach_clients. Unassigned -> 404 no_coach_assigned. No coachId param (server resolves assignment).",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "Authorization", "in": "header", "required": true, "schema": { "type": "string" }, "example": "Bearer <client JWT>" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success - same shape as coach list, take 100",
+            "content": {
+              "application/json": {
+                "example": {
+                  "achievements": [
+                    {
+                      "id": "b2c3d4e5-f6a7-4890-9bcd-ef1234567890",
+                      "coach_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+                      "title": "IFBB Pro Certificate 2024",
+                      "file_url": "https://res.cloudinary.com/demo/raw/upload/v123/athletica/achievements/coach-xxx.pdf",
+                      "file_name": "certificate.pdf",
+                      "file_size": 245760,
+                      "mime_type": "application/pdf",
+                      "created_at": "2026-09-24T15:30:00.000Z"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" },
+          "403": { "description": "Not a client" },
+          "404": { "description": "no_coach_assigned | coach_profile_not_found | client_profile_not_found" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": { "type": "http", "scheme": "bearer", "bearerFormat": "JWT" }
+    },
+    "schemas": {
+      "CoachAchievement": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "coach_id": { "type": "string", "format": "uuid" },
+          "title": { "type": "string", "maxLength": 200 },
+          "file_url": { "type": "string", "format": "uri", "description": "Cloudinary secure_url (raw)" },
+          "file_name": { "type": "string", "nullable": true },
+          "file_size": { "type": "integer", "nullable": true },
+          "mime_type": { "type": "string", "enum": ["application/pdf"], "default": "application/pdf" },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      }
+    }
+  }
+}
