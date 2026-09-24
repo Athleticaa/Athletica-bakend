@@ -107,6 +107,7 @@
   "coach_client_id_required": "coach_client_id is required and must be a valid UUID",
   "invalid_client_id": "client_id must be a valid UUID",
   "client_not_assigned_to_coach": "Client is not assigned to this coach",
+  "assignment_not_found": "No coach assignment found",
   "plan_not_found": "Plan not found",
   "template_has_no_meals": "Template has no meals to assign",
   "no_active_plan_found": "No active nutrition plan found",

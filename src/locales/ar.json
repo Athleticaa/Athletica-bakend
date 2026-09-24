@@ -107,6 +107,7 @@
   "coach_client_id_required": "معرف علاقة المدرب بالعميل مطلوب ويجب أن يكون UUID صالحاً",
   "invalid_client_id": "يجب أن يكون معرف العميل UUID صالحاً",
   "client_not_assigned_to_coach": "العميل غير معين لهذا المدرب",
+  "assignment_not_found": "لا يوجد ارتباط بين المدرب والعميل",
   "plan_not_found": "الخطة غير موجودة",
   "template_has_no_meals": "القالب لا يحتوي على وجبات للتخصيص",
   "no_active_plan_found": "لا توجد خطة تغذية نشطة",
