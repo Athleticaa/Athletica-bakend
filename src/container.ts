@@ -30,6 +30,8 @@ import { MessagingController } from "./modules/messaging/messaging.controller";
 import { RealtimeService } from "./modules/realtime/realtime.service";
 import { RealtimeController } from "./modules/realtime/realtime.controller";
 import { OutboxService } from "./events/outbox.service";
+import { CoachAchievementsService } from "./modules/coach-achievements/coach-achievements.service";
+import { CoachAchievementsController } from "./modules/coach-achievements/coach-achievements.controller";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
 const prisma = new PrismaClient({ adapter });
@@ -62,5 +64,7 @@ container.registerSingleton(MessagingController);
 container.registerSingleton(RealtimeService);
 container.registerSingleton(RealtimeController);
 container.registerSingleton(OutboxService);
+container.registerSingleton(CoachAchievementsService);
+container.registerSingleton(CoachAchievementsController);
 
 export { container };

@@ -213,5 +213,13 @@
   "invalid_limit": "يجب أن يكون الحد عددًا صحيحًا موجبًا ضمن النطاق المسموح",
   "invalid_cursor": "المؤشر غير صالح",
   "ably_not_configured": "خدمة الوقت الحقيقي غير مهيأة",
-  "outbox_not_configured": "معالج الأحداث غير مهيأ"
+  "outbox_not_configured": "معالج الأحداث غير مهيأ",
+  "pdf_required": "ملف PDF مطلوب",
+  "title_required": "العنوان مطلوب",
+  "title_too_long": "يجب ألا يتجاوز العنوان 200 حرف",
+  "achievement_not_found": "الإنجاز غير موجود",
+  "achievement_deleted": "تم حذف الإنجاز بنجاح",
+  "achievement_invalid_file_type": "نوع الملف غير صالح. يُسمح فقط بملفات PDF للإنجازات",
+  "achievement_file_too_large": "الملف كبير جداً (الحد الأقصى 10 ميجابايت)",
+  "achievement_limit_reached": "تم الوصول للحد الأقصى للإنجازات (50)"
 }

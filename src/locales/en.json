@@ -213,5 +213,13 @@
   "invalid_limit": "limit must be a positive integer within the allowed range",
   "invalid_cursor": "Cursor is invalid",
   "ably_not_configured": "Realtime service is not configured",
-  "outbox_not_configured": "Outbox processor is not configured"
+  "outbox_not_configured": "Outbox processor is not configured",
+  "pdf_required": "PDF file is required",
+  "title_required": "Title is required",
+  "title_too_long": "Title must be 200 characters or less",
+  "achievement_not_found": "Achievement not found",
+  "achievement_deleted": "Achievement deleted successfully",
+  "achievement_invalid_file_type": "Invalid file type. Only PDF files are allowed for achievements",
+  "achievement_file_too_large": "File is too large (max 10MB)",
+  "achievement_limit_reached": "Achievement limit reached (max 50)"
 }

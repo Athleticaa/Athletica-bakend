@@ -18,6 +18,7 @@ import { coachCheckInRouter, clientCheckInRouter } from "./modules/checkin/check
 import messagingRoutes from "./modules/messaging/messaging.routes";
 import realtimeRoutes from "./modules/realtime/realtime.routes";
 import outboxRoutes from "./modules/internal/outbox.routes";
+import { coachAchievementsRouter, clientAchievementsRouter } from "./modules/coach-achievements/coach-achievements.routes";
 
 const app = express();
 
@@ -39,6 +40,8 @@ app.use("/api/v1/client/checkin", clientCheckInRouter);
 app.use("/api/v1/messaging", messagingRoutes);
 app.use("/api/v1/realtime", realtimeRoutes);
 app.use("/api/v1/internal/outbox", outboxRoutes);
+app.use("/api/v1/coach/achievements", coachAchievementsRouter);
+app.use("/api/v1/client/coach/achievements", clientAchievementsRouter);
 
 app.get("/api/v1/health", (_req, res) => {
   res.json({ status: "ok" });
@@ -61,7 +64,13 @@ app.use((err: unknown, req: Request, res: Response, _next: NextFunction) => {
     return;
   }
   if (err instanceof multer.MulterError) {
-    const key = err.code === "LIMIT_FILE_SIZE" ? "file_too_large" : "invalid_upload";
+    const isAchievement = req.baseUrl.includes("/achievements") || req.path.includes("/achievements");
+    const key =
+      err.code === "LIMIT_FILE_SIZE"
+        ? isAchievement
+          ? "achievement_file_too_large"
+          : "file_too_large"
+        : "invalid_upload";
     res.status(err.code === "LIMIT_FILE_SIZE" ? 413 : 400).json({ error: req.t(key) });
     return;
   }
