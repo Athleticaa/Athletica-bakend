@@ -1183,6 +1183,62 @@
           }
         }
       ]
+    },
+    {
+      "name": "Client Streak - Client only",
+      "item": [
+        {
+          "name": "Get My Workout Streak",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/streak",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "streak"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Client Streak - Coach only",
+      "item": [
+        {
+          "name": "Get Client Workout Streak",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/clients/{{coachClientId}}/streak",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "clients",
+                "{{coachClientId}}",
+                "streak"
+              ]
+            }
+          }
+        }
+      ]
     }
   ],
   "variable": [
