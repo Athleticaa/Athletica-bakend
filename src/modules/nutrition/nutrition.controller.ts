@@ -636,4 +636,33 @@ export class NutritionController {
       this.handleError(res, err);
     }
   };
+
+  // ==========================================================================
+  // Streak (assignment start → today)
+  // ==========================================================================
+
+  getStreak = async (req: Request, res: Response) => {
+    try {
+      const data = await this.clientService.getStreakSelf(this.userId(req));
+      res.status(200).json(data);
+    } catch (err) {
+      this.handleError(res, err);
+    }
+  };
+
+  getClientStreak = async (req: Request, res: Response) => {
+    try {
+      const coachClientId = Array.isArray(req.params.coachClientId)
+        ? req.params.coachClientId[0]
+        : req.params.coachClientId;
+      if (!isValidUuid(coachClientId)) {
+        res.status(400).json({ error: req.t("invalid_uuid") });
+        return;
+      }
+      const data = await this.clientService.getStreakByCoachClient(this.userId(req), coachClientId);
+      res.status(200).json(data);
+    } catch (err) {
+      this.handleError(res, err);
+    }
+  };
 }

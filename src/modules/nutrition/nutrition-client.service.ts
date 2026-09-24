@@ -5,8 +5,11 @@ import { ServiceError } from "../../lib/service-error";
 import {
   todayDateOnly,
   toDateOnly,
+  toCairoDateOnly,
   parseDateOnly,
   formatDateOnly,
+  addDays,
+  calcStreak,
   toFoodPayload,
   type FoodWithData,
 } from "./nutrition.utils";
@@ -64,7 +67,31 @@ export interface INutritionClientService {
   completeMeal(userId: string, mealLogId: string, lang?: string): Promise<{ meal_log: TodayMealResponse; day_completed: boolean }>;
   uncompleteMeal(userId: string, mealLogId: string, lang?: string): Promise<{ meal_log: TodayMealResponse; day_completed: boolean }>;
   getHistory(userId: string, query: HistoryQuery): Promise<{ history: HistoryDayResponse[] }>;
+  getStreakSelf(userId: string): Promise<StreakResponse>;
+  getStreakByCoachClient(coachUserId: string, coachClientId: string): Promise<StreakResponse>;
 }
+
+type StreakDayResponse = {
+  date: string;
+  status: "completed" | "missed";
+  total_meals: number;
+  completed_meals: number;
+};
+
+type StreakResponse = {
+  client_id: string;
+  coach_client_id: string;
+  from: string;
+  to: string;
+  current_streak: number;
+  longest_streak: number;
+  total_completed: number;
+  total_missed: number;
+  rest_days: number;
+  total_days: number;
+  completion_rate: number;
+  days: StreakDayResponse[];
+};
 
 @injectable()
 export class NutritionClientService implements INutritionClientService {
@@ -454,5 +481,81 @@ export class NutritionClientService implements INutritionClientService {
       });
 
     return { history };
+  }
+
+  // ==========================================================================
+  // Streak: assignment start → today (no rest state for nutrition)
+  // ==========================================================================
+
+  private async resolveAssignmentByClient(clientId: string) {
+    const assignment = await this.prisma.coach_clients.findFirst({ where: { client_id: clientId } });
+    if (!assignment) throw new ServiceError("assignment_not_found", 404);
+    return assignment;
+  }
+
+  private async resolveAssignmentForCoach(coachUserId: string, coachClientId: string) {
+    const coach = await this.prisma.coach_profiles.findFirst({ where: { user_id: coachUserId } });
+    if (!coach) throw new ServiceError("coach_profile_not_found", 404);
+    const assignment = await this.prisma.coach_clients.findFirst({
+      where: { id: coachClientId, coach_id: coach.id },
+    });
+    if (!assignment) throw new ServiceError("client_not_assigned_to_coach", 404);
+    return assignment;
+  }
+
+  async getStreakSelf(userId: string): Promise<StreakResponse> {
+    const clientId = await this.getClientProfileId(userId);
+    const assignment = await this.resolveAssignmentByClient(clientId);
+    return this.buildStreak(assignment.id, clientId, toCairoDateOnly(new Date(assignment.created_at)));
+  }
+
+  async getStreakByCoachClient(coachUserId: string, coachClientId: string): Promise<StreakResponse> {
+    const assignment = await this.resolveAssignmentForCoach(coachUserId, coachClientId);
+    return this.buildStreak(assignment.id, assignment.client_id, toCairoDateOnly(new Date(assignment.created_at)));
+  }
+
+  private async buildStreak(coachClientId: string, clientId: string, rangeStart: Date): Promise<StreakResponse> {
+    const today = todayDateOnly();
+    // Guard against future-dated assignments (clock skew): clamp to a 1-day window.
+    if (rangeStart.getTime() > today.getTime()) rangeStart = today;
+
+    const logs = await this.prisma.nutrition_meal_logs.findMany({
+      where: { client_id: clientId, date: { gte: rangeStart, lte: today } },
+      select: { date: true, completed: true },
+    });
+
+    const byDate = new Map<string, { total: number; done: number }>();
+    for (const log of logs) {
+      const key = formatDateOnly(log.date);
+      const bucket = byDate.get(key);
+      if (bucket) {
+        bucket.total += 1;
+        if (log.completed) bucket.done += 1;
+      } else {
+        byDate.set(key, { total: 1, done: log.completed ? 1 : 0 });
+      }
+    }
+
+    const days: StreakDayResponse[] = [];
+    const statuses: Array<"completed" | "missed"> = [];
+    for (let cursor = new Date(rangeStart); cursor.getTime() <= today.getTime(); cursor = addDays(cursor, 1)) {
+      const dateKey = formatDateOnly(cursor);
+      const bucket = byDate.get(dateKey);
+      const total = bucket?.total ?? 0;
+      const done = bucket?.done ?? 0;
+      // Days with no logs count as missed (nothing tracked = nothing completed).
+      const completed = total > 0 && done >= total;
+      statuses.push(completed ? "completed" : "missed");
+      days.push({ date: dateKey, status: completed ? "completed" : "missed", total_meals: total, completed_meals: done });
+    }
+
+    return {
+      client_id: clientId,
+      coach_client_id: coachClientId,
+      from: formatDateOnly(rangeStart),
+      to: formatDateOnly(today),
+      ...calcStreak(statuses),
+      days,
+    };
   }
 }

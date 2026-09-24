@@ -166,6 +166,15 @@ export function todayDateOnly(): Date {
 }
 
 /**
+ * Truncates an arbitrary timestamp to its Africa/Cairo calendar day,
+ * normalized to UTC midnight. Use this (instead of `toDateOnly`, which
+ * truncates in UTC) for range bounds that must align with `todayDateOnly()`.
+ */
+export function toCairoDateOnly(date: Date): Date {
+  return parseDateOnly(cairoDateFormatter.format(date))!;
+}
+
+/**
  * Formats a Date as "YYYY-MM-DD" string (useful for API responses & logs).
  */
 export function formatDateOnly(date: Date): string {
@@ -211,4 +220,77 @@ export function addDays(date: Date, days: number): Date {
   const d = toDateOnly(date);
   d.setUTCDate(d.getUTCDate() + days);
   return d;
+}
+
+// ============================================================================
+// Streak calculation (shared by workout + nutrition streak endpoints)
+//
+// Input is an ascending (oldest → newest) list of per-day statuses where
+// "rest" marks a scheduled rest day (workout only). Rest days are skipped:
+// they neither break nor extend a run and are excluded from the
+// completion-rate denominator.
+//
+// "today" is always the last element. A trailing "missed" does not zero
+// `current_streak` — counting falls back to the run ending yesterday —
+// but the day itself still counts as missed in the totals.
+// ============================================================================
+
+export type StreakStatus = "completed" | "missed" | "rest";
+
+export interface StreakSummary {
+  current_streak: number;
+  longest_streak: number;
+  total_completed: number;
+  total_missed: number;
+  rest_days: number;
+  total_days: number;
+  completion_rate: number;
+}
+
+export function calcStreak(statuses: StreakStatus[]): StreakSummary {
+  let longest = 0;
+  let run = 0;
+  let completed = 0;
+  let missed = 0;
+  let rest = 0;
+
+  for (const s of statuses) {
+    if (s === "rest") {
+      rest += 1;
+      continue;
+    }
+    if (s === "completed") {
+      completed += 1;
+      run += 1;
+      if (run > longest) longest = run;
+    } else {
+      missed += 1;
+      run = 0;
+    }
+  }
+
+  // Current streak: run ending today; if today itself is missed, fall back
+  // to the run ending yesterday (trailing rest days are skipped first).
+  let current = 0;
+  let idx = statuses.length - 1;
+  while (idx >= 0 && statuses[idx] === "rest") idx--;
+  if (idx >= 0 && statuses[idx] === "missed") idx--; // today pending → start from yesterday
+  while (idx >= 0 && statuses[idx] !== "missed") {
+    if (statuses[idx] === "completed") current += 1;
+    idx--;
+  }
+
+  const total = statuses.length;
+  const denominator = total - rest;
+  const completion_rate = denominator > 0 ? Math.round((completed / denominator) * 100) / 100 : 0;
+
+  return {
+    current_streak: current,
+    longest_streak: longest,
+    total_completed: completed,
+    total_missed: missed,
+    rest_days: rest,
+    total_days: total,
+    completion_rate,
+  };
 }
