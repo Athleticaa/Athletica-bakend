@@ -143,6 +143,7 @@ function validateRoutes(): ValidationResult[] {
       isAuthModule &&
       (route.path === "/signup" ||
         route.path === "/login" ||
+        route.path === "/google" ||
         route.path === "/reset-password" ||
         route.path === "/reset-password/confirm" ||
         route.path === "/verify-email" ||

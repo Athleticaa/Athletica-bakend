@@ -10,9 +10,10 @@ model users {
   id             String   @id @default(uuid()) @db.Uuid
   username       String   @db.VarChar
   email          String   @unique @db.VarChar
-  password       String   @db.VarChar
+  password       String?  @db.VarChar
   role           String   @db.VarChar
   provider       String   @db.VarChar
+  google_sub     String?  @unique @db.VarChar
   email_verified Boolean  @default(false)
   created_at     DateTime @default(now())
 

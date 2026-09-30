@@ -3,6 +3,7 @@ import crypto from "crypto";
 import { PrismaClient } from "@prisma/client";
 import { injectable, container } from "tsyringe";
 import { JwtService } from "../../lib/jwt";
+import { GoogleTokenInvalidError, sanitizeGoogleUsername, verifyGoogleIdToken } from "../../lib/google-auth";
 import { EmailService } from "../../services/email";
 import { PrismaClientToken } from "../../di/tokens";
 import type { SignupInput } from "./auth.validation";
@@ -62,6 +63,9 @@ export class AuthService {
     const existing = await this.prisma.users.findFirst({
       where: { email: { equals: email, mode: "insensitive" } },
     });
+    // Same for Google-only rows (password null): keep 409 so signup never
+    // creates a duplicate or reveals password state beyond "already registered".
+    // Google users must continue with POST /auth/google. Only coach/client allowed.
     if (existing) throw new ServiceError("email_already_registered", 409);
 
     const trimmedUsername = typeof input.username === "string" ? input.username.trim() : input.username;
@@ -127,6 +131,10 @@ export class AuthService {
     });
     if (!user) throw new ServiceError("invalid_email_or_password", 401);
 
+    // Google-only accounts have no password — same 401 as a wrong password
+    // so the endpoint never reveals which credential type an email uses.
+    if (!user.password) throw new ServiceError("invalid_email_or_password", 401);
+
     const valid = await this.comparePassword(password, user.password);
     if (!valid) throw new ServiceError("invalid_email_or_password", 401);
 
@@ -147,6 +155,133 @@ export class AuthService {
     };
   }
 
+  private issueSession(user: { id: string; username: string; email: string; role: string; email_verified: boolean; created_at: Date }) {
+    const token = this.jwtService.signToken(user.id, user.email, user.role);
+    return {
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        email_verified: user.email_verified,
+        created_at: user.created_at,
+      },
+      token,
+    };
+  }
+
+  /**
+   * Google sign-in: verifies the ID token, then either signs in a returning
+   * Google user (by google_sub), auto-links an existing email account, or
+   * creates a new Google user with the Flutter-supplied role.
+   * Role is immutable: the `role` param is ignored for existing users.
+   */
+  async loginWithGoogle(idToken: string, role?: string) {
+    let account;
+    try {
+      account = await verifyGoogleIdToken(idToken);
+    } catch (err) {
+      if (err instanceof GoogleTokenInvalidError) throw new ServiceError("token_invalid", 401);
+      throw err;
+    }
+    const email = this.normalizeEmail(account.email);
+
+    // 1. Returning Google user — role param ignored, original role kept (only coach/client).
+    // Sync the stored email in case the user changed it at Google (sub is stable).
+    // Google auth always implies email_verified:true — heal legacy rows.
+    const bySub = await this.prisma.users.findUnique({ where: { google_sub: account.sub } });
+    if (bySub) {
+      if (bySub.email.toLowerCase() !== email) {
+        try {
+          const updated = await this.prisma.users.update({
+            where: { id: bySub.id },
+            data: { email, email_verified: true },
+          });
+          return this.issueSession(updated);
+        } catch (err) {
+          // The new address is owned by a different Athletica account — surface
+          // a conflict instead of a 500 so the user can resolve it.
+          if ((err as { code?: string })?.code === "P2002") {
+            throw new ServiceError("email_already_registered", 409);
+          }
+          throw err;
+        }
+      }
+      if (!bySub.email_verified) {
+        const healed = await this.prisma.users.update({
+          where: { id: bySub.id },
+          data: { email_verified: true },
+        });
+        return this.issueSession(healed);
+      }
+      return this.issueSession(bySub);
+    }
+
+    // 2. Existing email account — auto-link Google identity, keep everything else.
+    const byEmail = await this.prisma.users.findFirst({
+      where: { email: { equals: email, mode: "insensitive" } },
+    });
+    if (byEmail) {
+      try {
+        const linked = await this.prisma.users.update({
+          where: { id: byEmail.id },
+          data: { google_sub: account.sub, email_verified: true },
+        });
+        return this.issueSession(linked);
+      } catch (err) {
+        // Lost a link-vs-create race: this sub is already claimed by another row.
+        if ((err as { code?: string })?.code === "P2002") {
+          const winner = await this.prisma.users.findUnique({ where: { google_sub: account.sub } });
+          if (winner) return this.issueSession(winner);
+        }
+        throw err;
+      }
+    }
+
+    // 3. New user — role from the Flutter picker is required.
+    if (role !== "coach" && role !== "client") throw new ServiceError("role_invalid", 400);
+    const username = sanitizeGoogleUsername(account.name, email);
+
+    try {
+      let created!: { id: string; username: string; email: string; role: string; email_verified: boolean; created_at: Date };
+      await this.prisma.$transaction(async (tx) => {
+        const user = await tx.users.create({
+          data: {
+            username,
+            email,
+            password: null,
+            role,
+            provider: "google",
+            google_sub: account.sub,
+            email_verified: true,
+          },
+        });
+        created = user;
+
+        if (role === "client") {
+          await tx.client_profiles.create({
+            data: { user_id: user.id, gender: "unspecified", goal: "not_set" },
+          });
+        } else {
+          const coachProfile = await tx.coach_profiles.create({
+            data: { user_id: user.id, bio: "", specialization: "general" },
+          });
+          await createDefaultCheckInQuestions(tx, coachProfile.id);
+        }
+      });
+      return this.issueSession(created);
+    } catch (err) {
+      // Lost a concurrent create race (unique email/google_sub) — sign in as the winner.
+      if ((err as { code?: string })?.code === "P2002") {
+        const winner =
+          (await this.prisma.users.findUnique({ where: { google_sub: account.sub } })) ??
+          (await this.prisma.users.findFirst({ where: { email: { equals: email, mode: "insensitive" } } }));
+        if (winner) return this.issueSession(winner);
+      }
+      throw err;
+    }
+  }
+
   async verifyEmail(email: string, code: string) {
     const normalizedEmail = this.normalizeEmail(email);
     const normalizedCode = this.normalizeCode(code);
@@ -154,6 +289,8 @@ export class AuthService {
       where: { email: { equals: normalizedEmail, mode: "insensitive" } },
     });
     if (!user) throw new ServiceError("invalid_request", 400);
+    // Google users already have email_verified:true via loginWithGoogle and
+    // skip this endpoint entirely — never mint tokens without a valid code.
 
     const codeHash = this.hashToken(normalizedCode);
     const record = await this.prisma.verification_codes.findFirst({
@@ -199,6 +336,9 @@ export class AuthService {
       where: { email: { equals: normalizedEmail, mode: "insensitive" } },
     });
     if (!user) return;
+    // Google sign-in already implies email_verified:true — skip resending
+    // verification mail to already-verified users (Google or email).
+    if (user.email_verified) return;
 
     const code = this.generateCode();
     const codeHash = this.hashToken(code);
@@ -216,6 +356,10 @@ export class AuthService {
       where: { email: { equals: normalizedEmail, mode: "insensitive" } },
     });
     if (!user) return;
+    // Intentional add-password path: Google-only accounts (password null)
+    // are allowed here like email users. Requires inbox access, so no
+    // escalation. After confirm, both Google and password login work;
+    // provider stays "google" and google_sub is kept (Option A).
 
     const code = this.generateCode();
     const codeHash = this.hashToken(code);
@@ -245,6 +389,9 @@ export class AuthService {
       where: { email: { equals: normalizedEmail, mode: "insensitive" } },
     });
     if (!user) throw new ServiceError("invalid_or_expired_reset_token", 400);
+    // Intentional add-password path (Option A): Google-only accounts may set
+    // a password here after proving inbox access. Keep google_sub, keep
+    // provider="google", keep role immutable.
 
     const codeHash = this.hashToken(normalizedCode);
     const record = await this.prisma.password_reset_tokens.findFirst({
@@ -268,6 +415,9 @@ export class AuthService {
   async changePassword(userId: string, oldPassword: string, newPassword: string) {
     const user = await this.prisma.users.findUnique({ where: { id: userId } });
     if (!user) throw new ServiceError("invalid_request", 400);
+
+    // Google-only accounts have no password to change from.
+    if (!user.password) throw new ServiceError("google_account_no_password", 400);
 
     const valid = await this.comparePassword(oldPassword, user.password);
     if (!valid) throw new ServiceError("old_password_incorrect", 400);

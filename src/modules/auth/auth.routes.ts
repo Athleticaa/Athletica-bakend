@@ -8,6 +8,7 @@ const controller = container.resolve(AuthController);
 
 router.post("/signup", controller.signup);
 router.post("/login", controller.login);
+router.post("/google", controller.googleLogin);
 router.post("/reset-password", controller.resetPassword);
 router.post("/reset-password/confirm", controller.confirmReset);
 router.post("/verify-email", controller.verifyEmail);

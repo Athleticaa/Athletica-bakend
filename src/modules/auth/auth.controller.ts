@@ -52,6 +52,27 @@ export class AuthController {
     }
   };
 
+  googleLogin = async (req: Request, res: Response) => {
+    const errors = validation.validateGoogleLogin(req.body, req.t);
+    if (errors.length > 0) {
+      res.status(400).json({ error: req.t("validation_failed"), details: errors });
+      return;
+    }
+
+    try {
+      const result = await this.authService.loginWithGoogle(req.body.idToken, req.body.role);
+      res.status(200).json(result);
+    } catch (err) {
+      // New Google email without a usable role: return a stable machine-readable
+      // code (not a localized string) so Flutter can trigger the role picker.
+      if (err instanceof ServiceError && err.messageKey === "role_invalid") {
+        res.status(400).json({ error: req.t("validation_failed"), details: ["role_invalid"] });
+        return;
+      }
+      this.handleError(res, err);
+    }
+  };
+
   resetPassword = async (req: Request, res: Response) => {
     const errors = validation.validateResetPassword(req.body, req.t);
     if (errors.length > 0) {
