@@ -36,6 +36,15 @@ interface RouteFileConfig {
 const ROUTES_DIR = path.join(__dirname, "../src/modules");
 const BASE_URL = "http://localhost:3000";
 
+// Response bodies are intentionally undescribed (responses carry descriptions
+// only in the committed spec). `undefined` content keys are dropped by
+// JSON.stringify, so these placeholders keep the generator runnable without
+// changing the emitted shape.
+const errorBody = undefined;
+function getResponseContent(_method: string, _fullPath: string, _status: string): undefined {
+  return undefined;
+}
+
 function extractRoutes(filePath: string): RouteInfo[] {
   const content = fs.readFileSync(filePath, "utf-8");
   const lines = content.split("\n");
@@ -216,6 +225,22 @@ function getRequestBodySpec(
           password: { type: "string" },
         },
         required: ["email", "password"],
+      },
+    };
+  } else if (routePath.includes("/google")) {
+    return {
+      contentType: JSON,
+      schema: {
+        type: "object",
+        properties: {
+          idToken: { type: "string", description: "Google ID token from the Flutter google_sign_in SDK" },
+          role: {
+            type: "string",
+            enum: ["coach", "client"],
+            description: "Required for new Google emails (Flutter role picker); ignored for existing users",
+          },
+        },
+        required: ["idToken"],
       },
     };
   }
