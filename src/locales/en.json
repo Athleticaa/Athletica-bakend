@@ -25,6 +25,8 @@
   "insufficient_permissions": "Insufficient permissions",
   "token_expired": "Token has expired",
   "token_invalid": "Invalid token",
+  "idToken_required": "Google ID token is required",
+  "google_account_no_password": "This account uses Google sign-in and has no password",
   "email_subject_verify": "Verify your email",
   "email_verify_preheader": "Your Athletica verification code is inside — let's get you training.",
   "email_verify_badge": "✦ EMAIL VERIFICATION",

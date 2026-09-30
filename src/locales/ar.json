@@ -25,6 +25,8 @@
   "insufficient_permissions": "صلاحيات غير كافية",
   "token_expired": "انتهت صلاحية الرمز",
   "token_invalid": "الرمز غير صالح",
+  "idToken_required": "رمز Google مطلوب",
+  "google_account_no_password": "هذا الحساب يستخدم تسجيل الدخول عبر Google وليس له كلمة مرور",
   "email_subject_verify": "تحقق من بريدك الإلكتروني",
   "email_verify_preheader": "رمز التحقق الخاص بك من Athletica بالداخل — هيا نبدأ التمرين.",
   "email_verify_badge": "✦ التحقق من البريد الإلكتروني",

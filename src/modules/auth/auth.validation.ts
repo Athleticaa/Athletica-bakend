@@ -42,6 +42,11 @@ export interface ResendVerificationInput {
   email: string;
 }
 
+export interface GoogleLoginInput {
+  idToken: string;
+  role?: string;
+}
+
 function tFallback(key: string): string {
   return key;
 }
@@ -130,4 +135,18 @@ export function validateVerifyEmail(input: VerifyEmailInput, t: (key: string) =>
 export function validateResendVerification(input: ResendVerificationInput, t: (key: string) => string = tFallback): string[] {
   if (!input.email) return [t("email_required")];
   return [];
+}
+
+export function validateGoogleLogin(input: GoogleLoginInput, _t?: (key: string) => string): string[] {
+  const errors: string[] = [];
+  // Stable machine-readable codes (never localized) so Flutter can match
+  // details.contains('role_invalid') / 'idToken_required' to show the role picker.
+  // Only coach/client allowed — admin or any other value is rejected here and in service.
+  if (!input?.idToken || typeof input.idToken !== "string") errors.push("idToken_required");
+  // Role is required only for new users (decided in service after lookup),
+  // but reject obviously invalid values up front.
+  if (input?.role !== undefined && !VALID_ROLES.includes(input.role as any)) {
+    errors.push("role_invalid");
+  }
+  return errors;
 }
