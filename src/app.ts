@@ -60,16 +60,24 @@ if (process.env.VERCEL === "1") {
 
 app.use((err: unknown, req: Request, res: Response, _next: NextFunction) => {
   if (err instanceof ServiceError) {
-    res.status(err.statusCode).json({ error: req.t(err.messageKey) });
+    const body: Record<string, unknown> = {
+      error: req.t(err.messageKey),
+      code: err.messageKey,
+    };
+    if (err.details !== undefined) body.details = err.details;
+    res.status(err.statusCode).json(body);
     return;
   }
   if (err instanceof multer.MulterError) {
     const isAchievement = req.baseUrl.includes("/achievements") || req.path.includes("/achievements");
+    const isMessaging = req.baseUrl.includes("/messaging") || req.path.includes("/messaging");
     const key =
       err.code === "LIMIT_FILE_SIZE"
         ? isAchievement
           ? "achievement_file_too_large"
-          : "file_too_large"
+          : isMessaging
+            ? "message_file_too_large"
+            : "file_too_large"
         : "invalid_upload";
     res.status(err.code === "LIMIT_FILE_SIZE" ? 413 : 400).json({ error: req.t(key) });
     return;
