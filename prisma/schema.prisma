@@ -171,7 +171,12 @@ model messages {
   conversation_id String    @db.Uuid
   sender_user_id  String    @db.Uuid
   sender_role     String    @db.VarChar
-  content         String    @db.Text
+  content         String?   @db.Text
+  message_type            String  @default("text") @db.VarChar
+  attachment_url          String? @db.VarChar
+  attachment_mime         String? @db.VarChar
+  attachment_size         Int?
+  attachment_duration_sec Int?
   created_at      DateTime  @default(now())
   updated_at      DateTime  @updatedAt
   deleted_at      DateTime?

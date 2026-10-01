@@ -1,6 +1,7 @@
 import { Prisma, PrismaClient } from "@prisma/client";
 import { randomUUID } from "crypto";
 import { injectable, inject } from "tsyringe";
+import { v2 as cloudinary } from "cloudinary";
 import { PrismaClientToken } from "../../di/tokens";
 import { ServiceError } from "../../lib/service-error";
 import { config } from "../../config";
@@ -9,7 +10,15 @@ import {
   buildMessageCreatedPayload,
   publishMessageCreated,
 } from "../../lib/ably";
-import { encodeMessageCursor, MessageCursor } from "./messaging.validation";
+import { encodeMessageCursor, MessageCursor, ValidatedMediaMessage } from "./messaging.validation";
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+export type MessageType = "text" | "image" | "voice";
 
 export interface AuthContext {
   profileId: string;
@@ -172,7 +181,12 @@ export class MessagingService {
       conversationId: string;
       senderUserId: string;
       senderRole: string;
-      content: string;
+      content: string | null;
+      messageType: MessageType;
+      attachmentUrl?: string | null;
+      attachmentMime?: string | null;
+      attachmentSize?: number | null;
+      attachmentDurationSec?: number | null;
     },
   ) {
     const eventId = randomUUID();
@@ -182,6 +196,11 @@ export class MessagingService {
         sender_user_id: args.senderUserId,
         sender_role: args.senderRole,
         content: args.content,
+        message_type: args.messageType,
+        attachment_url: args.attachmentUrl ?? null,
+        attachment_mime: args.attachmentMime ?? null,
+        attachment_size: args.attachmentSize ?? null,
+        attachment_duration_sec: args.attachmentDurationSec ?? null,
       },
     });
 
@@ -198,6 +217,11 @@ export class MessagingService {
       senderUserId: args.senderUserId,
       senderRole: args.senderRole,
       content: args.content,
+      messageType: args.messageType,
+      attachmentUrl: args.attachmentUrl ?? null,
+      attachmentMime: args.attachmentMime ?? null,
+      attachmentSize: args.attachmentSize ?? null,
+      attachmentDurationSec: args.attachmentDurationSec ?? null,
       createdAt: message.created_at,
     });
 
@@ -249,6 +273,7 @@ export class MessagingService {
         senderUserId: userId,
         senderRole: role,
         content,
+        messageType: "text",
       });
     });
 
@@ -299,6 +324,7 @@ export class MessagingService {
         senderUserId: userId,
         senderRole: role,
         content,
+        messageType: "text",
       });
     });
 
@@ -336,12 +362,196 @@ export class MessagingService {
         senderUserId: coachUserId,
         senderRole: "coach",
         content,
+        messageType: "text",
       });
     });
 
     // See sendMessageToConversation: must be awaited on serverless.
     await this.bestEffortPublish(result.channel, result.payload);
 
+    return { message: result.message, conversation };
+  }
+
+  /**
+   * Upload a message attachment to Cloudinary. Images use the `image`
+   * resource type; audio uses `video` (Cloudinary's type for audio delivery).
+   */
+  async uploadMessageMedia(file: Express.Multer.File, conversationId: string) {
+    const isImage = file.mimetype.startsWith("image/");
+    const result = await new Promise<{ secure_url: string }>((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream(
+        {
+          folder: "athletica/messages",
+          resource_type: isImage ? "image" : "video",
+          public_id: `msg-${conversationId}-${Date.now()}-${randomUUID().slice(0, 8)}`,
+        },
+        (error, res) => {
+          if (error || !res) return reject(error ?? new Error("Upload failed"));
+          resolve({ secure_url: res.secure_url });
+        },
+      );
+      stream.end(file.buffer);
+    });
+    return { url: result.secure_url, mime: file.mimetype, size: file.size };
+  }
+
+  private extractMessagePublicId(url: string): string | null {
+    try {
+      // Cloudinary URL forms (image + video/audio):
+      // https://res.cloudinary.com/<cloud>/image/upload/v123/athletica/messages/msg-....jpg
+      // https://res.cloudinary.com/<cloud>/video/upload/athletica/messages/msg-....mp3 (no version)
+      // We need publicId = folder + filename without extension.
+      const u = new URL(url);
+      const parts = u.pathname.split("/upload/");
+      if (parts.length < 2) return null;
+      let after = parts[1];
+      after = after.replace(/^v\d+\//, "");
+      after = after.replace(/\.[^/.]+$/, "");
+      return after || null;
+    } catch {
+      return null;
+    }
+  }
+
+  private async createMediaMessage(
+    conversationId: string,
+    senderUserId: string,
+    senderRole: string,
+    validated: ValidatedMediaMessage,
+    file: Express.Multer.File,
+  ) {
+    const upload = await this.uploadMessageMedia(file, conversationId);
+
+    let result;
+    try {
+      result = await this.prisma.$transaction(async (tx) => {
+        return this.createMessageWithOutbox(tx, {
+          conversationId,
+          senderUserId,
+          senderRole,
+          content: validated.content,
+          messageType: validated.messageType,
+          attachmentUrl: upload.url,
+          attachmentMime: upload.mime,
+          attachmentSize: upload.size,
+          attachmentDurationSec: validated.durationSec,
+        });
+      });
+    } catch (err) {
+      // Don't strand an orphan asset when the DB write fails (same pattern
+      // as coach-achievements upload cleanup).
+      const publicId = this.extractMessagePublicId(upload.url);
+      if (publicId) {
+        const resourceType = file.mimetype.startsWith("image/") ? "image" : "video";
+        await cloudinary.uploader.destroy(publicId, { resource_type: resourceType }).catch(() => {});
+      } else {
+        console.warn(`[messaging] upload cleanup: could not extract publicId for ${upload.url}`);
+      }
+      throw err;
+    }
+
+    // See sendMessageToConversation: must be awaited on serverless.
+    await this.bestEffortPublish(result.channel, result.payload);
+
+    return result;
+  }
+
+  async sendMediaMessageToConversation(
+    userId: string,
+    role: string,
+    conversationId: string,
+    validated: ValidatedMediaMessage,
+    file: Express.Multer.File,
+  ) {
+    const { conversation } = await this.requireConversationAccess(userId, role, conversationId);
+    const result = await this.createMediaMessage(
+      conversation.id,
+      userId,
+      role,
+      validated,
+      file,
+    );
+    return { message: result.message, conversation };
+  }
+
+  async sendMediaMessageByCoachClientId(
+    userId: string,
+    role: string,
+    coachClientId: string,
+    validated: ValidatedMediaMessage,
+    file: Express.Multer.File,
+  ) {
+    const profileId = await this.resolveProfile(userId, role);
+
+    const assignment = await this.prisma.coach_clients.findUnique({
+      where: { id: coachClientId },
+    });
+    if (!assignment) {
+      throw new ServiceError("forbidden", 403, ["assignment_not_found"]);
+    }
+    if (role === "coach" && assignment.coach_id !== profileId) {
+      throw new ServiceError("forbidden", 403, ["not_assignment_owner"]);
+    }
+    if (role === "client" && assignment.client_id !== profileId) {
+      throw new ServiceError("forbidden", 403, ["not_assignment_owner"]);
+    }
+
+    const conversation = await this.findOrCreateConversation(
+      assignment.id,
+      assignment.coach_id,
+      assignment.client_id,
+    );
+
+    if (role === "coach" && conversation.coach_id !== profileId) {
+      throw new ServiceError("forbidden", 403, ["not_conversation_member"]);
+    }
+    if (role === "client" && conversation.client_id !== profileId) {
+      throw new ServiceError("forbidden", 403, ["not_conversation_member"]);
+    }
+
+    const result = await this.createMediaMessage(
+      conversation.id,
+      userId,
+      role,
+      validated,
+      file,
+    );
+    return { message: result.message, conversation };
+  }
+
+  /** @deprecated Use sendMediaMessageByCoachClientId with coach_clients.id instead. */
+  async sendMediaByClientId(
+    coachUserId: string,
+    clientProfileId: string,
+    validated: ValidatedMediaMessage,
+    file: Express.Multer.File,
+  ) {
+    const coachProfileId = await this.resolveProfile(coachUserId, "coach");
+
+    const assignment = await this.prisma.coach_clients.findFirst({
+      where: { coach_id: coachProfileId, client_id: clientProfileId },
+    });
+    if (!assignment) {
+      throw new ServiceError("forbidden", 403, ["assignment_not_found"]);
+    }
+
+    const conversation = await this.findOrCreateConversation(
+      assignment.id,
+      assignment.coach_id,
+      assignment.client_id,
+    );
+
+    if (conversation.coach_id !== coachProfileId) {
+      throw new ServiceError("forbidden", 403);
+    }
+
+    const result = await this.createMediaMessage(
+      conversation.id,
+      coachUserId,
+      "coach",
+      validated,
+      file,
+    );
     return { message: result.message, conversation };
   }
 

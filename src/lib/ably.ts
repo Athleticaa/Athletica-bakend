@@ -45,7 +45,12 @@ export interface MessageCreatedPayload {
     conversationId: string;
     senderUserId: string;
     senderRole: string;
-    content: string;
+    content: string | null;
+    messageType: string;
+    attachmentUrl: string | null;
+    attachmentMime: string | null;
+    attachmentSize: number | null;
+    attachmentDurationSec: number | null;
     createdAt: string;
   };
 }
@@ -56,7 +61,12 @@ export function buildMessageCreatedPayload(args: {
   conversationId: string;
   senderUserId: string;
   senderRole: string;
-  content: string;
+  content: string | null;
+  messageType: string;
+  attachmentUrl?: string | null;
+  attachmentMime?: string | null;
+  attachmentSize?: number | null;
+  attachmentDurationSec?: number | null;
   createdAt: Date;
   occurredAt?: Date;
 }): MessageCreatedPayload {
@@ -71,6 +81,11 @@ export function buildMessageCreatedPayload(args: {
       senderUserId: args.senderUserId,
       senderRole: args.senderRole,
       content: args.content,
+      messageType: args.messageType,
+      attachmentUrl: args.attachmentUrl ?? null,
+      attachmentMime: args.attachmentMime ?? null,
+      attachmentSize: args.attachmentSize ?? null,
+      attachmentDurationSec: args.attachmentDurationSec ?? null,
       createdAt: args.createdAt.toISOString(),
     },
   };

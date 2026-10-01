@@ -11,6 +11,24 @@ export const config = {
     maxContentLength: 2000,
     defaultLimit: 50,
     maxLimit: 50,
+    // Media messaging (009-message-media): per-type caps are enforced in
+    // messaging.validation.ts; uploadMaxBytes is the Multer memory ceiling
+    // (kept above both caps so rejections carry the specific error key).
+    imageMaxBytes: 10 * 1024 * 1024,
+    voiceMaxBytes: 25 * 1024 * 1024,
+    uploadMaxBytes: 32 * 1024 * 1024,
+    allowedImageMimes: ["image/jpeg", "image/png", "image/webp", "image/gif"],
+    allowedVoiceMimes: [
+      "audio/mpeg",
+      "audio/mp4",
+      "audio/m4a",
+      "audio/ogg",
+      "audio/wav",
+      "audio/webm",
+      "audio/aac",
+      "audio/x-m4a",
+    ],
+    maxVoiceDurationSec: 900,
   },
   realtime: {
     channelPrefix: "conversation",
