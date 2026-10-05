@@ -43,6 +43,24 @@ export const config = {
   outbox: {
     batchSize: 50,
   },
+  push: {
+    // Upper bound for a best-effort FCM send. The triggering request still
+    // succeeds when FCM is slow — failures are logged, never thrown.
+    // Awaiting (instead of fire-and-forget) is required on Vercel: the runtime
+    // may suspend the function as soon as the response is sent.
+    timeoutMs: 2500,
+    // Budget for the Ably presence pre-check before chat-message pushes.
+    // Fail-open: on timeout/error the push is sent anyway.
+    presenceTimeoutMs: 800,
+    // Budget for each bounded best-effort phase preceding a push: recipient
+    // resolution lookups, inbox-row persist (+ its recipient enrichment),
+    // and PushService's own device-list lookup + dead-token cleanup. On
+    // timeout the phase is skipped and the triggering request still
+    // succeeds. Worst-case added latency per notify path is therefore
+    // bounded: dbLookup + inbox + presence + FCM ≈ 6.3s, and each phase
+    // fails safe (skip or fail-open) instead of hanging p99.
+    dbLookupTimeoutMs: 1500,
+  },
   history: {
     maxDays: 90,
   },

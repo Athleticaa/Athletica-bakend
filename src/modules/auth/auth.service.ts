@@ -8,6 +8,7 @@ import { EmailService } from "../../services/email";
 import { PrismaClientToken } from "../../di/tokens";
 import type { SignupInput } from "./auth.validation";
 import { createDefaultCheckInQuestions } from "../checkin/checkin-defaults";
+import { DevicesService } from "../devices/devices.service";
 
 const SALT_ROUNDS = 12;
 
@@ -26,11 +27,13 @@ export class AuthService {
   private prisma: PrismaClient;
   private jwtService: JwtService;
   private emailService: EmailService;
+  private devicesService: DevicesService;
 
   constructor() {
     this.prisma = container.resolve(PrismaClientToken);
     this.jwtService = container.resolve(JwtService);
     this.emailService = container.resolve(EmailService);
+    this.devicesService = container.resolve(DevicesService);
   }
 
   private hashPassword(password: string): Promise<string> {
@@ -408,8 +411,18 @@ export class AuthService {
     ]);
   }
 
-  async logout(userId: string) {
+  async logout(userId: string, deviceId?: string, fcmToken?: string) {
+    // Sessions are revoked globally by design: refresh_tokens has no
+    // device/session linkage, so per-device session revocation would need a
+    // schema migration. Device cleanup is delegated to
+    // DevicesService.deleteForLogout (scoped when the client sent an
+    // identifier, global for legacy clients) so the two never drift.
+    // Tradeoff: a sibling install keeps its push row while its session is
+    // dead; it re-registers (is_active: true) on next login via
+    // DevicesService.register, and heartbeat now returns is_active so a
+    // deactivated client knows to re-register.
     await this.prisma.refresh_tokens.deleteMany({ where: { user_id: userId } });
+    await this.devicesService.deleteForLogout(userId, deviceId, fcmToken);
   }
 
   async changePassword(userId: string, oldPassword: string, newPassword: string) {

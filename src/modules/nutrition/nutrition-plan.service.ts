@@ -4,6 +4,12 @@ import { PrismaClientToken } from "../../di/tokens";
 import { ServiceError } from "../../lib/service-error";
 import { paginate, toFoodPayload, type FoodWithData } from "./nutrition.utils";
 import { NutritionBaseService } from "./base.service";
+import { PushService } from "../../services/push";
+import { NotificationsService } from "../notifications/notifications.service";
+import { withActorData } from "../notifications/notification-actor";
+import i18next from "../../lib/i18n";
+import { config } from "../../config";
+import { withTimeout } from "../../lib/with-timeout";
 import type {
   AssignPlanInput,
   ListClientPlansQuery,
@@ -82,7 +88,11 @@ export interface INutritionPlanService {
 
 @injectable()
 export class NutritionPlanService extends NutritionBaseService implements INutritionPlanService {
-  constructor(@inject(PrismaClientToken) prisma: PrismaClient) {
+  constructor(
+    @inject(PrismaClientToken) prisma: PrismaClient,
+    @inject(PushService) private push?: PushService,
+    @inject(NotificationsService) private inbox?: NotificationsService,
+  ) {
     super(prisma);
   }
 
@@ -107,6 +117,84 @@ export class NutritionPlanService extends NutritionBaseService implements INutri
       where: { coach_client_id: coachClientId, is_active: true },
       data: { is_active: false },
     });
+  }
+
+  /** Best-effort inbox + push. Never throws. */
+  private async notifyClientOfPlan(
+    coachUserId: string,
+    clientProfileId: string,
+    planId: string,
+    planTitle: string,
+  ) {
+    try {
+      const [coachUser, clientProfile, coachProfile] = await withTimeout(
+        Promise.all([
+          this.prisma.users.findUnique({
+            where: { id: coachUserId },
+            select: { username: true },
+          }),
+          this.prisma.client_profiles.findFirst({
+            where: { id: clientProfileId },
+            select: { user_id: true },
+          }),
+          this.prisma.coach_profiles.findFirst({
+            where: { user_id: coachUserId },
+            select: { profile_image: true },
+          }),
+        ]),
+        config.push.dbLookupTimeoutMs,
+        "notify_lookup_timeout",
+      );
+      if (!clientProfile) return;
+      const t = (key: string, opts?: Record<string, string>) =>
+        i18next.t(key, { lng: "en", ...opts });
+      const title = t("push_nutrition_assigned_title");
+      const body = t("push_nutrition_assigned_body", {
+        coach: coachUser?.username ?? "Your coach",
+        plan: planTitle,
+      });
+      const data = withActorData(
+        {
+          type: "nutrition_assigned",
+          planId,
+          click_action: "FLUTTER_NOTIFICATION_CLICK",
+        },
+        {
+          userId: coachUserId,
+          username: coachUser?.username,
+          profileImage: coachProfile?.profile_image ?? undefined,
+          role: "coach",
+        },
+      );
+      let notificationId: string | undefined;
+      if (this.inbox) {
+        try {
+          const row = await withTimeout(
+            this.inbox.create(clientProfile.user_id, {
+              type: "nutrition_assigned",
+              title,
+              body,
+              data,
+            }),
+            config.push.dbLookupTimeoutMs,
+            "inbox_create_timeout",
+          );
+          notificationId = row.id;
+        } catch (err) {
+          const reason = err instanceof Error ? err.message : "unknown";
+          console.error(`[nutrition] inbox persist failed reason=${reason}`);
+        }
+      }
+      if (!this.push) return;
+      await this.push.sendToUser(clientProfile.user_id, {
+        title,
+        body,
+        data: notificationId ? { ...data, notificationId } : data,
+      });
+    } catch (err) {
+      const reason = err instanceof Error ? err.message : "unknown";
+      console.error(`[nutrition] assign push failed reason=${reason}`);
+    }
   }
 
   private toPlanResponse(p: {
@@ -187,6 +275,15 @@ export class NutritionPlanService extends NutritionBaseService implements INutri
         include: { _count: { select: { nutrition_meals: true } } },
       });
     });
+
+    if (plan) {
+      await this.notifyClientOfPlan(
+        userId,
+        coachClient.client_id,
+        plan.id,
+        input.title.trim(),
+      );
+    }
 
     return this.toPlanResponse(plan!);
   }

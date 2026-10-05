@@ -23,6 +23,8 @@ model users {
   verification_codes    verification_codes[]
   refresh_tokens        refresh_tokens[]
   messages              messages[]
+  user_devices          user_devices[]
+  notifications         notifications[]
 }
 
 model verification_codes {
@@ -610,5 +612,41 @@ model coach_achievements {
   coach coach_profiles @relation(fields: [coach_id], references: [id], onDelete: Cascade)
 
   @@index([coach_id, created_at])
+}
+
+model user_devices {
+  id           String   @id @default(uuid()) @db.Uuid
+  user_id      String   @db.Uuid
+  fcm_token    String   @unique @db.VarChar
+  platform     String   @db.VarChar
+  device_id    String   @db.VarChar
+  is_active    Boolean  @default(true)
+  last_seen_at DateTime @default(now())
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  user users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  // Single-device rule: one row per user, newest registration wins.
+  // device_id stays as the heartbeat/logout identifier + audit trail.
+  @@unique([user_id])
+  @@index([user_id, is_active])
+}
+
+model notifications {
+  id                String    @id @default(uuid()) @db.Uuid
+  recipient_user_id String    @db.Uuid
+  type              String    @db.VarChar(50)
+  title             String    @db.VarChar(200)
+  body              String    @db.Text
+  data              Json      @default("{}")
+  is_read           Boolean   @default(false)
+  read_at           DateTime?
+  created_at        DateTime  @default(now())
+
+  recipient users @relation(fields: [recipient_user_id], references: [id], onDelete: Cascade)
+
+  @@index([recipient_user_id, created_at(sort: Desc), id(sort: Desc)])
+  @@index([recipient_user_id, is_read, created_at(sort: Desc)])
 }
 

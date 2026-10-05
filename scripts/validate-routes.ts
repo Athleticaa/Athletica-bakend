@@ -101,6 +101,8 @@ function validateRoutes(): ValidationResult[] {
     "coach-assignment/coach-assignment.routes.ts",
     "client-questions/client-questions.routes.ts",
     "checkin/checkin.routes.ts",
+    "devices/devices.routes.ts",
+    "notifications/notifications.routes.ts",
   ];
 
   const allRoutes: RouteInfo[] = [];

@@ -1,0 +1,2 @@
+- Prefers comprehensive code reviews that inspect all changed files, compare implementation against the plan/spec, and call out bugs, missing requirements, architectural issues, and edge cases. Confidence: 0.95
+- Wants implementation fixes validated against the existing deployment and client architecture—in particular, serverless backend constraints and Flutter/Ably real-time chat integration—rather than treated as backend-only changes. Confidence: 0.9

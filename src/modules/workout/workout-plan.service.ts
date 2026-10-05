@@ -6,11 +6,99 @@ import { ServiceError } from "../../lib/service-error";
 import { WorkoutBaseService } from "./workout.base.service";
 import { toPlanResponse, toPlanSummaryResponse } from "./workout-plan.response-mappers";
 import { todayDateOnly } from "../nutrition/nutrition.utils";
+import { PushService } from "../../services/push";
+import { NotificationsService } from "../notifications/notifications.service";
+import { withActorData } from "../notifications/notification-actor";
+import i18next from "../../lib/i18n";
+import { config } from "../../config";
+import { withTimeout } from "../../lib/with-timeout";
 
 @injectable()
 export class WorkoutPlanService extends WorkoutBaseService {
-  constructor(@inject(PrismaClientToken) prisma: PrismaClient) {
+  constructor(
+    @inject(PrismaClientToken) prisma: PrismaClient,
+    @inject(PushService) private push?: PushService,
+    @inject(NotificationsService) private inbox?: NotificationsService,
+  ) {
     super(prisma);
+  }
+
+  /** Best-effort inbox + push. Never throws. */
+  private async notifyClientOfPlan(
+    coachId: string,
+    coachClientId: string,
+    planId: string,
+    planTitle: string,
+  ) {
+    try {
+      const [cc, coach] = await withTimeout(
+        Promise.all([
+          this.prisma.coach_clients.findUnique({
+            where: { id: coachClientId },
+            select: { client: { select: { user_id: true } } },
+          }),
+          this.prisma.coach_profiles.findUnique({
+            where: { id: coachId },
+            select: {
+              profile_image: true,
+              user: { select: { id: true, username: true } },
+            },
+          }),
+        ]),
+        config.push.dbLookupTimeoutMs,
+        "notify_lookup_timeout",
+      );
+      const clientUserId = cc?.client?.user_id;
+      if (!clientUserId) return;
+      const t = (key: string, opts?: Record<string, string>) =>
+        i18next.t(key, { lng: "en", ...opts });
+      const title = t("push_workout_assigned_title");
+      const body = t("push_workout_assigned_body", {
+        coach: coach?.user?.username ?? "Your coach",
+        plan: planTitle,
+      });
+      const data = withActorData(
+        {
+          type: "workout_assigned",
+          planId,
+          click_action: "FLUTTER_NOTIFICATION_CLICK",
+        },
+        {
+          userId: coach?.user?.id,
+          username: coach?.user?.username,
+          profileImage: coach?.profile_image ?? undefined,
+          role: "coach",
+        },
+      );
+      let notificationId: string | undefined;
+      if (this.inbox) {
+        try {
+          const row = await withTimeout(
+            this.inbox.create(clientUserId, {
+              type: "workout_assigned",
+              title,
+              body,
+              data,
+            }),
+            config.push.dbLookupTimeoutMs,
+            "inbox_create_timeout",
+          );
+          notificationId = row.id;
+        } catch (err) {
+          const reason = err instanceof Error ? err.message : "unknown";
+          console.error(`[workout] inbox persist failed reason=${reason}`);
+        }
+      }
+      if (!this.push) return;
+      await this.push.sendToUser(clientUserId, {
+        title,
+        body,
+        data: notificationId ? { ...data, notificationId } : data,
+      });
+    } catch (err) {
+      const reason = err instanceof Error ? err.message : "unknown";
+      console.error(`[workout] assign push failed reason=${reason}`);
+    }
   }
 
   async assignPlan(input: {
@@ -88,6 +176,8 @@ export class WorkoutPlanService extends WorkoutBaseService {
         },
       },
     });
+
+    await this.notifyClientOfPlan(coachId, coachClientId, plan.id, plan.title);
 
     return toPlanResponse(plan);
   }

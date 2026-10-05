@@ -97,11 +97,67 @@ function getRequestBodySpec(
   fullPath: string,
   routePath: string
 ): { contentType: string; schema: any } | undefined {
+  const JSON = "application/json";
+
+  // ── Devices ────────────────────────────────────────────────────
+  if (fullPath === "/api/v1/devices" && method === "post") {
+    return {
+      contentType: JSON,
+      schema: {
+        type: "object",
+        properties: {
+          fcm_token: { type: "string", minLength: 100, maxLength: 4096 },
+          platform: { type: "string", enum: ["android", "ios", "web"] },
+          device_id: { type: "string", format: "uuid" },
+        },
+        required: ["fcm_token", "platform", "device_id"],
+      },
+    };
+  }
+
+  if (fullPath === "/api/v1/devices" && method === "delete") {
+    return {
+      contentType: JSON,
+      schema: {
+        type: "object",
+        properties: {
+          device_id: { type: "string", format: "uuid" },
+          fcm_token: { type: "string", minLength: 100, maxLength: 4096 },
+        },
+      },
+    };
+  }
+
+  if (fullPath === "/api/v1/devices/heartbeat" && method === "post") {
+    return {
+      contentType: JSON,
+      schema: {
+        type: "object",
+        properties: {
+          device_id: { type: "string", format: "uuid" },
+        },
+        required: ["device_id"],
+      },
+    };
+  }
+
+  // ── Auth: logout (optional per-device identifiers) ─────────────
+  if (fullPath === "/api/v1/auth/logout" && method === "post") {
+    return {
+      contentType: JSON,
+      schema: {
+        type: "object",
+        properties: {
+          device_id: { type: "string", format: "uuid" },
+          fcm_token: { type: "string" },
+        },
+      },
+    };
+  }
+
   if (method === "get" || method === "delete") {
     return undefined;
   }
-
-  const JSON = "application/json";
 
   // ── Check-In (coach) ───────────────────────────────────────────
   if (fullPath === "/api/v1/coach/checkin/questions" && method === "post") {
@@ -466,6 +522,8 @@ function generateOpenAPISpec(): OpenAPISchema {
         clientCheckInRouter: "/api/v1/client/checkin",
       },
     },
+    { file: "devices/devices.routes.ts", mount: "/api/v1/devices", tag: "Devices" },
+    { file: "notifications/notifications.routes.ts", mount: "/api/v1/notifications", tag: "Notifications" },
   ];
 
   for (const routeFile of routeFiles) {

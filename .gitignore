@@ -21,3 +21,4 @@ auth.postman_collection.json
 .vercel/.env.development.local
 tmp/
 reports/apidog-sync-report.md
+*-firebase-adminsdk-*.json
