@@ -3,6 +3,10 @@ export const config = {
     ttlMs: 7 * 24 * 60 * 60 * 1000,
     rejectionCooldownMs: 5 * 60 * 1000,
   },
+  auth: {
+    // Refresh-token lifetime. Rotated on every /auth/refresh use.
+    refreshTtlMs: 7 * 24 * 60 * 60 * 1000,
+  },
   pagination: {
     maxPageSize: 100,
     defaultPageSize: 20,

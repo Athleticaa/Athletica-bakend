@@ -1,6 +1,6 @@
 import "reflect-metadata";
 import { JwtPayload, JwtService } from "../../src/lib/jwt";
-import { validateSignup, validateLogin, validateConfirmReset, validateVerifyEmail, validateChangePassword } from "../../src/modules/auth/auth.validation";
+import { validateSignup, validateLogin, validateConfirmReset, validateVerifyEmail, validateChangePassword, validateRefreshToken, validateDeleteAccount } from "../../src/modules/auth/auth.validation";
 
 const jwtService = new JwtService();
 
@@ -113,6 +113,18 @@ describe("validateVerifyEmail", () => {
   });
 });
 
+describe("validateDeleteAccount", () => {
+  it("should accept valid credentials", () => {
+    expect(validateDeleteAccount({ email: "test@example.com", password: "password123" })).toHaveLength(0);
+  });
+
+  it("should reject malformed email and missing password", () => {
+    const errors = validateDeleteAccount({ email: "bad-email", password: "" });
+    expect(errors).toContain("email_invalid");
+    expect(errors).toContain("password_required");
+  });
+});
+
 describe("validateChangePassword", () => {
   it("should return no errors for valid input", () => {
     const errors = validateChangePassword({ old_password: "oldpass123", new_password: "newpass123" });
@@ -132,5 +144,27 @@ describe("validateChangePassword", () => {
   it("should return error for short new_password", () => {
     const errors = validateChangePassword({ old_password: "oldpass123", new_password: "short" });
     expect(errors).toContain("password_min");
+  });
+});
+
+describe("validateRefreshToken", () => {
+  it("should return no errors for valid input", () => {
+    const errors = validateRefreshToken({ refreshToken: "a".repeat(64) });
+    expect(errors.length).toBe(0);
+  });
+
+  it("should return error when refreshToken is missing", () => {
+    const errors = validateRefreshToken({} as { refreshToken: string });
+    expect(errors).toContain("refresh_token_required");
+  });
+
+  it("should return error when refreshToken is blank", () => {
+    const errors = validateRefreshToken({ refreshToken: "   " });
+    expect(errors).toContain("refresh_token_required");
+  });
+
+  it("should return error when refreshToken is not a string", () => {
+    const errors = validateRefreshToken({ refreshToken: 123 as unknown as string });
+    expect(errors).toContain("refresh_token_required");
   });
 });

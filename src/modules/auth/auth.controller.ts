@@ -53,6 +53,21 @@ export class AuthController {
     }
   };
 
+  refresh = async (req: Request, res: Response) => {
+    const errors = validation.validateRefreshToken(req.body, req.t);
+    if (errors.length > 0) {
+      res.status(400).json({ error: req.t("validation_failed"), details: errors });
+      return;
+    }
+
+    try {
+      const result = await this.authService.refresh(req.body.refreshToken.trim());
+      res.status(200).json(result);
+    } catch (err) {
+      this.handleError(res, err);
+    }
+  };
+
   googleLogin = async (req: Request, res: Response) => {
     const errors = validation.validateGoogleLogin(req.body, req.t);
     if (errors.length > 0) {
@@ -106,6 +121,21 @@ export class AuthController {
         typeof rawCode === "number" && Number.isInteger(rawCode) ? String(rawCode) : typeof rawCode === "string" ? rawCode.trim() : rawCode;
       await this.authService.confirmPasswordReset(email, code, req.body.password);
       res.status(200).json({ message: req.t("password_updated") });
+    } catch (err) {
+      this.handleError(res, err);
+    }
+  };
+
+  deleteAccount = async (req: Request, res: Response) => {
+    const errors = validation.validateDeleteAccount(req.body, req.t);
+    if (errors.length > 0) {
+      res.status(400).json({ error: req.t("validation_failed"), details: errors });
+      return;
+    }
+
+    try {
+      await this.authService.deleteAccount(req.body.email, req.body.password);
+      res.status(200).json({ message: req.t("account_deleted") });
     } catch (err) {
       this.handleError(res, err);
     }

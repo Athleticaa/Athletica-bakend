@@ -1,3 +1,5 @@
+import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
 import jwt from "jsonwebtoken";
 import request from "supertest";
 import app from "../../src/app";
@@ -10,6 +12,9 @@ function token(sub: string, role: string) {
     expiresIn: "1h",
   });
 }
+
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
+const prisma = new PrismaClient({ adapter });
 
 describe("GET /api/v1/notifications", () => {
   it("returns 401 without a token", async () => {
@@ -61,5 +66,47 @@ describe("PATCH /api/v1/notifications/read-all", () => {
   it("returns 401 without a token", async () => {
     const res = await request(app).patch("/api/v1/notifications/read-all");
     expect(res.status).toBe(401);
+  });
+});
+
+describe("notification created_at is correct UTC (timezone regression)", () => {
+  const email = "notif-tz-test@example.com";
+  let userId: string;
+
+  beforeAll(async () => {
+    await prisma.users.deleteMany({ where: { email } });
+    const user = await prisma.users.create({
+      data: { username: "notif_tz_test", email, role: "coach", provider: "email" },
+    });
+    userId = user.id;
+  });
+
+  afterAll(async () => {
+    await prisma.users.deleteMany({ where: { email } });
+    await prisma.$disconnect();
+  });
+
+  it("returns created_at within a minute of now, not shifted by the local offset", async () => {
+    await prisma.notifications.create({
+      data: {
+        recipient_user_id: userId,
+        type: "coach_request",
+        title: "TZ test",
+        body: "TZ test body",
+      },
+    });
+
+    const res = await request(app)
+      .get("/api/v1/notifications")
+      .set("Authorization", `Bearer ${token(userId, "coach")}`);
+
+    expect(res.status).toBe(200);
+    const items = res.body.data.notifications as Array<{ created_at: string }>;
+    expect(items.length).toBeGreaterThan(0);
+
+    const createdMs = new Date(items[0].created_at).getTime();
+    expect(Number.isNaN(createdMs)).toBe(false);
+    // A timezone-naive column read as local time would be off by hours here.
+    expect(Math.abs(createdMs - Date.now())).toBeLessThan(60_000);
   });
 });

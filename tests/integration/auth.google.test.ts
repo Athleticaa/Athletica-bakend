@@ -136,6 +136,18 @@ describe("POST /api/v1/auth/google — new users (US1)", () => {
 });
 
 describe("POST /api/v1/auth/google — returning users (US2)", () => {
+  it("does not sign in a soft-deleted Google account", async () => {
+    mockGoogleAccount("google-sub-guard-1", EMAILS.guard);
+    const created = await request(app).post("/api/v1/auth/google").send({ idToken: "valid-token", role: "client" });
+    expect(created.status).toBe(200);
+
+    await prisma.users.update({ where: { email: EMAILS.guard }, data: { deleted_at: new Date() } });
+    const login = await request(app).post("/api/v1/auth/google").send({ idToken: "valid-token" });
+
+    expect(login.status).toBe(401);
+    expect(login.body.error).toBe("Invalid email or password");
+  });
+
   it("keeps the original role even when a different role is sent", async () => {
     mockGoogleAccount("google-sub-client-1", EMAILS.client);
 

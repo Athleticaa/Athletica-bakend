@@ -1,4 +1,5 @@
 import "dotenv/config";
+import "./lib/timezone";
 import "reflect-metadata";
 import "./container";
 import express, { NextFunction, Request, Response } from "express";

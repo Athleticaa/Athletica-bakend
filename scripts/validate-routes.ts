@@ -145,6 +145,8 @@ function validateRoutes(): ValidationResult[] {
       isAuthModule &&
       (route.path === "/signup" ||
         route.path === "/login" ||
+        route.path === "/refresh" ||
+        route.path === "/delete-account" ||
         route.path === "/google" ||
         route.path === "/reset-password" ||
         route.path === "/reset-password/confirm" ||
@@ -164,7 +166,7 @@ function validateRoutes(): ValidationResult[] {
       issues.push("Mutation route without authentication");
     }
 
-    if (route.path.includes("/delete") && route.method !== "DELETE") {
+    if (route.path.includes("/delete") && route.path !== "/delete-account" && route.method !== "DELETE") {
       issues.push("Route contains '/delete' but uses wrong HTTP method");
     }
 

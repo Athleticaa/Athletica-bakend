@@ -14,8 +14,9 @@ model users {
   role           String   @db.VarChar
   provider       String   @db.VarChar
   google_sub     String?  @unique @db.VarChar
-  email_verified Boolean  @default(false)
-  created_at     DateTime @default(now())
+  email_verified Boolean   @default(false)
+  created_at     DateTime  @default(now()) @db.Timestamptz(3)
+  deleted_at     DateTime? @db.Timestamptz(3)
 
   coach_profiles        coach_profiles[]
   client_profiles       client_profiles[]
@@ -31,9 +32,9 @@ model verification_codes {
   id         String   @id @default(uuid()) @db.Uuid
   user_id    String   @db.Uuid
   code_hash  String   @db.VarChar
-  expires_at DateTime
+  expires_at DateTime @db.Timestamptz(3)
   used       Boolean  @default(false)
-  created_at DateTime @default(now())
+  created_at DateTime @default(now()) @db.Timestamptz(3)
 
   user users @relation(fields: [user_id], references: [id])
 
@@ -44,9 +45,9 @@ model password_reset_tokens {
   id         String   @id @default(uuid()) @db.Uuid
   user_id    String   @db.Uuid
   token_hash String   @db.VarChar
-  expires_at DateTime
+  expires_at DateTime @db.Timestamptz(3)
   used       Boolean  @default(false)
-  created_at DateTime @default(now())
+  created_at DateTime @default(now()) @db.Timestamptz(3)
 
   user users @relation(fields: [user_id], references: [id])
 
@@ -57,8 +58,8 @@ model refresh_tokens {
   id         String   @id @default(uuid()) @db.Uuid
   user_id    String   @db.Uuid
   token_hash String   @db.VarChar
-  expires_at DateTime
-  created_at DateTime @default(now())
+  expires_at DateTime @db.Timestamptz(3)
+  created_at DateTime @default(now()) @db.Timestamptz(3)
 
   user users @relation(fields: [user_id], references: [id])
 
@@ -74,7 +75,7 @@ model coach_profiles {
   location                    String?     @db.VarChar
   profile_image               String?     @db.VarChar
   active_invite_code            String?     @db.VarChar(6)
-  active_invite_code_expires_at DateTime?
+  active_invite_code_expires_at DateTime?   @db.Timestamptz(3)
 
   user                users                 @relation(fields: [user_id], references: [id])
   coach_requests      coach_requests[]      @relation("coach_requests_coach_id")
@@ -120,9 +121,9 @@ model coach_requests {
   coach_id    String    @db.Uuid
   client_id   String    @db.Uuid
   status      String    @db.VarChar
-  created_at  DateTime  @default(now())
-  updated_at  DateTime  @updatedAt
-  rejected_at DateTime?
+  created_at  DateTime  @default(now()) @db.Timestamptz(3)
+  updated_at  DateTime  @updatedAt @db.Timestamptz(3)
+  rejected_at DateTime? @db.Timestamptz(3)
 
   coach  coach_profiles  @relation("coach_requests_coach_id", fields: [coach_id], references: [id])
   client client_profiles @relation("coach_requests_client_id", fields: [client_id], references: [id])
@@ -134,7 +135,7 @@ model coach_clients {
   id              String              @id @default(uuid()) @db.Uuid
   coach_id        String              @db.Uuid
   client_id       String              @db.Uuid
-  created_at      DateTime            @default(now())
+  created_at      DateTime            @default(now()) @db.Timestamptz(3)
 
   coach  coach_profiles  @relation("coach_clients_coach_id", fields: [coach_id], references: [id])
   client client_profiles @relation("coach_clients_client_id", fields: [client_id], references: [id])
@@ -154,9 +155,9 @@ model conversations {
   coach_client_id String    @unique @db.Uuid
   coach_id        String    @db.Uuid
   client_id       String    @db.Uuid
-  created_at      DateTime  @default(now())
-  updated_at      DateTime  @updatedAt
-  last_message_at DateTime?
+  created_at      DateTime  @default(now()) @db.Timestamptz(3)
+  updated_at      DateTime  @updatedAt @db.Timestamptz(3)
+  last_message_at DateTime? @db.Timestamptz(3)
 
   coach_client coach_clients   @relation(fields: [coach_client_id], references: [id], onDelete: Cascade)
   coach        coach_profiles  @relation("conversations_coach_id", fields: [coach_id], references: [id], onDelete: Cascade)
@@ -179,9 +180,9 @@ model messages {
   attachment_mime         String? @db.VarChar
   attachment_size         Int?
   attachment_duration_sec Int?
-  created_at      DateTime  @default(now())
-  updated_at      DateTime  @updatedAt
-  deleted_at      DateTime?
+  created_at      DateTime  @default(now()) @db.Timestamptz(3)
+  updated_at      DateTime  @updatedAt @db.Timestamptz(3)
+  deleted_at      DateTime? @db.Timestamptz(3)
 
   conversation conversations @relation(fields: [conversation_id], references: [id], onDelete: Cascade)
   sender       users         @relation(fields: [sender_user_id], references: [id])
@@ -197,11 +198,11 @@ model outbox_events {
   aggregate_id   String    @db.Uuid
   channel        String    @db.VarChar
   payload        Json
-  created_at     DateTime  @default(now())
-  processed_at   DateTime?
+  created_at     DateTime  @default(now()) @db.Timestamptz(3)
+  processed_at   DateTime? @db.Timestamptz(3)
   attempts       Int       @default(0)
   last_error     String?   @db.Text
-  locked_at      DateTime?
+  locked_at      DateTime? @db.Timestamptz(3)
 
   @@index([processed_at, created_at])
   @@index([event_type, created_at])
@@ -237,8 +238,8 @@ model workout_templates {
   coach_id    String    @db.Uuid
   title       String    @db.VarChar
   description String
-  deleted_at  DateTime?
-  created_at  DateTime  @default(now())
+  deleted_at  DateTime? @db.Timestamptz(3)
+  created_at  DateTime  @default(now()) @db.Timestamptz(3)
 
   coach                 coach_profiles          @relation(fields: [coach_id], references: [id])
   workout_template_days workout_template_days[]
@@ -282,8 +283,8 @@ model workout_plans {
   start_date           DateTime  @db.Date
   cycle_days           Int
   is_active            Boolean   @default(true)
-  deleted_at           DateTime?
-  created_at           DateTime  @default(now())
+  deleted_at           DateTime? @db.Timestamptz(3)
+  created_at           DateTime  @default(now()) @db.Timestamptz(3)
 
   coach_client coach_clients  @relation(fields: [coach_client_id], references: [id])
   coach        coach_profiles @relation(fields: [coach_id], references: [id])
@@ -331,7 +332,7 @@ model workout_logs {
   client_id       String    @db.Uuid
   workout_date    DateTime  @db.Date
   completed       Boolean
-  completed_at    DateTime?
+  completed_at    DateTime? @db.Timestamptz(3)
   notes           String?
 
   workout_plan workout_plans   @relation(fields: [workout_plan_id], references: [id])
@@ -347,8 +348,8 @@ model workout_exercise_logs {
   client_id               String   @db.Uuid
   workout_date            DateTime @db.Date
   completed               Boolean  @default(false)
-  completed_at            DateTime?
-  created_at              DateTime @default(now())
+  completed_at            DateTime? @db.Timestamptz(3)
+  created_at              DateTime @default(now()) @db.Timestamptz(3)
 
   workout_plan       workout_plans         @relation(fields: [workout_plan_id], references: [id])
   workout_day        workout_days          @relation(fields: [workout_day_id], references: [id])
@@ -384,7 +385,7 @@ model foods {
   carbs           Float
   fat             Float
   is_archived     Boolean  @default(false)
-  created_at      DateTime @default(now())
+  created_at      DateTime @default(now()) @db.Timestamptz(3)
 
   category                food_categories           @relation(fields: [category_id], references: [id])
   nutrition_template_foods nutrition_template_foods[]
@@ -397,7 +398,7 @@ model nutrition_templates {
   title       String   @db.VarChar
   description String
   is_deleted  Boolean  @default(false)
-  created_at  DateTime @default(now())
+  created_at  DateTime @default(now()) @db.Timestamptz(3)
 
   coach                    coach_profiles             @relation(fields: [coach_id], references: [id])
   nutrition_template_meals nutrition_template_meals[]
@@ -438,7 +439,7 @@ model nutrition_plans {
   title                 String    @db.VarChar
   description           String
   is_active             Boolean   @default(true)
-  created_at            DateTime  @default(now())
+  created_at            DateTime  @default(now()) @db.Timestamptz(3)
 
   coach_client       coach_clients        @relation(fields: [coach_client_id], references: [id])
   nutrition_template nutrition_templates? @relation(fields: [nutrition_template_id], references: [id])
@@ -483,8 +484,8 @@ model nutrition_meal_logs {
   client_id         String   @db.Uuid
   date              DateTime @db.Date
   completed         Boolean  @default(false)
-  completed_at      DateTime?
-  created_at        DateTime @default(now())
+  completed_at      DateTime? @db.Timestamptz(3)
+  created_at        DateTime @default(now()) @db.Timestamptz(3)
 
   nutrition_plan nutrition_plans @relation(fields: [nutrition_plan_id], references: [id])
   nutrition_meal nutrition_meals @relation(fields: [nutrition_meal_id], references: [id])
@@ -502,7 +503,7 @@ model client_questions {
   question_type String   @default("choice") @db.VarChar
   choices       String[]
   language      String   @db.VarChar
-  created_at    DateTime @default(now())
+  created_at    DateTime @default(now()) @db.Timestamptz(3)
 
   client_answers client_answers[]
 
@@ -515,7 +516,7 @@ model client_answers {
   client_id   String   @db.Uuid
   question_id String   @db.Uuid
   answer      String   @db.VarChar
-  created_at  DateTime @default(now())
+  created_at  DateTime @default(now()) @db.Timestamptz(3)
 
   client   client_profiles  @relation(fields: [client_id], references: [id])
   question client_questions @relation(fields: [question_id], references: [id])
@@ -542,8 +543,8 @@ model checkin_questions {
   options    String[]
   required   Boolean               @default(true)
   order      Int
-  created_at DateTime              @default(now())
-  updated_at DateTime              @updatedAt
+  created_at DateTime              @default(now()) @db.Timestamptz(3)
+  updated_at DateTime              @updatedAt @db.Timestamptz(3)
 
   coach   coach_profiles    @relation(fields: [coach_id], references: [id], onDelete: Cascade)
   answers checkin_answers[]
@@ -556,7 +557,7 @@ model checkin_submissions {
   coach_id      String   @db.Uuid
   client_id     String   @db.Uuid
   coach_client_id String? @db.Uuid
-  submitted_at  DateTime @default(now())
+  submitted_at  DateTime @default(now()) @db.Timestamptz(3)
 
   coach        coach_profiles  @relation(fields: [coach_id], references: [id], onDelete: Cascade)
   client       client_profiles @relation(fields: [client_id], references: [id], onDelete: Cascade)
@@ -587,8 +588,8 @@ model checkin_assignments {
   client_id       String   @db.Uuid
   coach_client_id String? @db.Uuid
   status          String   @default("pending") @db.VarChar
-  created_at      DateTime @default(now())
-  updated_at      DateTime @updatedAt
+  created_at      DateTime @default(now()) @db.Timestamptz(3)
+  updated_at      DateTime @updatedAt @db.Timestamptz(3)
 
   coach  coach_profiles  @relation(fields: [coach_id], references: [id], onDelete: Cascade)
   client client_profiles @relation(fields: [client_id], references: [id], onDelete: Cascade)
@@ -607,7 +608,7 @@ model coach_achievements {
   file_name  String?  @db.VarChar
   file_size  Int?
   mime_type  String   @default("application/pdf") @db.VarChar
-  created_at DateTime @default(now())
+  created_at DateTime @default(now()) @db.Timestamptz(3)
 
   coach coach_profiles @relation(fields: [coach_id], references: [id], onDelete: Cascade)
 
@@ -621,9 +622,9 @@ model user_devices {
   platform     String   @db.VarChar
   device_id    String   @db.VarChar
   is_active    Boolean  @default(true)
-  last_seen_at DateTime @default(now())
-  created_at   DateTime @default(now())
-  updated_at   DateTime @updatedAt
+  last_seen_at DateTime @default(now()) @db.Timestamptz(3)
+  created_at   DateTime @default(now()) @db.Timestamptz(3)
+  updated_at   DateTime @updatedAt @db.Timestamptz(3)
 
   user users @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
@@ -641,12 +642,11 @@ model notifications {
   body              String    @db.Text
   data              Json      @default("{}")
   is_read           Boolean   @default(false)
-  read_at           DateTime?
-  created_at        DateTime  @default(now())
+  read_at           DateTime? @db.Timestamptz(3)
+  created_at        DateTime  @default(now()) @db.Timestamptz(3)
 
   recipient users @relation(fields: [recipient_user_id], references: [id], onDelete: Cascade)
 
   @@index([recipient_user_id, created_at(sort: Desc), id(sort: Desc)])
   @@index([recipient_user_id, is_read, created_at(sort: Desc)])
 }
-
