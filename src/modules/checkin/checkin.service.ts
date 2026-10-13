@@ -4,6 +4,12 @@ import { injectable, inject } from "tsyringe";
 import { PrismaClientToken } from "../../di/tokens";
 import { ServiceError } from "../../lib/service-error";
 import type { CreateQuestionInput, UpdateQuestionInput, SubmitAnswerItem } from "./checkin.validation";
+import { PushService } from "../../services/push";
+import { NotificationsService } from "../notifications/notifications.service";
+import { withActorData } from "../notifications/notification-actor";
+import i18next from "../../lib/i18n";
+import { config } from "../../config";
+import { withTimeout } from "../../lib/with-timeout";
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -13,7 +19,161 @@ cloudinary.config({
 
 @injectable()
 export class CheckInService {
-  constructor(@inject(PrismaClientToken) private prisma: PrismaClient) {}
+  constructor(
+    @inject(PrismaClientToken) private prisma: PrismaClient,
+    @inject(PushService) private push?: PushService,
+    @inject(NotificationsService) private inbox?: NotificationsService,
+  ) {}
+
+  /** Best-effort inbox + push. Never throws. */
+  private async notifyClientOfAssignment(
+    coachProfileId: string,
+    clientProfileId: string,
+    assignmentId: string,
+  ) {
+    try {
+      const [coach, client] = await withTimeout(
+        Promise.all([
+          this.prisma.coach_profiles.findFirst({
+            where: { id: coachProfileId },
+            select: {
+              profile_image: true,
+              user: { select: { id: true, username: true } },
+            },
+          }),
+          this.prisma.client_profiles.findFirst({
+            where: { id: clientProfileId },
+            select: { user_id: true },
+          }),
+        ]),
+        config.push.dbLookupTimeoutMs,
+        "notify_lookup_timeout",
+      );
+      if (!client) return;
+      const t = (key: string, opts?: Record<string, string>) =>
+        i18next.t(key, { lng: "en", ...opts });
+      const title = t("push_checkin_requested_title");
+      const body = t("push_checkin_requested_body", {
+        coach: coach?.user?.username ?? "Your coach",
+      });
+      const data = withActorData(
+        {
+          type: "checkin_requested",
+          assignmentId,
+          click_action: "FLUTTER_NOTIFICATION_CLICK",
+        },
+        {
+          userId: coach?.user?.id,
+          username: coach?.user?.username,
+          profileImage: coach?.profile_image ?? undefined,
+          role: "coach",
+        },
+      );
+      let notificationId: string | undefined;
+      if (this.inbox) {
+        try {
+          const row = await withTimeout(
+            this.inbox.create(client.user_id, {
+              type: "checkin_requested",
+              title,
+              body,
+              data,
+            }),
+            config.push.dbLookupTimeoutMs,
+            "inbox_create_timeout",
+          );
+          notificationId = row.id;
+        } catch (err) {
+          const reason = err instanceof Error ? err.message : "unknown";
+          console.error(`[checkin] inbox persist failed reason=${reason}`);
+        }
+      }
+      if (!this.push) return;
+      await this.push.sendToUser(client.user_id, {
+        title,
+        body,
+        data: notificationId ? { ...data, notificationId } : data,
+      });
+    } catch (err) {
+      const reason = err instanceof Error ? err.message : "unknown";
+      console.error(`[checkin] assign push failed reason=${reason}`);
+    }
+  }
+
+  /** Best-effort inbox + push. Never throws. */
+  private async notifyCoachOfSubmission(
+    coachProfileId: string,
+    clientProfileId: string,
+    submissionId: string,
+  ) {
+    try {
+      const [coach, client] = await withTimeout(
+        Promise.all([
+          this.prisma.coach_profiles.findFirst({
+            where: { id: coachProfileId },
+            select: { user_id: true },
+          }),
+          this.prisma.client_profiles.findFirst({
+            where: { id: clientProfileId },
+            select: {
+              profile_image: true,
+              user: { select: { id: true, username: true } },
+            },
+          }),
+        ]),
+        config.push.dbLookupTimeoutMs,
+        "notify_lookup_timeout",
+      );
+      if (!coach) return;
+      const t = (key: string, opts?: Record<string, string>) =>
+        i18next.t(key, { lng: "en", ...opts });
+      const title = t("push_checkin_submitted_title");
+      const body = t("push_checkin_submitted_body", {
+        client: client?.user?.username ?? "A client",
+      });
+      const data = withActorData(
+        {
+          type: "checkin_submitted",
+          submissionId,
+          click_action: "FLUTTER_NOTIFICATION_CLICK",
+        },
+        {
+          userId: client?.user?.id,
+          username: client?.user?.username,
+          profileImage: client?.profile_image ?? undefined,
+          role: "client",
+        },
+      );
+      let notificationId: string | undefined;
+      if (this.inbox) {
+        try {
+          const row = await withTimeout(
+            this.inbox.create(coach.user_id, {
+              type: "checkin_submitted",
+              title,
+              body,
+              data,
+            }),
+            config.push.dbLookupTimeoutMs,
+            "inbox_create_timeout",
+          );
+          notificationId = row.id;
+        } catch (err) {
+          const reason = err instanceof Error ? err.message : "unknown";
+          console.error(`[checkin] inbox persist failed reason=${reason}`);
+        }
+      }
+      if (!this.push) return;
+      await this.push.sendToUser(coach.user_id, {
+        title,
+        body,
+        data: notificationId ? { ...data, notificationId } : data,
+      });
+    } catch (err) {
+      const reason = err instanceof Error ? err.message : "unknown";
+      console.error(`[checkin] submit push failed reason=${reason}`);
+    }
+  }
 
   // ── Shared helpers ────────────────────────────────────────────────────────
 
@@ -387,6 +547,8 @@ export class CheckInService {
       return sub;
     });
 
+    await this.notifyCoachOfSubmission(coachId, clientProfileId, submission.id);
+
     return submission;
   }
 
@@ -462,6 +624,8 @@ export class CheckInService {
       update: { status: "pending", updated_at: new Date() },
       create: { coach_id: coachProfileId, client_id: cc.client_id, coach_client_id: coachClientId, status: "pending" },
     });
+
+    await this.notifyClientOfAssignment(coachProfileId, cc.client_id, assignment.id);
 
     return assignment;
   }

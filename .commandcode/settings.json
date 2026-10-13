@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "powershell",
+      "Shell(Select-String:*)"
+    ],
+    "deny": [],
+    "defaultMode": "default"
+  }
+}

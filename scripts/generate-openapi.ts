@@ -97,11 +97,67 @@ function getRequestBodySpec(
   fullPath: string,
   routePath: string
 ): { contentType: string; schema: any } | undefined {
+  const JSON = "application/json";
+
+  // ── Devices ────────────────────────────────────────────────────
+  if (fullPath === "/api/v1/devices" && method === "post") {
+    return {
+      contentType: JSON,
+      schema: {
+        type: "object",
+        properties: {
+          fcm_token: { type: "string", minLength: 100, maxLength: 4096 },
+          platform: { type: "string", enum: ["android", "ios", "web"] },
+          device_id: { type: "string", format: "uuid" },
+        },
+        required: ["fcm_token", "platform", "device_id"],
+      },
+    };
+  }
+
+  if (fullPath === "/api/v1/devices" && method === "delete") {
+    return {
+      contentType: JSON,
+      schema: {
+        type: "object",
+        properties: {
+          device_id: { type: "string", format: "uuid" },
+          fcm_token: { type: "string", minLength: 100, maxLength: 4096 },
+        },
+      },
+    };
+  }
+
+  if (fullPath === "/api/v1/devices/heartbeat" && method === "post") {
+    return {
+      contentType: JSON,
+      schema: {
+        type: "object",
+        properties: {
+          device_id: { type: "string", format: "uuid" },
+        },
+        required: ["device_id"],
+      },
+    };
+  }
+
+  // ── Auth: logout (optional per-device identifiers) ─────────────
+  if (fullPath === "/api/v1/auth/logout" && method === "post") {
+    return {
+      contentType: JSON,
+      schema: {
+        type: "object",
+        properties: {
+          device_id: { type: "string", format: "uuid" },
+          fcm_token: { type: "string" },
+        },
+      },
+    };
+  }
+
   if (method === "get" || method === "delete") {
     return undefined;
   }
-
-  const JSON = "application/json";
 
   // ── Check-In (coach) ───────────────────────────────────────────
   if (fullPath === "/api/v1/coach/checkin/questions" && method === "post") {
@@ -197,7 +253,30 @@ function getRequestBodySpec(
   }
 
   // ── Auth ───────────────────────────────────────────────────────
-  if (routePath.includes("/signup")) {
+  if (fullPath === "/api/v1/auth/refresh" && method === "post") {
+    return {
+      contentType: JSON,
+      schema: {
+        type: "object",
+        properties: { refreshToken: { type: "string", minLength: 1 } },
+        required: ["refreshToken"],
+      },
+    };
+  }
+
+  if (fullPath === "/api/v1/auth/delete-account" && method === "post") {
+    return {
+      contentType: JSON,
+      schema: {
+        type: "object",
+        properties: {
+          email: { type: "string", format: "email" },
+          password: { type: "string", minLength: 1 },
+        },
+        required: ["email", "password"],
+      },
+    };
+  } else if (routePath.includes("/signup")) {
     return {
       contentType: JSON,
       schema: {
@@ -466,6 +545,8 @@ function generateOpenAPISpec(): OpenAPISchema {
         clientCheckInRouter: "/api/v1/client/checkin",
       },
     },
+    { file: "devices/devices.routes.ts", mount: "/api/v1/devices", tag: "Devices" },
+    { file: "notifications/notifications.routes.ts", mount: "/api/v1/notifications", tag: "Notifications" },
   ];
 
   for (const routeFile of routeFiles) {
@@ -491,10 +572,22 @@ function generateOpenAPISpec(): OpenAPISchema {
         security: getAuthRequirements(route.middleware),
         parameters: generateParameters(route.path, route.method, fullPath),
         responses: {
-          "200": { description: "Success", content: getResponseContent(route.method, fullPath, "200") },
+          "200": {
+            description:
+              fullPath === "/api/v1/auth/delete-account"
+                ? "Account soft-deleted; email/password login restores it within 30 days"
+                : "Success",
+            content: getResponseContent(route.method, fullPath, "200"),
+          },
           "201": { description: "Created", content: getResponseContent(route.method, fullPath, "201") },
           "400": { description: "Bad request", content: errorBody },
-          "401": { description: "Unauthorized", content: errorBody },
+          "401": {
+            description:
+              fullPath === "/api/v1/auth/delete-account"
+                ? "Invalid email or password"
+                : "Unauthorized",
+            content: errorBody,
+          },
           "403": { description: "Forbidden", content: errorBody },
           "404": { description: "Not found", content: errorBody },
         },

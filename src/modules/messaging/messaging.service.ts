@@ -10,6 +10,10 @@ import {
   buildMessageCreatedPayload,
   publishMessageCreated,
 } from "../../lib/ably";
+import { isUserInChannel } from "../../lib/ably-presence";
+import { withTimeout } from "../../lib/with-timeout";
+import { PushService } from "../../services/push";
+import i18next from "../../lib/i18n";
 import { encodeMessageCursor, MessageCursor, ValidatedMediaMessage } from "./messaging.validation";
 
 cloudinary.config({
@@ -68,7 +72,10 @@ const conversationInclude: Prisma.conversationsInclude = {
 
 @injectable()
 export class MessagingService {
-  constructor(@inject(PrismaClientToken) private prisma: PrismaClient) {}
+  constructor(
+    @inject(PrismaClientToken) private prisma: PrismaClient,
+    @inject(PushService) private push?: PushService,
+  ) {}
 
   private isUniqueViolation(err: unknown): boolean {
     return err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002";
@@ -239,6 +246,83 @@ export class MessagingService {
     return { message, event, channel, payload };
   }
 
+  /**
+   * Best-effort chat push to the conversation counterpart — skipped when the
+   * recipient is present in the Ably channel (fail-open: any lookup failure
+   * still sends). Never throws; never blocks the message response beyond the
+   * push budget. Server copy is English; clients may re-render from data.
+   * NOTE: chat deliberately writes NO inbox row (see NOTIFICATION_TYPES) —
+   * messaging history is the source of truth for chat badges.
+   */
+  private async notifyRecipient(
+    channel: string,
+    message: {
+      id: string;
+      conversation_id: string;
+      sender_user_id: string;
+      sender_role: string;
+      content: string | null;
+      message_type: string;
+    },
+  ) {
+    if (!this.push) return;
+    try {
+      // Bounded: a slow DB skips the push instead of inflating send latency.
+      const [conversation, sender] = await withTimeout(
+        Promise.all([
+          this.prisma.conversations.findUnique({
+            where: { id: message.conversation_id },
+            select: {
+              coach: { select: { user: { select: { id: true } } } },
+              client: { select: { user: { select: { id: true } } } },
+            },
+          }),
+          this.prisma.users.findUnique({
+            where: { id: message.sender_user_id },
+            select: { username: true },
+          }),
+        ]),
+        config.push.dbLookupTimeoutMs,
+        "notify_lookup_timeout",
+      );
+      if (!conversation) return;
+
+      const recipientId =
+        message.sender_role === "coach"
+          ? conversation.client?.user?.id
+          : conversation.coach?.user?.id;
+      if (!recipientId || recipientId === message.sender_user_id) return;
+
+      if (await isUserInChannel(channel, recipientId)) return;
+
+      const t = (key: string, opts?: Record<string, string>) =>
+        i18next.t(key, { lng: "en", ...opts });
+      const senderName = sender?.username ?? t("push_chat_message_title", { sender: "Athletica" });
+      const preview =
+        message.message_type === "image"
+          ? t("push_chat_photo")
+          : message.message_type === "voice"
+            ? t("push_chat_voice")
+            : (message.content ?? "").slice(0, 120) || t("push_chat_new_message");
+
+      await this.push.sendToUser(recipientId, {
+        title: t("push_chat_message_title", { sender: senderName }),
+        body: t("push_chat_message_body", { preview }),
+        data: {
+          type: "chat_message",
+          conversationId: message.conversation_id,
+          messageId: message.id,
+          messageType: message.message_type,
+          senderRole: message.sender_role,
+          click_action: "FLUTTER_NOTIFICATION_CLICK",
+        },
+      });
+    } catch (err) {
+      const reason = err instanceof Error ? err.message : "unknown";
+      console.error(`[messaging] recipient push failed channel=${channel} reason=${reason}`);
+    }
+  }
+
   private async bestEffortPublish(channel: string, payload: ReturnType<typeof buildMessageCreatedPayload>) {
     let timer: ReturnType<typeof setTimeout> | undefined;
     try {
@@ -281,6 +365,7 @@ export class MessagingService {
     // Awaited (not fire-and-forget): serverless runtimes may suspend the
     // function once the response is sent, killing background work.
     await this.bestEffortPublish(result.channel, result.payload);
+    await this.notifyRecipient(result.channel, result.message);
 
     return { message: result.message, conversation };
   }
@@ -330,6 +415,7 @@ export class MessagingService {
 
     // See sendMessageToConversation: must be awaited on serverless.
     await this.bestEffortPublish(result.channel, result.payload);
+    await this.notifyRecipient(result.channel, result.message);
 
     return { message: result.message, conversation };
   }
@@ -368,6 +454,7 @@ export class MessagingService {
 
     // See sendMessageToConversation: must be awaited on serverless.
     await this.bestEffortPublish(result.channel, result.payload);
+    await this.notifyRecipient(result.channel, result.message);
 
     return { message: result.message, conversation };
   }
@@ -452,6 +539,7 @@ export class MessagingService {
 
     // See sendMessageToConversation: must be awaited on serverless.
     await this.bestEffortPublish(result.channel, result.payload);
+    await this.notifyRecipient(result.channel, result.message);
 
     return result;
   }

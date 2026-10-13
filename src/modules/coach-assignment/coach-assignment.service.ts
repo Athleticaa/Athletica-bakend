@@ -6,13 +6,139 @@ import { JwtService } from "../../lib/jwt";
 import { ServiceError } from "../../lib/service-error";
 import { formatGoal } from "../../lib/format-goal";
 import { config } from "../../config";
+import { PushService } from "../../services/push";
+import { NotificationsService } from "../notifications/notifications.service";
+import { withActorData } from "../notifications/notification-actor";
+import i18next from "../../lib/i18n";
+import { withTimeout } from "../../lib/with-timeout";
 
 @injectable()
 export class CoachAssignmentService {
   constructor(
     @inject(PrismaClientToken) private prisma: PrismaClient,
     @inject(JwtServiceToken) private jwtService: JwtService,
+    @inject(PushService) private push?: PushService,
+    @inject(NotificationsService) private inbox?: NotificationsService,
   ) {}
+
+  /**
+   * Persist the inbox row best-effort. Never throws — inbox write failure
+   * must not break the domain request (same philosophy as pushes).
+   * Time-bounded like the lookups so a slow DB can't push added latency
+   * past the documented push budget. Returns the notification id for
+   * FCM `data.notificationId`, if stored.
+   */
+  private async persistInbox(
+    recipientUserId: string,
+    type: "coach_request" | "request_accepted",
+    title: string,
+    body: string,
+    data: Record<string, string>,
+  ): Promise<string | undefined> {
+    if (!this.inbox) return undefined;
+    try {
+      const row = await withTimeout(
+        this.inbox.create(recipientUserId, { type, title, body, data }),
+        config.push.dbLookupTimeoutMs,
+        "inbox_create_timeout",
+      );
+      return row.id;
+    } catch (err) {
+      const reason = err instanceof Error ? err.message : "unknown";
+      console.error(`[coach-assignment] inbox persist failed type=${type} reason=${reason}`);
+      return undefined;
+    }
+  }
+
+  /** Best-effort inbox + push. Never throws. */
+  private async notifyCoachOfRequest(coachUserId: string, clientUserId: string, requestId: string) {
+    try {
+      const [client, clientProfile] = await withTimeout(
+        Promise.all([
+          this.prisma.users.findUnique({
+            where: { id: clientUserId },
+            select: { username: true },
+          }),
+          this.prisma.client_profiles.findFirst({
+            where: { user_id: clientUserId },
+            select: { profile_image: true },
+          }),
+        ]),
+        config.push.dbLookupTimeoutMs,
+        "notify_lookup_timeout",
+      );
+      const t = (key: string, opts?: Record<string, string>) =>
+        i18next.t(key, { lng: "en", ...opts });
+      const title = t("push_coach_request_title");
+      const body = t("push_coach_request_body", { client: client?.username ?? "A client" });
+      const data = withActorData(
+        {
+          type: "coach_request",
+          requestId,
+          click_action: "FLUTTER_NOTIFICATION_CLICK",
+        },
+        {
+          userId: clientUserId,
+          username: client?.username,
+          profileImage: clientProfile?.profile_image ?? undefined,
+          role: "client",
+        },
+      );
+      const notificationId = await this.persistInbox(coachUserId, "coach_request", title, body, data);
+      if (!this.push) return;
+      await this.push.sendToUser(coachUserId, {
+        title,
+        body,
+        data: notificationId ? { ...data, notificationId } : data,
+      });
+    } catch (err) {
+      const reason = err instanceof Error ? err.message : "unknown";
+      console.error(`[coach-assignment] request push failed reason=${reason}`);
+    }
+  }
+
+  /** Best-effort inbox + push. Never throws. */
+  private async notifyClientOfAcceptance(
+    clientUserId: string,
+    coach: { userId: string; username: string; profileImage?: string },
+    assignmentId: string,
+  ) {
+    try {
+      const t = (key: string, opts?: Record<string, string>) =>
+        i18next.t(key, { lng: "en", ...opts });
+      const title = t("push_request_accepted_title");
+      const body = t("push_request_accepted_body", { coach: coach.username });
+      const data = withActorData(
+        {
+          type: "request_accepted",
+          assignmentId,
+          click_action: "FLUTTER_NOTIFICATION_CLICK",
+        },
+        {
+          userId: coach.userId,
+          username: coach.username,
+          profileImage: coach.profileImage,
+          role: "coach",
+        },
+      );
+      const notificationId = await this.persistInbox(
+        clientUserId,
+        "request_accepted",
+        title,
+        body,
+        data,
+      );
+      if (!this.push) return;
+      await this.push.sendToUser(clientUserId, {
+        title,
+        body,
+        data: notificationId ? { ...data, notificationId } : data,
+      });
+    } catch (err) {
+      const reason = err instanceof Error ? err.message : "unknown";
+      console.error(`[coach-assignment] acceptance push failed reason=${reason}`);
+    }
+  }
 
   async getCoachProfileId(userId: string): Promise<string> {
     const profile = await this.prisma.coach_profiles.findFirst({ where: { user_id: userId } });
@@ -184,6 +310,7 @@ export class CoachAssignmentService {
           where: { id: existingRequest.id },
           data: { status: "pending", rejected_at: null },
         });
+        await this.notifyCoachOfRequest(coachProfile.user_id, userId, record.id);
         return { record, created: false, coach };
       }
     }
@@ -192,6 +319,7 @@ export class CoachAssignmentService {
       const record = await this.prisma.coach_requests.create({
         data: { coach_id: coachProfile.id, client_id: clientProfileId, status: "pending" },
       });
+      await this.notifyCoachOfRequest(coachProfile.user_id, userId, record.id);
       return { record, created: true, coach };
     } catch (err) {
       if (this.isUniqueViolation(err)) {
@@ -246,6 +374,43 @@ export class CoachAssignmentService {
         });
         return [updated, created];
       });
+      // Resolve the client user + coach identity for the acceptance
+      // inbox row and push. Bounded best-effort: on slow DB the assignment
+      // still succeeds.
+      try {
+        const [clientProfile, coachUser, coachProfile] = await withTimeout(
+          Promise.all([
+            this.prisma.client_profiles.findFirst({
+              where: { id: request.client_id },
+              select: { user_id: true },
+            }),
+            this.prisma.users.findUnique({
+              where: { id: userId },
+              select: { username: true },
+            }),
+            this.prisma.coach_profiles.findFirst({
+              where: { id: coachProfileId },
+              select: { profile_image: true },
+            }),
+          ]),
+          config.push.dbLookupTimeoutMs,
+          "notify_lookup_timeout",
+        );
+        if (clientProfile) {
+          await this.notifyClientOfAcceptance(
+            clientProfile.user_id,
+            {
+              userId,
+              username: coachUser?.username ?? "Your coach",
+              profileImage: coachProfile?.profile_image ?? undefined,
+            },
+            assignment.id,
+          );
+        }
+      } catch (err) {
+        const reason = err instanceof Error ? err.message : "unknown";
+        console.error(`[coach-assignment] acceptance lookup failed reason=${reason}`);
+      }
       return { request: updatedRequest, assignment };
     } catch (err) {
       if (this.isUniqueViolation(err)) {

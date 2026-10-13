@@ -6,10 +6,13 @@ import { JwtService } from "../../lib/jwt";
 import { GoogleTokenInvalidError, sanitizeGoogleUsername, verifyGoogleIdToken } from "../../lib/google-auth";
 import { EmailService } from "../../services/email";
 import { PrismaClientToken } from "../../di/tokens";
+import { config } from "../../config";
 import type { SignupInput } from "./auth.validation";
 import { createDefaultCheckInQuestions } from "../checkin/checkin-defaults";
+import { DevicesService } from "../devices/devices.service";
 
 const SALT_ROUNDS = 12;
+const ACCOUNT_RECOVERY_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
 
 export class ServiceError extends Error {
   statusCode: number;
@@ -26,11 +29,13 @@ export class AuthService {
   private prisma: PrismaClient;
   private jwtService: JwtService;
   private emailService: EmailService;
+  private devicesService: DevicesService;
 
   constructor() {
     this.prisma = container.resolve(PrismaClientToken);
     this.jwtService = container.resolve(JwtService);
     this.emailService = container.resolve(EmailService);
+    this.devicesService = container.resolve(DevicesService);
   }
 
   private hashPassword(password: string): Promise<string> {
@@ -124,6 +129,25 @@ export class AuthService {
     return crypto.randomBytes(32).toString("hex");
   }
 
+  /**
+   * Mints a new opaque refresh token and persists only its SHA-256 hash.
+   * Pass a transaction client to keep the write atomic with the caller's work.
+   */
+  private async createRefreshToken(
+    userId: string,
+    tx: Pick<PrismaClient, "refresh_tokens"> = this.prisma
+  ): Promise<string> {
+    const raw = this.generateRefreshToken();
+    await tx.refresh_tokens.create({
+      data: {
+        user_id: userId,
+        token_hash: this.hashToken(raw),
+        expires_at: new Date(Date.now() + config.auth.refreshTtlMs),
+      },
+    });
+    return raw;
+  }
+
   async login(email: string, password: string) {
     const normalizedEmail = this.normalizeEmail(email);
     const user = await this.prisma.users.findFirst({
@@ -138,25 +162,32 @@ export class AuthService {
     const valid = await this.comparePassword(password, user.password);
     if (!valid) throw new ServiceError("invalid_email_or_password", 401);
 
+    if (user.deleted_at && Date.now() - user.deleted_at.getTime() > ACCOUNT_RECOVERY_WINDOW_MS) {
+      throw new ServiceError("account_recovery_expired", 401);
+    }
+
     if (!user.email_verified) throw new ServiceError("email_not_verified", 403);
 
-    const token = this.jwtService.signToken(user.id, user.email, user.role);
+    if (user.deleted_at) {
+      const restored = await this.prisma.$transaction(async (tx) => {
+        const result = await tx.users.updateMany({
+          where: { id: user.id, deleted_at: user.deleted_at },
+          data: { deleted_at: null },
+        });
+        if (result.count !== 1) return false;
+        await tx.refresh_tokens.deleteMany({ where: { user_id: user.id } });
+        return true;
+      });
+      if (!restored) throw new ServiceError("invalid_email_or_password", 401);
+      user.deleted_at = null;
+    }
 
-    return {
-      user: {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        role: user.role,
-        email_verified: user.email_verified,
-        created_at: user.created_at,
-      },
-      token,
-    };
+    return this.issueSession(user);
   }
 
-  private issueSession(user: { id: string; username: string; email: string; role: string; email_verified: boolean; created_at: Date }) {
+  private async issueSession(user: { id: string; username: string; email: string; role: string; email_verified: boolean; created_at: Date }) {
     const token = this.jwtService.signToken(user.id, user.email, user.role);
+    const refreshToken = await this.createRefreshToken(user.id);
     return {
       user: {
         id: user.id,
@@ -167,6 +198,7 @@ export class AuthService {
         created_at: user.created_at,
       },
       token,
+      refreshToken,
     };
   }
 
@@ -190,6 +222,7 @@ export class AuthService {
     // Sync the stored email in case the user changed it at Google (sub is stable).
     // Google auth always implies email_verified:true — heal legacy rows.
     const bySub = await this.prisma.users.findUnique({ where: { google_sub: account.sub } });
+    if (bySub?.deleted_at) throw new ServiceError("invalid_email_or_password", 401);
     if (bySub) {
       if (bySub.email.toLowerCase() !== email) {
         try {
@@ -221,6 +254,7 @@ export class AuthService {
     const byEmail = await this.prisma.users.findFirst({
       where: { email: { equals: email, mode: "insensitive" } },
     });
+    if (byEmail?.deleted_at) throw new ServiceError("invalid_email_or_password", 401);
     if (byEmail) {
       try {
         const linked = await this.prisma.users.update({
@@ -232,6 +266,7 @@ export class AuthService {
         // Lost a link-vs-create race: this sub is already claimed by another row.
         if ((err as { code?: string })?.code === "P2002") {
           const winner = await this.prisma.users.findUnique({ where: { google_sub: account.sub } });
+          if (winner?.deleted_at) throw new ServiceError("invalid_email_or_password", 401);
           if (winner) return this.issueSession(winner);
         }
         throw err;
@@ -276,6 +311,7 @@ export class AuthService {
         const winner =
           (await this.prisma.users.findUnique({ where: { google_sub: account.sub } })) ??
           (await this.prisma.users.findFirst({ where: { email: { equals: email, mode: "insensitive" } } }));
+        if (winner?.deleted_at) throw new ServiceError("invalid_email_or_password", 401);
         if (winner) return this.issueSession(winner);
       }
       throw err;
@@ -288,7 +324,7 @@ export class AuthService {
     const user = await this.prisma.users.findFirst({
       where: { email: { equals: normalizedEmail, mode: "insensitive" } },
     });
-    if (!user) throw new ServiceError("invalid_request", 400);
+    if (!user || user.deleted_at) throw new ServiceError("invalid_request", 400);
     // Google users already have email_verified:true via loginWithGoogle and
     // skip this endpoint entirely — never mint tokens without a valid code.
 
@@ -299,19 +335,11 @@ export class AuthService {
 
     if (!record) throw new ServiceError("invalid_or_expired_code", 400);
 
-    const refreshTokenRaw = this.generateRefreshToken();
-    const refreshTokenHash = this.hashToken(refreshTokenRaw);
-
+    let refreshTokenRaw = "";
     await this.prisma.$transaction(async (tx) => {
       await tx.users.update({ where: { id: user.id }, data: { email_verified: true } });
       await tx.verification_codes.update({ where: { id: record.id }, data: { used: true } });
-      await tx.refresh_tokens.create({
-        data: {
-          user_id: user.id,
-          token_hash: refreshTokenHash,
-          expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-        },
-      });
+      refreshTokenRaw = await this.createRefreshToken(user.id, tx);
     });
 
     const accessToken = this.jwtService.signToken(user.id, user.email, user.role);
@@ -330,12 +358,47 @@ export class AuthService {
     };
   }
 
+  /**
+   * Exchanges a valid refresh token for a new access token, rotating the
+   * refresh token (old row deleted, new row inserted) on every use.
+   */
+  async refresh(refreshToken: string) {
+    const record = await this.prisma.refresh_tokens.findFirst({
+      where: { token_hash: this.hashToken(refreshToken), expires_at: { gt: new Date() } },
+    });
+    if (!record) throw new ServiceError("invalid_refresh_token", 401);
+
+    const user = await this.prisma.users.findUnique({ where: { id: record.user_id } });
+    if (!user || user.deleted_at) throw new ServiceError("invalid_refresh_token", 401);
+
+    let newRefreshToken = "";
+    await this.prisma.$transaction(async (tx) => {
+      await tx.refresh_tokens.delete({ where: { id: record.id } });
+      newRefreshToken = await this.createRefreshToken(user.id, tx);
+    });
+
+    const token = this.jwtService.signToken(user.id, user.email, user.role);
+
+    return {
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        email_verified: user.email_verified,
+        created_at: user.created_at,
+      },
+      token,
+      refreshToken: newRefreshToken,
+    };
+  }
+
   async resendVerificationCode(email: string, lng = "en") {
     const normalizedEmail = this.normalizeEmail(email);
     const user = await this.prisma.users.findFirst({
       where: { email: { equals: normalizedEmail, mode: "insensitive" } },
     });
-    if (!user) return;
+    if (!user || user.deleted_at) return;
     // Google sign-in already implies email_verified:true — skip resending
     // verification mail to already-verified users (Google or email).
     if (user.email_verified) return;
@@ -355,7 +418,7 @@ export class AuthService {
     const user = await this.prisma.users.findFirst({
       where: { email: { equals: normalizedEmail, mode: "insensitive" } },
     });
-    if (!user) return;
+    if (!user || user.deleted_at) return;
     // Intentional add-password path: Google-only accounts (password null)
     // are allowed here like email users. Requires inbox access, so no
     // escalation. After confirm, both Google and password login work;
@@ -388,7 +451,7 @@ export class AuthService {
     const user = await this.prisma.users.findFirst({
       where: { email: { equals: normalizedEmail, mode: "insensitive" } },
     });
-    if (!user) throw new ServiceError("invalid_or_expired_reset_token", 400);
+    if (!user || user.deleted_at) throw new ServiceError("invalid_or_expired_reset_token", 400);
     // Intentional add-password path (Option A): Google-only accounts may set
     // a password here after proving inbox access. Keep google_sub, keep
     // provider="google", keep role immutable.
@@ -408,8 +471,38 @@ export class AuthService {
     ]);
   }
 
-  async logout(userId: string) {
+  async deleteAccount(email: string, password: string) {
+    const normalizedEmail = this.normalizeEmail(email);
+    const user = await this.prisma.users.findFirst({
+      where: { email: { equals: normalizedEmail, mode: "insensitive" } },
+    });
+    if (!user?.password || user.deleted_at) throw new ServiceError("invalid_email_or_password", 401);
+
+    const valid = await this.comparePassword(password, user.password);
+    if (!valid) throw new ServiceError("invalid_email_or_password", 401);
+
+    await this.prisma.$transaction(async (tx) => {
+      const deleted = await tx.users.updateMany({
+        where: { id: user.id, deleted_at: null },
+        data: { deleted_at: new Date() },
+      });
+      if (deleted.count !== 1) throw new ServiceError("invalid_email_or_password", 401);
+      await tx.refresh_tokens.deleteMany({ where: { user_id: user.id } });
+    });
+  }
+
+  async logout(userId: string, deviceId?: string, fcmToken?: string) {
+    // Sessions are revoked globally by design: refresh_tokens has no
+    // device/session linkage, so per-device session revocation would need a
+    // schema migration. Device cleanup is delegated to
+    // DevicesService.deleteForLogout (scoped when the client sent an
+    // identifier, global for legacy clients) so the two never drift.
+    // Tradeoff: a sibling install keeps its push row while its session is
+    // dead; it re-registers (is_active: true) on next login via
+    // DevicesService.register, and heartbeat now returns is_active so a
+    // deactivated client knows to re-register.
     await this.prisma.refresh_tokens.deleteMany({ where: { user_id: userId } });
+    await this.devicesService.deleteForLogout(userId, deviceId, fcmToken);
   }
 
   async changePassword(userId: string, oldPassword: string, newPassword: string) {

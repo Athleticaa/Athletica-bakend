@@ -8,13 +8,13 @@ export function getAblyApiKey(): string | undefined {
 }
 
 export function getAblyRestClient(): Ably.Rest {
+  // Injected fake wins (tests) — key check only applies to real init.
+  if (restClient) return restClient;
   const apiKey = getAblyApiKey();
   if (!apiKey) {
     throw new Error("ably_not_configured");
   }
-  if (!restClient) {
-    restClient = new Ably.Rest(apiKey);
-  }
+  restClient = new Ably.Rest(apiKey);
   return restClient;
 }
 
@@ -33,7 +33,7 @@ export function buildConversationChannel(conversationId: string): string {
 }
 
 export function buildChannelCapability(channel: string): string {
-  return JSON.stringify({ [channel]: ["subscribe", "history"] });
+  return JSON.stringify({ [channel]: ["subscribe", "history", "presence", "enter"] });
 }
 
 export interface MessageCreatedPayload {

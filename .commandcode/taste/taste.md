@@ -1,0 +1,6 @@
+- Prefers comprehensive code reviews that inspect all changed files, compare implementation against the plan/spec, and call out bugs, missing requirements, architectural issues, and edge cases. Confidence: 0.95
+- Wants implementation fixes validated against the existing deployment and client architecture—in particular, serverless backend constraints and Flutter/Ably real-time chat integration—rather than treated as backend-only changes. Confidence: 0.9
+- When a backend change affects the API contract, expects a client-facing Flutter integration guide (step-by-step usage, models, error handling, testing checklist) written to match the existing docs house style, not just backend-only work. Confidence: 0.75
+- Prefers API timestamps to be absolute UTC ISO (`...Z`) values that the client converts to local time for display, rather than the server returning times pre-converted to a specific timezone. Confidence: 0.6
+- Prefers important runtime defaults such as UTC to be set in application startup code, rather than requiring environment configuration. Confidence: 0.9
+- Reports bugs and makes requests in short, informal messages that describe the user-facing symptom only, expecting the agent to investigate and pin down scope rather than asking for technical specifics up front. Confidence: 0.55

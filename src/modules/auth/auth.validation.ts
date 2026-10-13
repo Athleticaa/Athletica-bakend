@@ -33,6 +33,11 @@ export interface ChangePasswordInput {
   new_password: string;
 }
 
+export interface DeleteAccountInput {
+  email: string;
+  password: string;
+}
+
 export interface VerifyEmailInput {
   email: string;
   code: string;
@@ -45,6 +50,10 @@ export interface ResendVerificationInput {
 export interface GoogleLoginInput {
   idToken: string;
   role?: string;
+}
+
+export interface RefreshTokenInput {
+  refreshToken: string;
 }
 
 function tFallback(key: string): string {
@@ -114,6 +123,15 @@ export function validateConfirmReset(input: ConfirmResetInput, t: (key: string) 
   return errors;
 }
 
+export function validateDeleteAccount(input: DeleteAccountInput, t: (key: string) => string = tFallback): string[] {
+  const errors: string[] = [];
+  const email = typeof input?.email === "string" ? input.email.trim() : "";
+  if (!email) errors.push(t("email_required"));
+  else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.push(t("email_invalid"));
+  if (typeof input?.password !== "string" || input.password.length === 0) errors.push(t("password_required"));
+  return errors;
+}
+
 export function validateChangePassword(input: ChangePasswordInput, t: (key: string) => string = tFallback): string[] {
   const errors: string[] = [];
   if (!input.old_password) errors.push(t("old_password_required"));
@@ -149,4 +167,11 @@ export function validateGoogleLogin(input: GoogleLoginInput, _t?: (key: string) 
     errors.push("role_invalid");
   }
   return errors;
+}
+
+export function validateRefreshToken(input: RefreshTokenInput, t: (key: string) => string = tFallback): string[] {
+  if (!input || typeof input.refreshToken !== "string" || input.refreshToken.trim().length === 0) {
+    return [t("refresh_token_required")];
+  }
+  return [];
 }

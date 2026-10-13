@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { injectable, container } from "tsyringe";
 import { AuthService, ServiceError } from "./auth.service";
 import * as validation from "./auth.validation";
+import { FCM_TOKEN_LENGTH } from "../devices/devices.validation";
 
 @injectable()
 export class AuthController {
@@ -46,6 +47,21 @@ export class AuthController {
 
     try {
       const result = await this.authService.login(req.body.email, req.body.password);
+      res.status(200).json(result);
+    } catch (err) {
+      this.handleError(res, err);
+    }
+  };
+
+  refresh = async (req: Request, res: Response) => {
+    const errors = validation.validateRefreshToken(req.body, req.t);
+    if (errors.length > 0) {
+      res.status(400).json({ error: req.t("validation_failed"), details: errors });
+      return;
+    }
+
+    try {
+      const result = await this.authService.refresh(req.body.refreshToken.trim());
       res.status(200).json(result);
     } catch (err) {
       this.handleError(res, err);
@@ -110,6 +126,21 @@ export class AuthController {
     }
   };
 
+  deleteAccount = async (req: Request, res: Response) => {
+    const errors = validation.validateDeleteAccount(req.body, req.t);
+    if (errors.length > 0) {
+      res.status(400).json({ error: req.t("validation_failed"), details: errors });
+      return;
+    }
+
+    try {
+      await this.authService.deleteAccount(req.body.email, req.body.password);
+      res.status(200).json({ message: req.t("account_deleted") });
+    } catch (err) {
+      this.handleError(res, err);
+    }
+  };
+
   changePassword = async (req: Request, res: Response) => {
     const errors = validation.validateChangePassword(req.body, req.t);
     if (errors.length > 0) {
@@ -156,8 +187,28 @@ export class AuthController {
   };
 
   logout = async (req: Request, res: Response) => {
+    const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const { device_id, fcm_token } = req.body ?? {};
+    // Optional identifiers; when present they must be well-formed.
+    if (device_id !== undefined && (typeof device_id !== "string" || !UUID_REGEX.test(device_id))) {
+      res.status(400).json({ error: req.t("validation_failed"), details: ["invalid_uuid"] });
+      return;
+    }
+    // Same length bounds as device registration: a truncated/corrupt token
+    // would otherwise match zero rows and the live device row would survive
+    // logout while still receiving pushes. Client may retry with no token
+    // (legacy delete-all branch) instead.
+    if (
+      fcm_token !== undefined &&
+      (typeof fcm_token !== "string" ||
+        fcm_token.trim().length < FCM_TOKEN_LENGTH.min ||
+        fcm_token.trim().length > FCM_TOKEN_LENGTH.max)
+    ) {
+      res.status(400).json({ error: req.t("validation_failed"), details: ["validation_failed"] });
+      return;
+    }
     try {
-      await this.authService.logout(req.user!.sub);
+      await this.authService.logout(req.user!.sub, device_id, fcm_token?.trim());
       res.status(200).json({ message: req.t("logged_out") });
     } catch (err) {
       this.handleError(res, err);
