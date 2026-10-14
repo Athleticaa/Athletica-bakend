@@ -1,7 +1,9 @@
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import { injectable, inject } from "tsyringe";
 import { v2 as cloudinary } from "cloudinary";
 import { PrismaClientToken } from "../../di/tokens";
+import { config } from "../../config";
+import { CacheService, CacheHit, cacheKeys } from "../../lib/cache";
 import { ServiceError } from "../../lib/service-error";
 
 cloudinary.config({
@@ -75,6 +77,7 @@ export class CoachAchievementsService {
           },
         });
       });
+      await this.refreshCoachList(coachId);
       return created;
     } catch (e) {
       const publicId = this.extractPublicId(result.secure_url);
@@ -87,14 +90,34 @@ export class CoachAchievementsService {
     }
   }
 
-  async listMyAchievements(userId: string) {
+  async listMyAchievements(
+    userId: string,
+  ): Promise<CacheHit<Prisma.coach_achievementsGetPayload<Record<string, never>>[]>> {
     const coachId = await this.getCoachProfileId(userId);
-    const rows = await this.prisma.coach_achievements.findMany({
+    return CacheService.getOrSet(
+      cacheKeys.achievements(coachId),
+      config.cache.ttlSec.achievements,
+      () => this.loadByCoach(coachId),
+    );
+  }
+
+  private loadByCoach(
+    coachId: string,
+  ): Promise<Prisma.coach_achievementsGetPayload<Record<string, never>>[]> {
+    return this.prisma.coach_achievements.findMany({
       where: { coach_id: coachId },
       orderBy: { created_at: "desc" },
       take: 100,
     });
-    return rows;
+  }
+
+  /** Refresh-through: re-cache the coach list after upload/delete. */
+  private refreshCoachList(coachId: string): Promise<void> {
+    return CacheService.refresh(
+      cacheKeys.achievements(coachId),
+      config.cache.ttlSec.achievements,
+      () => this.loadByCoach(coachId),
+    );
   }
 
   async deleteAchievement(userId: string, achievementId: string) {
@@ -116,10 +139,14 @@ export class CoachAchievementsService {
       console.warn(`[coach-achievements] delete: could not extract publicId for ${achievement.file_url}`);
     }
 
+    await this.refreshCoachList(coachId);
+
     return { message: "achievement_deleted" } as const;
   }
 
-  async listCoachAchievementsForClient(userId: string) {
+  async listCoachAchievementsForClient(
+    userId: string,
+  ): Promise<CacheHit<Prisma.coach_achievementsGetPayload<Record<string, never>>[]>> {
     const clientProfileId = await this.getClientProfileId(userId);
     const assignment = await this.prisma.coach_clients.findFirst({
       where: { client_id: clientProfileId },
@@ -127,12 +154,13 @@ export class CoachAchievementsService {
     });
     if (!assignment) throw new ServiceError("no_coach_assigned", 404);
 
-    const rows = await this.prisma.coach_achievements.findMany({
-      where: { coach_id: assignment.coach_id },
-      orderBy: { created_at: "desc" },
-      take: 100,
-    });
-    return rows;
+    // Shared key with the coach's own list — one entry per coach, refreshed by
+    // the same upload/delete paths.
+    return CacheService.getOrSet(
+      cacheKeys.achievements(assignment.coach_id),
+      config.cache.ttlSec.achievements,
+      () => this.loadByCoach(assignment.coach_id),
+    );
   }
 
   private extractPublicId(url: string): string | null {

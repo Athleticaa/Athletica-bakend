@@ -6,6 +6,7 @@ import { JwtService } from "../../lib/jwt";
 import { ServiceError } from "../../lib/service-error";
 import { formatGoal } from "../../lib/format-goal";
 import { config } from "../../config";
+import { CacheService, cacheKeys } from "../../lib/cache";
 import { PushService } from "../../services/push";
 import { NotificationsService } from "../notifications/notifications.service";
 import { withActorData } from "../notifications/notification-actor";
@@ -228,6 +229,58 @@ export class CoachAssignmentService {
     return { message: "Invitation link revoked successfully" };
   }
 
+  /**
+   * Post-commit sync for roster membership changes (leave/remove). Drops
+   * every cached view of the severed relationship: roster + request lists,
+   * the client item + mycoach keys, check-in gating keys, and all plan keys
+   * (the cascade deletes the plans). Profiles/answers are untouched by
+   * roster removal; notifications are historical — both skipped deliberately.
+   */
+  private async delRosterCaches(
+    coachId: string,
+    clientProfileId: string,
+    coachClientId: string,
+    workoutPlanIds: string[],
+    nutritionPlanIds: string[],
+  ): Promise<void> {
+    await CacheService.delByPrefix(cacheKeys.coachClients(coachId));
+    await CacheService.delByPrefix(cacheKeys.coachRequests(coachId));
+    await CacheService.del(cacheKeys.myCoach(clientProfileId));
+    await CacheService.delByPrefix(cacheKeys.coachClientItemPrefix(clientProfileId));
+    await CacheService.del(cacheKeys.checkinSubmissions(clientProfileId));
+    await CacheService.del(cacheKeys.checkinCoachSubmissions(coachId, coachClientId));
+    await CacheService.delByPrefix(cacheKeys.checkinCoachSubmissionDetailPrefix(coachId, coachClientId));
+    await CacheService.del(cacheKeys.checkinClientQuestions(clientProfileId));
+    await CacheService.del(cacheKeys.workoutPlanMine(clientProfileId));
+    await CacheService.del(cacheKeys.nutritionPlanMine(clientProfileId));
+    for (const pid of workoutPlanIds) {
+      await CacheService.del(cacheKeys.workoutPlanItem(coachId, pid));
+      await CacheService.del(cacheKeys.workoutPlanDetail(clientProfileId, pid));
+    }
+    for (const pid of nutritionPlanIds) {
+      await CacheService.delByPrefix(cacheKeys.nutritionPlanItemPrefix(coachId, pid));
+      await CacheService.delByPrefix(cacheKeys.nutritionPlanDetailPrefix(clientProfileId, pid));
+    }
+  }
+
+  /** Plan ids behind an assignment row (fetched pre-delete: cascade removes them). */
+  private async assignmentPlanIds(
+    coachClientId: string,
+  ): Promise<{ workoutPlanIds: string[]; nutritionPlanIds: string[] }> {
+    const [wPlans, nPlans] = await Promise.all([
+      this.prisma.workout_plans
+        .findMany({ where: { coach_client_id: coachClientId }, select: { id: true } })
+        .catch(() => [] as Array<{ id: string }>),
+      this.prisma.nutrition_plans
+        .findMany({ where: { coach_client_id: coachClientId }, select: { id: true } })
+        .catch(() => [] as Array<{ id: string }>),
+    ]);
+    return {
+      workoutPlanIds: wPlans.map((p) => p.id),
+      nutritionPlanIds: nPlans.map((p) => p.id),
+    };
+  }
+
   async submitRequest(userId: string, tokenOrCode: string) {
     const normalizedCode = tokenOrCode.trim().toUpperCase();
 
@@ -311,6 +364,7 @@ export class CoachAssignmentService {
           data: { status: "pending", rejected_at: null },
         });
         await this.notifyCoachOfRequest(coachProfile.user_id, userId, record.id);
+        await CacheService.delByPrefix(cacheKeys.coachRequests(coachProfile.id));
         return { record, created: false, coach };
       }
     }
@@ -320,6 +374,7 @@ export class CoachAssignmentService {
         data: { coach_id: coachProfile.id, client_id: clientProfileId, status: "pending" },
       });
       await this.notifyCoachOfRequest(coachProfile.user_id, userId, record.id);
+      await CacheService.delByPrefix(cacheKeys.coachRequests(coachProfile.id));
       return { record, created: true, coach };
     } catch (err) {
       if (this.isUniqueViolation(err)) {
@@ -331,6 +386,14 @@ export class CoachAssignmentService {
 
   async listRequests(userId: string) {
     const coachProfileId = await this.getCoachProfileId(userId);
+    return CacheService.getOrSet(
+      cacheKeys.coachRequests(coachProfileId),
+      config.cache.ttlSec.coachRequests,
+      () => this.loadRequests(coachProfileId),
+    );
+  }
+
+  private async loadRequests(coachProfileId: string) {
     const requests = await this.prisma.coach_requests.findMany({
       where: { coach_id: coachProfileId },
       orderBy: { created_at: "desc" },
@@ -411,6 +474,18 @@ export class CoachAssignmentService {
         const reason = err instanceof Error ? err.message : "unknown";
         console.error(`[coach-assignment] acceptance lookup failed reason=${reason}`);
       }
+      // Membership changed: drop the coach's request/roster lists, the
+      // client's mycoach + profile snapshot (embeds assignment + plans) +
+      // check-in gating keys (assignment now exists).
+      // Cross-coach request lists rely on short TTL (accepted tradeoff).
+      await CacheService.delByPrefix(cacheKeys.coachRequests(coachProfileId));
+      await CacheService.delByPrefix(cacheKeys.coachClients(coachProfileId));
+      await CacheService.del(cacheKeys.myCoach(request.client_id));
+      await CacheService.del(cacheKeys.checkinClientQuestions(request.client_id));
+      const clientUser = await this.prisma.client_profiles
+        .findUnique({ where: { id: request.client_id }, select: { user_id: true } })
+        .catch(() => null);
+      if (clientUser) await CacheService.del(cacheKeys.profile(clientUser.user_id));
       return { request: updatedRequest, assignment };
     } catch (err) {
       if (this.isUniqueViolation(err)) {
@@ -437,14 +512,24 @@ export class CoachAssignmentService {
     if (!request) throw new ServiceError("request_not_found", 404);
     if (request.status !== "pending") throw new ServiceError("request_not_pending", 400);
 
-    return this.prisma.coach_requests.update({
+    const rejected = await this.prisma.coach_requests.update({
       where: { id: request.id },
       data: { status: "rejected", rejected_at: new Date() },
     });
+    await CacheService.delByPrefix(cacheKeys.coachRequests(coachProfileId));
+    return rejected;
   }
 
   async listClients(userId: string) {
     const coachProfileId = await this.getCoachProfileId(userId);
+    return CacheService.getOrSet(
+      cacheKeys.coachClients(coachProfileId),
+      config.cache.ttlSec.coachClients,
+      () => this.loadClients(coachProfileId),
+    );
+  }
+
+  private async loadClients(coachProfileId: string) {
     const clients = await this.prisma.coach_clients.findMany({
       where: { coach_id: coachProfileId },
       orderBy: { created_at: "desc" },
@@ -542,14 +627,24 @@ export class CoachAssignmentService {
 
   async getClientProfileForCoach(coachUserId: string, clientProfileId: string, acceptLanguage?: string) {
     const coachProfileId = await this.getCoachProfileId(coachUserId);
+    const language = this.resolveLanguage(acceptLanguage);
+    return CacheService.getOrSet(
+      cacheKeys.coachClientItem(clientProfileId, language),
+      config.cache.ttlSec.coachClientItem,
+      () => this.loadClientProfileForCoach(coachProfileId, clientProfileId, language),
+    );
+  }
 
+  private async loadClientProfileForCoach(
+    coachProfileId: string,
+    clientProfileId: string,
+    language: string,
+  ) {
     const coachClient = await this.prisma.coach_clients.findFirst({
       where: { coach_id: coachProfileId, client_id: clientProfileId },
       select: { id: true, created_at: true },
     });
     if (!coachClient) throw new ServiceError("client_not_assigned", 404);
-
-    const language = this.resolveLanguage(acceptLanguage);
 
     const [clientProfile, answersResult, nutritionPlan, workoutPlan, totalQuestions] = await Promise.all([
       this.prisma.client_profiles.findUnique({
@@ -588,6 +683,14 @@ export class CoachAssignmentService {
 
   async getMyCoach(userId: string) {
     const clientProfileId = await this.getClientProfileId(userId);
+    return CacheService.getOrSet(
+      cacheKeys.myCoach(clientProfileId),
+      config.cache.ttlSec.myCoach,
+      () => this.loadMyCoach(clientProfileId),
+    );
+  }
+
+  private async loadMyCoach(clientProfileId: string) {
     const assignment = await this.prisma.coach_clients.findFirst({
       where: { client_id: clientProfileId },
       include: {
@@ -649,6 +752,12 @@ export class CoachAssignmentService {
 
   async leaveCoach(userId: string) {
     const clientProfileId = await this.getClientProfileId(userId);
+    const pre = await this.prisma.coach_clients.findFirst({
+      where: { client_id: clientProfileId },
+      select: { id: true, coach_id: true },
+    });
+    if (!pre) throw new ServiceError("no_coach_assigned", 404);
+    const { workoutPlanIds, nutritionPlanIds } = await this.assignmentPlanIds(pre.id);
     await this.prisma.$transaction(async (tx) => {
       const cc = await tx.coach_clients.findFirst({
         where: { client_id: clientProfileId },
@@ -657,11 +766,19 @@ export class CoachAssignmentService {
       if (!cc) throw new ServiceError("no_coach_assigned", 404);
       await this.deleteCoachClientCascade(tx, cc.id);
     });
+    await this.delRosterCaches(pre.coach_id, clientProfileId, pre.id, workoutPlanIds, nutritionPlanIds);
+    await CacheService.del(cacheKeys.profile(userId));
     return { message: "Successfully left coach" };
   }
 
   async removeClient(userId: string, clientId: string) {
     const coachProfileId = await this.getCoachProfileId(userId);
+    const pre = await this.prisma.coach_clients.findFirst({
+      where: { coach_id: coachProfileId, client_id: clientId },
+      select: { id: true },
+    });
+    if (!pre) throw new ServiceError("client_not_assigned", 404);
+    const { workoutPlanIds, nutritionPlanIds } = await this.assignmentPlanIds(pre.id);
     await this.prisma.$transaction(async (tx) => {
       const cc = await tx.coach_clients.findFirst({
         where: { coach_id: coachProfileId, client_id: clientId },
@@ -670,6 +787,11 @@ export class CoachAssignmentService {
       if (!cc) throw new ServiceError("client_not_assigned", 404);
       await this.deleteCoachClientCascade(tx, cc.id);
     });
+    await this.delRosterCaches(coachProfileId, clientId, pre.id, workoutPlanIds, nutritionPlanIds);
+    const clientUser = await this.prisma.client_profiles
+      .findUnique({ where: { id: clientId }, select: { user_id: true } })
+      .catch(() => null);
+    if (clientUser) await CacheService.del(cacheKeys.profile(clientUser.user_id));
     return { message: "Client removed from roster" };
   }
 }

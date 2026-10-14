@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { injectable, inject } from "tsyringe";
 import { NotificationsService } from "./notifications.service";
 import { ServiceError } from "../../lib/service-error";
+import { cacheHeader } from "../../lib/cache";
 import {
   parseNotificationListQuery,
   validateNotificationId,
@@ -31,14 +32,16 @@ export class NotificationsController {
       req.query as Record<string, unknown>,
     );
     if (errors.length > 0 || !result) {
+      res.set("X-Cache", "BYPASS");
       res.status(400).json({ error: req.t("validation_failed"), details: errors });
       return;
     }
     try {
-      const { notifications, nextCursor, hasMore } = await this.service.list(
+      const { value: { notifications, nextCursor, hasMore }, hit } = await this.service.list(
         req.user!.sub,
         result,
       );
+      res.set("X-Cache", cacheHeader(hit));
       res.status(200).json({
         success: true,
         data: {
@@ -54,7 +57,8 @@ export class NotificationsController {
 
   unreadCount = async (req: Request, res: Response) => {
     try {
-      const unread_count = await this.service.unreadCount(req.user!.sub);
+      const { value: unread_count, hit } = await this.service.unreadCount(req.user!.sub);
+      res.set("X-Cache", cacheHeader(hit));
       res.status(200).json({ success: true, data: { unread_count } });
     } catch (err) {
       this.handleError(res, err);

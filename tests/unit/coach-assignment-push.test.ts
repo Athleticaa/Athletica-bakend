@@ -83,6 +83,7 @@ describe("CoachAssignmentService push hooks", () => {
       },
       client_profiles: {
         findFirst: jest.fn().mockResolvedValue({ user_id: "client-u1" }),
+        findUnique: jest.fn().mockResolvedValue(null),
       },
       users: {
         findUnique: jest.fn().mockResolvedValue({ username: "CoachUser" }),

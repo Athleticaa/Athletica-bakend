@@ -2,6 +2,8 @@ import { PrismaClient } from "@prisma/client";
 import { injectable, inject } from "tsyringe";
 import { v2 as cloudinary } from "cloudinary";
 import { PrismaClientToken } from "../../di/tokens";
+import { config } from "../../config";
+import { CacheService, cacheKeys } from "../../lib/cache";
 import { ServiceError } from "../../lib/service-error";
 import type { UpdateCoachProfileInput, UpdateClientProfileInput } from "./profile.validation";
 import { formatGoal } from "../../lib/format-goal";
@@ -28,6 +30,12 @@ export class ProfileService {
   constructor(@inject(PrismaClientToken) private prisma: PrismaClient) {}
 
   async getCoachProfile(userId: string) {
+    return CacheService.getOrSet(cacheKeys.profile(userId), config.cache.ttlSec.profile, () =>
+      this.loadCoachProfile(userId),
+    );
+  }
+
+  private async loadCoachProfile(userId: string) {
     const user = await this.prisma.users.findUnique({ where: { id: userId } });
     if (!user) throw new ServiceError("user_not_found", 404);
 
@@ -58,6 +66,12 @@ export class ProfileService {
   }
 
   async getClientProfile(userId: string) {
+    return CacheService.getOrSet(cacheKeys.profile(userId), config.cache.ttlSec.profile, () =>
+      this.loadClientProfile(userId),
+    );
+  }
+
+  private async loadClientProfile(userId: string) {
     const user = await this.prisma.users.findUnique({ where: { id: userId } });
     if (!user) throw new ServiceError("user_not_found", 404);
 
@@ -194,6 +208,19 @@ export class ProfileService {
       return { freshUser, freshProfile };
     });
 
+    // Refresh-through via the GET loader (not the return value below: same
+    // shape today, but the loader is the contract T023 will cache).
+    await CacheService.refresh(cacheKeys.profile(userId), config.cache.ttlSec.profile, () =>
+      this.loadCoachProfile(userId),
+    );
+    // Every assigned client's mycoach view embeds bio/specialization/image.
+    const clientRows = await this.prisma.coach_clients
+      .findMany({ where: { coach_id: profile.id }, select: { client_id: true } })
+      .catch(() => [] as Array<{ client_id: string }>);
+    for (const row of clientRows) {
+      await CacheService.del(cacheKeys.myCoach(row.client_id));
+    }
+
     const specializationDisplay = getSpecializationDisplay(freshProfile.specialization);
 
     // Return like GET: { user, profile } with all fields
@@ -283,6 +310,18 @@ export class ProfileService {
       if (!freshProfile) throw new ServiceError("client_profile_not_found", 404);
       return { freshUser, freshProfile };
     });
+
+    // Refresh-through via the GET loader (embeds assigned_at + active plans,
+    // which the return value below lacks — never cache the return directly).
+    await CacheService.refresh(cacheKeys.profile(userId), config.cache.ttlSec.profile, () =>
+      this.loadClientProfile(userId),
+    );
+    // Gender sync rewrites gender-question answers → drop all language keys.
+    if (hasGenderSync) {
+      await CacheService.delByPrefix(`${cacheKeys.prefix}ans:${profile.id}:`);
+    }
+    // The coach's cached client view embeds profile fields + goal.
+    await CacheService.delByPrefix(cacheKeys.coachClientItemPrefix(profile.id));
 
     // Return like GET: { user, profile } with all fields
     return {
@@ -417,6 +456,7 @@ export class ProfileService {
       where: { id: profile.id },
       data: { profile_image: result.secure_url },
     });
+    await CacheService.del(cacheKeys.profile(userId));
 
     if (profile.profile_image) {
       const publicId = this.extractPublicId(profile.profile_image);
@@ -447,6 +487,7 @@ export class ProfileService {
       where: { id: profile.id },
       data: { profile_image: result.secure_url },
     });
+    await CacheService.del(cacheKeys.profile(userId));
 
     if (profile.profile_image) {
       const publicId = this.extractPublicId(profile.profile_image);
@@ -472,6 +513,7 @@ export class ProfileService {
       where: { id: profile.id },
       data: { profile_image: null },
     });
+    await CacheService.del(cacheKeys.profile(userId));
 
     return { message: "profile_image_deleted" };
   }
@@ -490,6 +532,7 @@ export class ProfileService {
       where: { id: profile.id },
       data: { profile_image: null },
     });
+    await CacheService.del(cacheKeys.profile(userId));
 
     return { message: "profile_image_deleted" };
   }

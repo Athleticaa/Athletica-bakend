@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { injectable, inject } from "tsyringe";
 import { CoachAchievementsService } from "./coach-achievements.service";
 import { ServiceError } from "../../lib/service-error";
+import { cacheHeader } from "../../lib/cache";
 import * as validation from "./coach-achievements.validation";
 
 @injectable()
@@ -39,8 +40,9 @@ export class CoachAchievementsController {
   listMine = async (req: Request, res: Response) => {
     try {
       const userId = req.user!.sub;
-      const achievements = await this.service.listMyAchievements(userId);
-      res.status(200).json({ achievements });
+      const { value, hit } = await this.service.listMyAchievements(userId);
+      res.set("X-Cache", cacheHeader(hit));
+      res.status(200).json({ achievements: value });
     } catch (err) {
       this.handleError(req, res, err);
     }
@@ -65,8 +67,9 @@ export class CoachAchievementsController {
   listForClient = async (req: Request, res: Response) => {
     try {
       const userId = req.user!.sub;
-      const achievements = await this.service.listCoachAchievementsForClient(userId);
-      res.status(200).json({ achievements });
+      const { value, hit } = await this.service.listCoachAchievementsForClient(userId);
+      res.set("X-Cache", cacheHeader(hit));
+      res.status(200).json({ achievements: value });
     } catch (err) {
       this.handleError(req, res, err);
     }
