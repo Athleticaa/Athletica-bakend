@@ -2,8 +2,9 @@ import "reflect-metadata";
 import { container } from "tsyringe";
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClientToken, JwtServiceToken } from "./di/tokens";
+import { PrismaClientToken, JwtServiceToken, CacheServiceToken } from "./di/tokens";
 import { JwtService } from "./lib/jwt";
+import { CacheService } from "./lib/cache";
 import { EmailService } from "./services/email";
 import { AuthService } from "./modules/auth/auth.service";
 import { AuthController } from "./modules/auth/auth.controller";
@@ -42,6 +43,7 @@ const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
 const prisma = new PrismaClient({ adapter });
 
 container.registerInstance(PrismaClientToken, prisma);
+container.registerInstance(CacheServiceToken, CacheService);
 container.registerSingleton(JwtServiceToken, JwtService);
 container.registerSingleton(EmailService);
 container.registerSingleton(AuthService);

@@ -5,6 +5,7 @@ import { WorkoutTemplateService } from "./workout-template.service";
 import { WorkoutPlanService } from "./workout-plan.service";
 import { WorkoutClientService } from "./workout-client.service";
 import { ServiceError } from "../../lib/service-error";
+import { cacheHeader } from "../../lib/cache";
 import { isValidUuid, parseListExercisesQuery, validateCreateTemplate, validateUpdateTemplate, validateCreateDay, validateUpdateDay, validateReorderDays, validateCreateTemplateExercise, validateUpdateTemplateExercise, validateAssignPlan, validateCreatePlanExercise, validateUpdatePlanExercise, validateUpdatePlan } from "./workout.validation";
 
 @injectable()
@@ -50,13 +51,15 @@ export class WorkoutController {
   listExercises = async (req: Request, res: Response) => {
     const { result, errors } = parseListExercisesQuery(req.query, req.t);
     if (!result) {
+      res.set("X-Cache", "BYPASS");
       res.status(400).json({ success: false, error: req.t("validation_failed"), details: errors });
       return;
     }
 
     try {
-      const data = await this.exerciseService.listExercises(result);
-      res.status(200).json({ success: true, data });
+      const { value, hit } = await this.exerciseService.listExercises(result);
+      res.set("X-Cache", cacheHeader(hit));
+      res.status(200).json({ success: true, data: value });
     } catch (err) {
       this.handleError(res, err);
     }
@@ -66,8 +69,9 @@ export class WorkoutController {
     try {
       const id = String(req.params.id ?? "").trim();
       if (!id) throw new ServiceError("exercise_not_found", 404);
-      const exercise = await this.exerciseService.getExercise(id);
-      res.status(200).json({ success: true, data: { exercise } });
+      const { value, hit } = await this.exerciseService.getExercise(id);
+      res.set("X-Cache", cacheHeader(hit));
+      res.status(200).json({ success: true, data: { exercise: value } });
     } catch (err) {
       this.handleError(res, err);
     }
@@ -108,8 +112,9 @@ export class WorkoutController {
         return;
       }
 
-      const data = await this.templateService.listTemplates({ coachId, page, pageSize });
-      res.status(200).json({ success: true, data });
+      const { value, hit } = await this.templateService.listTemplates({ coachId, page, pageSize });
+      res.set("X-Cache", cacheHeader(hit));
+      res.status(200).json({ success: true, data: value });
     } catch (err) {
       this.handleError(res, err);
     }
@@ -119,8 +124,9 @@ export class WorkoutController {
     try {
       const coachId = await this.templateService.getCoachIdFromUser(this.userId(req));
       const id = this.param(req, "id");
-      const template = await this.templateService.getTemplate(id, coachId);
-      res.status(200).json({ success: true, data: template });
+      const { value, hit } = await this.templateService.getTemplate(id, coachId);
+      res.set("X-Cache", cacheHeader(hit));
+      res.status(200).json({ success: true, data: value });
     } catch (err) {
       this.handleError(res, err);
     }
@@ -414,8 +420,9 @@ export class WorkoutController {
         return;
       }
 
-      const data = await this.planService.listClientPlans({ coachId, clientId, isActive, page, pageSize });
-      res.status(200).json({ success: true, data });
+      const { value, hit } = await this.planService.listClientPlans({ coachId, clientId, isActive, page, pageSize });
+      res.set("X-Cache", cacheHeader(hit));
+      res.status(200).json({ success: true, data: value });
     } catch (err) {
       this.handleError(res, err);
     }
@@ -425,8 +432,9 @@ export class WorkoutController {
     try {
       const coachId = await this.templateService.getCoachIdFromUser(this.userId(req));
       const planId = this.param(req, "pid");
-      const plan = await this.planService.getClientPlan(planId, coachId);
-      res.status(200).json({ success: true, data: plan });
+      const { value, hit } = await this.planService.getClientPlan(planId, coachId);
+      res.set("X-Cache", cacheHeader(hit));
+      res.status(200).json({ success: true, data: value });
     } catch (err) {
       this.handleError(res, err);
     }
@@ -545,8 +553,9 @@ export class WorkoutController {
 
   getMyActivePlan = async (req: Request, res: Response) => {
     try {
-      const data = await this.clientService.getMyActivePlan(this.userId(req));
-      res.status(200).json({ success: true, data });
+      const { value, hit } = await this.clientService.getMyActivePlan(this.userId(req));
+      res.set("X-Cache", cacheHeader(hit));
+      res.status(200).json({ success: true, data: value });
     } catch (err) {
       this.handleError(res, err);
     }
@@ -555,8 +564,9 @@ export class WorkoutController {
   getPlanDetails = async (req: Request, res: Response) => {
     try {
       const planId = this.param(req, "pid");
-      const data = await this.clientService.getPlanDetails(this.userId(req), planId);
-      res.status(200).json({ success: true, data });
+      const { value, hit } = await this.clientService.getPlanDetails(this.userId(req), planId);
+      res.set("X-Cache", cacheHeader(hit));
+      res.status(200).json({ success: true, data: value });
     } catch (err) {
       this.handleError(res, err);
     }

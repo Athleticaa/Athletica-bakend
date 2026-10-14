@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { injectable, container } from "tsyringe";
 import { ProfileService, ServiceError } from "./profile.service";
+import { cacheHeader } from "../../lib/cache";
 import * as validation from "./profile.validation";
 
 @injectable()
@@ -28,11 +29,13 @@ export class ProfileController {
       const role = req.user!.role;
 
       if (role === "coach") {
-        const result = await this.profileService.getCoachProfile(userId);
-        res.status(200).json(result);
+        const { value, hit } = await this.profileService.getCoachProfile(userId);
+        res.set("X-Cache", cacheHeader(hit));
+        res.status(200).json(value);
       } else {
-        const result = await this.profileService.getClientProfile(userId);
-        res.status(200).json(result);
+        const { value, hit } = await this.profileService.getClientProfile(userId);
+        res.set("X-Cache", cacheHeader(hit));
+        res.status(200).json(value);
       }
     } catch (err) {
       this.handleError(res, err);

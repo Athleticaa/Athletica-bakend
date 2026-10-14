@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { injectable, inject } from "tsyringe";
 import { CoachAssignmentService } from "./coach-assignment.service";
 import { ServiceError } from "../../lib/service-error";
+import { cacheHeader } from "../../lib/cache";
 import { validateSubmitRequest, isValidUuid } from "./coach-assignment.validation";
 import { formatGoal } from "../../lib/format-goal";
 import { config } from "../../config";
@@ -89,7 +90,8 @@ export class CoachAssignmentController {
 
   listRequests = async (req: Request, res: Response) => {
     try {
-      const { requests } = await this.service.listRequests(req.user!.sub);
+      const { value: { requests }, hit } = await this.service.listRequests(req.user!.sub);
+      res.set("X-Cache", cacheHeader(hit));
       res.status(200).json({
         requests: requests.map((r: any) => ({
           id: r.id,
@@ -157,7 +159,8 @@ export class CoachAssignmentController {
 
   listClients = async (req: Request, res: Response) => {
     try {
-      const { clients } = await this.service.listClients(req.user!.sub);
+      const { value: { clients }, hit } = await this.service.listClients(req.user!.sub);
+      res.set("X-Cache", cacheHeader(hit));
       res.status(200).json({
         clients: clients.map((c: any) => ({
           id: c.id,
@@ -178,8 +181,9 @@ export class CoachAssignmentController {
     }
     const acceptLanguage = (req.headers["accept-language"] as string) || (req as any).language || "en";
     try {
-      const data = await this.service.getClientProfileForCoach(req.user!.sub, clientId, acceptLanguage);
-      res.status(200).json(data);
+      const { value, hit } = await this.service.getClientProfileForCoach(req.user!.sub, clientId, acceptLanguage);
+      res.set("X-Cache", cacheHeader(hit));
+      res.status(200).json(value);
     } catch (err) {
       this.handleError(res, err);
     }
@@ -187,7 +191,8 @@ export class CoachAssignmentController {
 
   getMyCoach = async (req: Request, res: Response) => {
     try {
-      const { coach, assigned_at, assignment_id } = await this.service.getMyCoach(req.user!.sub);
+      const { value: { coach, assigned_at, assignment_id }, hit } = await this.service.getMyCoach(req.user!.sub);
+      res.set("X-Cache", cacheHeader(hit));
       res.status(200).json({
         coach: {
           id: coach.id,

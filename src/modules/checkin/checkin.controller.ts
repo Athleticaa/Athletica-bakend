@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { injectable, inject } from "tsyringe";
 import { CheckInService } from "./checkin.service";
 import { ServiceError } from "../../lib/service-error";
+import { cacheHeader } from "../../lib/cache";
 import * as v from "./checkin.validation";
 
 @injectable()
@@ -24,8 +25,9 @@ export class CheckInController {
   getMyQuestions = async (req: Request, res: Response): Promise<void> => {
     try {
       const coachId = await this.service.getCoachProfileId(req.user!.sub);
-      const questions = await this.service.getMyQuestions(coachId);
-      res.json({ questions });
+      const { value, hit } = await this.service.getMyQuestions(coachId);
+      res.set("X-Cache", cacheHeader(hit));
+      res.json({ questions: value });
     } catch (err) {
       this.handleError(res, err);
     }
@@ -99,13 +101,15 @@ export class CheckInController {
   getClientSubmissions = async (req: Request, res: Response): Promise<void> => {
     const coachClientId = String(req.params.coachClientId);
     if (!v.isValidUuid(coachClientId)) {
+      res.set("X-Cache", "BYPASS");
       res.status(400).json({ error: req.t("invalid_uuid") });
       return;
     }
     try {
       const coachId = await this.service.getCoachProfileId(req.user!.sub);
-      const submissions = await this.service.getClientSubmissions(coachId, coachClientId);
-      res.json({ submissions });
+      const { value, hit } = await this.service.getClientSubmissions(coachId, coachClientId);
+      res.set("X-Cache", cacheHeader(hit));
+      res.json({ submissions: value });
     } catch (err) {
       this.handleError(res, err);
     }
@@ -130,13 +134,15 @@ export class CheckInController {
     const coachClientId = String(req.params.coachClientId);
     const submissionId = String(req.params.submissionId);
     if (!v.isValidUuid(coachClientId) || !v.isValidUuid(submissionId)) {
+      res.set("X-Cache", "BYPASS");
       res.status(400).json({ error: req.t("invalid_uuid") });
       return;
     }
     try {
       const coachId = await this.service.getCoachProfileId(req.user!.sub);
-      const submission = await this.service.getSubmissionDetail(coachId, coachClientId, submissionId);
-      res.json({ submission });
+      const { value, hit } = await this.service.getSubmissionDetail(coachId, coachClientId, submissionId);
+      res.set("X-Cache", cacheHeader(hit));
+      res.json({ submission: value });
     } catch (err) {
       this.handleError(res, err);
     }
@@ -162,8 +168,9 @@ export class CheckInController {
   getCoachQuestions = async (req: Request, res: Response): Promise<void> => {
     try {
       const clientId = await this.service.getClientProfileId(req.user!.sub);
-      const questions = await this.service.getCoachQuestionsForClient(clientId);
-      res.json({ questions });
+      const { value, hit } = await this.service.getCoachQuestionsForClient(clientId);
+      res.set("X-Cache", cacheHeader(hit));
+      res.json({ questions: value });
     } catch (err) {
       this.handleError(res, err);
     }
@@ -214,8 +221,9 @@ export class CheckInController {
   getMySubmissions = async (req: Request, res: Response): Promise<void> => {
     try {
       const clientId = await this.service.getClientProfileId(req.user!.sub);
-      const submissions = await this.service.getMySubmissions(clientId);
-      res.json({ submissions });
+      const { value, hit } = await this.service.getMySubmissions(clientId);
+      res.set("X-Cache", cacheHeader(hit));
+      res.json({ submissions: value });
     } catch (err) {
       this.handleError(res, err);
     }
@@ -224,13 +232,15 @@ export class CheckInController {
   getMySubmissionDetail = async (req: Request, res: Response): Promise<void> => {
     const submissionId = String(req.params.submissionId);
     if (!v.isValidUuid(submissionId)) {
+      res.set("X-Cache", "BYPASS");
       res.status(400).json({ error: req.t("invalid_uuid") });
       return;
     }
     try {
       const clientId = await this.service.getClientProfileId(req.user!.sub);
-      const submission = await this.service.getMySubmissionDetail(clientId, submissionId);
-      res.json({ submission });
+      const { value, hit } = await this.service.getMySubmissionDetail(clientId, submissionId);
+      res.set("X-Cache", cacheHeader(hit));
+      res.json({ submission: value });
     } catch (err) {
       this.handleError(res, err);
     }
@@ -239,8 +249,9 @@ export class CheckInController {
   hasPendingAssignment = async (req: Request, res: Response): Promise<void> => {
     try {
       const clientId = await this.service.getClientProfileId(req.user!.sub);
-      const hasPending = await this.service.hasPendingAssignment(clientId);
-      res.json({ has_pending: hasPending });
+      const { value, hit } = await this.service.hasPendingAssignment(clientId);
+      res.set("X-Cache", cacheHeader(hit));
+      res.json({ has_pending: value });
     } catch (err) {
       this.handleError(res, err);
     }

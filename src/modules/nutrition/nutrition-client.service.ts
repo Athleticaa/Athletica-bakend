@@ -1,6 +1,8 @@
 import { PrismaClient } from "@prisma/client";
 import { injectable, inject } from "tsyringe";
 import { PrismaClientToken } from "../../di/tokens";
+import { config } from "../../config";
+import { CacheService, CacheHit, cacheKeys } from "../../lib/cache";
 import { ServiceError } from "../../lib/service-error";
 import {
   todayDateOnly,
@@ -62,8 +64,8 @@ type HistoryDayResponse = {
 
 export interface INutritionClientService {
   getTodayMeals(userId: string, lang?: string): Promise<{ meals: TodayMealResponse[]; day_completed: boolean | null }>;
-  getMyActivePlan(userId: string): Promise<{ plan: PlanSummaryResponse | null }>;
-  getPlanDetails(userId: string, planId: string, lang?: string): Promise<{ plan: PlanDetailResponse }>;
+  getMyActivePlan(userId: string): Promise<CacheHit<{ plan: PlanSummaryResponse | null }>>;
+  getPlanDetails(userId: string, planId: string, lang?: string): Promise<CacheHit<{ plan: PlanDetailResponse }>>;
   completeMeal(userId: string, mealLogId: string, lang?: string): Promise<{ meal_log: TodayMealResponse; day_completed: boolean }>;
   uncompleteMeal(userId: string, mealLogId: string, lang?: string): Promise<{ meal_log: TodayMealResponse; day_completed: boolean }>;
   getHistory(userId: string, query: HistoryQuery): Promise<{ history: HistoryDayResponse[] }>;
@@ -251,8 +253,21 @@ export class NutritionClientService implements INutritionClientService {
     return { meals, day_completed };
   }
 
+  private normalizeLang(lang?: string): string {
+    const l = (lang || "").trim().toLowerCase();
+    return l || "en";
+  }
+
   async getMyActivePlan(userId: string) {
     const clientId = await this.getClientProfileId(userId);
+    return CacheService.getOrSet(
+      cacheKeys.nutritionPlanMine(clientId),
+      config.cache.ttlSec.nutritionPlanMine,
+      () => this.loadMyActivePlan(clientId),
+    );
+  }
+
+  private async loadMyActivePlan(clientId: string) {
     const plan = await this.getActivePlanSummary(clientId);
 
     if (!plan) {
@@ -282,7 +297,15 @@ export class NutritionClientService implements INutritionClientService {
 
   async getPlanDetails(userId: string, planId: string, lang?: string) {
     const clientId = await this.getClientProfileId(userId);
+    const l = this.normalizeLang(lang);
+    return CacheService.getOrSet(
+      cacheKeys.nutritionPlanDetail(clientId, planId, l),
+      config.cache.ttlSec.nutritionPlanDetail,
+      () => this.loadPlanDetails(clientId, planId, l),
+    );
+  }
 
+  private async loadPlanDetails(clientId: string, planId: string, lang: string) {
     const plan = await this.prisma.nutrition_plans.findFirst({
       where: {
         id: planId,
@@ -356,9 +379,11 @@ export class NutritionClientService implements INutritionClientService {
     if (!plan) throw new ServiceError("plan_not_active", 400);
     await this.ensurePlanActive(plan);
 
-    // Already completed — return as-is (preserve original completed_at)
+    // Already completed — return as-is (preserve original completed_at).
+    // Still drop the detail key: it may predate the original completion.
     if (log.completed) {
       const day_completed = await this.checkDayCompletion(clientId, log.nutrition_plan_id, log.date);
+      await CacheService.delByPrefix(cacheKeys.nutritionPlanDetailPrefix(clientId, log.nutrition_plan_id));
       return { meal_log: this.toMealLogResponse(log, lang), day_completed };
     }
 
@@ -378,6 +403,7 @@ export class NutritionClientService implements INutritionClientService {
 
     const day_completed = await this.checkDayCompletion(clientId, log.nutrition_plan_id, log.date);
 
+    await CacheService.delByPrefix(cacheKeys.nutritionPlanDetailPrefix(clientId, log.nutrition_plan_id));
     return {
       meal_log: this.toMealLogResponse(updated, lang),
       day_completed,
@@ -421,6 +447,7 @@ export class NutritionClientService implements INutritionClientService {
 
     const day_completed = await this.checkDayCompletion(clientId, log.nutrition_plan_id, log.date);
 
+    await CacheService.delByPrefix(cacheKeys.nutritionPlanDetailPrefix(clientId, log.nutrition_plan_id));
     return {
       meal_log: this.toMealLogResponse(updated, lang),
       day_completed,

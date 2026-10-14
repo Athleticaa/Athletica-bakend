@@ -16,7 +16,8 @@
     "api:generate": "tsx scripts/generate-openapi.ts",
     "api:test": "tsx scripts/test-api.ts",
     "api:sync": "tsx scripts/sync-apidog.ts",
-    "api:all": "npm run api:validate && npm run api:generate && npm run api:test"
+    "api:all": "npm run api:validate && npm run api:generate && npm run api:test",
+    "cache:smoke": "tsx scripts/cache-smoke.ts"
   },
   "keywords": [],
   "author": "",
@@ -36,6 +37,7 @@
     "google-auth-library": "^11.1.0",
     "helmet": "^8.3.0",
     "i18next": "^26.3.6",
+    "ioredis": "^6.0.0",
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.2.0",
     "pg": "^8.22.0",

@@ -1,6 +1,8 @@
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import { injectable, container } from "tsyringe";
 import { PrismaClientToken } from "../../di/tokens";
+import { config } from "../../config";
+import { CacheService, CacheHit, cacheKeys } from "../../lib/cache";
 import { ServiceError } from "../../lib/service-error";
 import type { AnswerItem } from "./client-questions.validation";
 import { resolveHeightWeightFromAnswers } from "./height-weight.util";
@@ -16,15 +18,28 @@ export class ClientQuestionsService {
     this.prisma = container.resolve(PrismaClientToken);
   }
 
-  async getQuestions(language: string) {
-    return this.prisma.client_questions.findMany({
-      where: { language },
-      orderBy: { created_at: "asc" },
-    });
+  private normalizeLang(language: string): string {
+    const lang = (language || "").trim().toLowerCase();
+    return lang || "en";
   }
 
-  async getTotalQuestions(language: string) {
-    return this.prisma.client_questions.count({ where: { language } });
+  async getQuestions(
+    language: string,
+  ): Promise<CacheHit<Prisma.client_questionsGetPayload<Record<string, never>>[]>> {
+    const lang = this.normalizeLang(language);
+    return CacheService.getOrSet(cacheKeys.questions(lang), config.cache.ttlSec.questions, () =>
+      this.prisma.client_questions.findMany({
+        where: { language: lang },
+        orderBy: { created_at: "asc" },
+      }),
+    );
+  }
+
+  async getTotalQuestions(language: string): Promise<CacheHit<number>> {
+    const lang = this.normalizeLang(language);
+    return CacheService.getOrSet(cacheKeys.questionCount(lang), config.cache.ttlSec.questions, () =>
+      this.prisma.client_questions.count({ where: { language: lang } }),
+    );
   }
 
   async getClientProfileId(userId: string) {
@@ -36,6 +51,15 @@ export class ClientQuestionsService {
   }
 
   async getAnswers(clientId: string, language: string) {
+    const lang = this.normalizeLang(language);
+    return CacheService.getOrSet(
+      cacheKeys.answers(clientId, lang),
+      config.cache.ttlSec.answers,
+      () => this.loadAnswers(clientId, lang),
+    );
+  }
+
+  private async loadAnswers(clientId: string, language: string) {
     const answers = await this.prisma.client_answers.findMany({
       where: { client_id: clientId },
       orderBy: { created_at: "asc" },
@@ -106,7 +130,7 @@ export class ClientQuestionsService {
 
     const questions = await this.prisma.client_questions.findMany({
       where: { id: { in: answers.map((a) => a.question_id) } },
-      select: { id: true, choices: true, question_type: true },
+      select: { id: true, choices: true, question_type: true, language: true },
     });
 
     const questionMap = new Map(questions.map((q) => [q.id, q]));
@@ -136,6 +160,8 @@ export class ClientQuestionsService {
         });
       }
     });
+
+    await this.refreshAnswerCaches(clientId, questions);
   }
 
   async updateAnswers(clientId: string, answers: AnswerItem[]) {
@@ -152,7 +178,7 @@ export class ClientQuestionsService {
 
     const questions = await this.prisma.client_questions.findMany({
       where: { id: { in: answers.map((a) => a.question_id) } },
-      select: { id: true, choices: true, question_type: true },
+      select: { id: true, choices: true, question_type: true, language: true },
     });
 
     const questionMap = new Map(questions.map((q) => [q.id, q]));
@@ -181,6 +207,35 @@ export class ClientQuestionsService {
         });
       }
     });
+
+    await this.refreshAnswerCaches(clientId, questions);
+  }
+
+  /**
+   * Post-commit cache sync for answer writes. Refreshes every touched
+   * language's answers key via the GET loader (US3 will cache the same
+   * shape), and drops the client profile key — the transaction above may
+   * have synced gender/height/weight, and the key is user-scoped (resolved
+   * here; no cross-service coupling). Best-effort: never throws.
+   */
+  private async refreshAnswerCaches(
+    clientId: string,
+    questions: Array<{ language?: string | null }>,
+  ): Promise<void> {
+    const langs = [...new Set(questions.map((q) => this.normalizeLang(q.language ?? "en")))];
+    for (const lang of langs) {
+      await CacheService.refresh(
+        cacheKeys.answers(clientId, lang),
+        config.cache.ttlSec.answers,
+        () => this.loadAnswers(clientId, lang),
+      );
+    }
+    const profile = await this.prisma.client_profiles
+      .findUnique({ where: { id: clientId }, select: { user_id: true } })
+      .catch(() => null);
+    if (profile) await CacheService.del(cacheKeys.profile(profile.user_id));
+    // The coach's cached client view embeds these answers — drop all langs.
+    await CacheService.delByPrefix(cacheKeys.coachClientItemPrefix(clientId));
   }
 
   /**

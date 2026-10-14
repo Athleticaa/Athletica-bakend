@@ -1,5 +1,6 @@
 import "reflect-metadata";
 import { NotificationsService } from "../../src/modules/notifications/notifications.service";
+import { CacheService, cacheKeys } from "../../src/lib/cache";
 import {
   encodeNotificationCursor,
   parseNotificationListQuery,
@@ -90,6 +91,10 @@ describe("NotificationsService.create", () => {
 });
 
 describe("NotificationsService.list", () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   it("pages newest-first with cursor and hasMore", async () => {
     const newest = row({ id: "22222222-2222-4222-8222-222222222222" });
     const oldest = row({ id: "11111111-1111-4111-8111-111111111111" });
@@ -101,7 +106,7 @@ describe("NotificationsService.list", () => {
       ...userMocks(),
     };
     const svc = new NotificationsService(prisma as never);
-    const out = await svc.list("u1", { limit: 2, unreadOnly: false });
+    const { value: out } = await svc.list("u1", { limit: 2, unreadOnly: false });
     expect(out.notifications).toHaveLength(2);
     expect(out.hasMore).toBe(true);
     expect(out.nextCursor).toBeDefined();
@@ -117,15 +122,18 @@ describe("NotificationsService.list", () => {
 
   it("marks only the returned page read on open (later pages survive)", async () => {
     const pageRow = row({ id: "22222222-2222-4222-8222-222222222222" });
+    const delByPrefix = jest.spyOn(CacheService, "delByPrefix").mockResolvedValue(undefined);
+    const refresh = jest.spyOn(CacheService, "refresh").mockResolvedValue(undefined);
     const prisma = {
       notifications: {
         findMany: jest.fn().mockResolvedValue([pageRow, row({})]),
         updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+        count: jest.fn().mockResolvedValue(2),
       },
       ...userMocks(),
     };
     const svc = new NotificationsService(prisma as never);
-    const out = await svc.list("u1", { limit: 1, unreadOnly: true });
+    const { value: out } = await svc.list("u1", { limit: 1, unreadOnly: true });
     expect(out.notifications).toHaveLength(1);
     // Scoped to the returned page ID — unseen rows stay unread for page 2.
     expect(prisma.notifications.updateMany).toHaveBeenCalledWith({
@@ -138,6 +146,16 @@ describe("NotificationsService.list", () => {
     });
     expect(out.notifications[0].is_read).toBe(true);
     expect(out.notifications[0].read_at).not.toBeNull();
+    expect(delByPrefix).toHaveBeenCalledWith(cacheKeys.notificationListPrefix("u1"));
+    expect(refresh).toHaveBeenCalledWith(
+      cacheKeys.notificationCount("u1"),
+      expect.any(Number),
+      expect.any(Function),
+    );
+    await expect(refresh.mock.calls[0][2]()).resolves.toBe(2);
+    expect(prisma.notifications.count).toHaveBeenCalledWith({
+      where: { recipient_user_id: "u1", is_read: false },
+    });
   });
 
   it("skips the mark entirely with auto_read=false (side-effect-free poll)", async () => {
@@ -149,7 +167,7 @@ describe("NotificationsService.list", () => {
       ...userMocks(),
     };
     const svc = new NotificationsService(prisma as never);
-    const out = await svc.list("u1", { limit: 20, unreadOnly: false, autoRead: false });
+    const { value: out } = await svc.list("u1", { limit: 20, unreadOnly: false, autoRead: false });
     expect(out.notifications).toHaveLength(1);
     expect(out.notifications[0].is_read).toBe(false);
     expect(prisma.notifications.updateMany).not.toHaveBeenCalled();
@@ -164,7 +182,7 @@ describe("NotificationsService.list", () => {
       ...userMocks(),
     };
     const svc = new NotificationsService(prisma as never);
-    const out = await svc.list("u1", { limit: 20, unreadOnly: false });
+    const { value: out } = await svc.list("u1", { limit: 20, unreadOnly: false });
     expect(out.notifications).toHaveLength(1);
     expect(out.notifications[0].is_read).toBe(false);
   });
@@ -213,7 +231,8 @@ describe("NotificationsService read state", () => {
   it("unreadCount scopes to the recipient", async () => {
     const prisma = { notifications: { count: jest.fn().mockResolvedValue(3) } };
     const svc = new NotificationsService(prisma as never);
-    await expect(svc.unreadCount("u1")).resolves.toBe(3);
+    const { value: unread } = await svc.unreadCount("u1");
+    expect(unread).toBe(3);
     expect(prisma.notifications.count).toHaveBeenCalledWith({
       where: { recipient_user_id: "u1", is_read: false },
     });

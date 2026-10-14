@@ -1,6 +1,8 @@
 import { Prisma, PrismaClient } from "@prisma/client";
 import { injectable, inject } from "tsyringe";
 import { PrismaClientToken } from "../../di/tokens";
+import { config } from "../../config";
+import { CacheService, CacheHit, cacheKeys, hashQuery } from "../../lib/cache";
 import { ServiceError } from "../../lib/service-error";
 import {
   NotificationCursor,
@@ -147,7 +149,13 @@ export class NotificationsService {
       },
     });
     const recipient = await this.resolveRecipient(recipientUserId);
-    return toResponse(row as unknown as NotificationRow, recipient);
+    const response = toResponse(row as unknown as NotificationRow, recipient);
+    // A new inbox row changes both the list and the badge count.
+    await CacheService.delByPrefix(cacheKeys.notificationListPrefix(recipientUserId));
+    await CacheService.refresh(cacheKeys.notificationCount(recipientUserId), config.cache.ttlSec.notificationCount, () =>
+      this.loadUnreadCount(recipientUserId),
+    );
+    return response;
   }
 
   /**
@@ -159,6 +167,32 @@ export class NotificationsService {
    * The mark is best-effort — if it fails the page is returned as stored.
    */
   async list(
+    userId: string,
+    query: { before?: NotificationCursor; limit: number; unreadOnly: boolean; autoRead?: boolean },
+  ): Promise<
+    CacheHit<{
+      notifications: NotificationResponse[];
+      nextCursor: string | undefined;
+      hasMore: boolean;
+    }>
+  > {
+    const key = cacheKeys.notificationList(
+      userId,
+      hashQuery({ limit: query.limit, unreadOnly: query.unreadOnly, autoRead: query.autoRead ?? true, before: query.before ?? null }),
+    );
+    return CacheService.getOrSet(key, config.cache.ttlSec.notificationList, () =>
+      this.loadList(userId, query),
+    );
+  }
+
+  /**
+   * Loader behind the list cache. NOTE: on a cache HIT this whole body is
+   * skipped — including the autoRead page-marking below. The served payload
+   * is the post-autoRead shape from the MISS, so badge state stays
+   * consistent; the mark for newly arrived rows lands on the next MISS
+   * (≤30 s). All writers (create/mark*) delete list keys, bounding drift.
+   */
+  private async loadList(
     userId: string,
     query: { before?: NotificationCursor; limit: number; unreadOnly: boolean; autoRead?: boolean },
   ) {
@@ -205,6 +239,12 @@ export class NotificationsService {
           },
           data: { is_read: true, read_at: new Date() },
         });
+        await CacheService.delByPrefix(cacheKeys.notificationListPrefix(userId));
+        await CacheService.refresh(
+          cacheKeys.notificationCount(userId),
+          config.cache.ttlSec.notificationCount,
+          () => this.loadUnreadCount(userId),
+        );
         autoRead = true;
       } catch (err) {
         const reason = err instanceof Error ? err.message : "unknown";
@@ -226,7 +266,15 @@ export class NotificationsService {
     };
   }
 
-  async unreadCount(userId: string): Promise<number> {
+  async unreadCount(userId: string): Promise<CacheHit<number>> {
+    return CacheService.getOrSet(
+      cacheKeys.notificationCount(userId),
+      config.cache.ttlSec.notificationCount,
+      () => this.loadUnreadCount(userId),
+    );
+  }
+
+  private loadUnreadCount(userId: string): Promise<number> {
     return this.prisma.notifications.count({
       where: { recipient_user_id: userId, is_read: false },
     });
@@ -251,7 +299,12 @@ export class NotificationsService {
       where: { id: notificationId },
     });
     if (!row) throw new ServiceError("notification_not_found", 404);
-    return toResponse(row as unknown as NotificationRow, recipient);
+    const response = toResponse(row as unknown as NotificationRow, recipient);
+    await CacheService.delByPrefix(cacheKeys.notificationListPrefix(userId));
+    await CacheService.refresh(cacheKeys.notificationCount(userId), config.cache.ttlSec.notificationCount, () =>
+      this.loadUnreadCount(userId),
+    );
+    return response;
   }
 
   async markAllRead(userId: string): Promise<{ updated: number }> {
@@ -259,6 +312,10 @@ export class NotificationsService {
       where: { recipient_user_id: userId, is_read: false },
       data: { is_read: true, read_at: new Date() },
     });
+    await CacheService.delByPrefix(cacheKeys.notificationListPrefix(userId));
+    await CacheService.refresh(cacheKeys.notificationCount(userId), config.cache.ttlSec.notificationCount, () =>
+      this.loadUnreadCount(userId),
+    );
     return { updated: result.count };
   }
 }

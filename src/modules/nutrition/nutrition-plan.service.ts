@@ -1,6 +1,7 @@
 import { Prisma, PrismaClient } from "@prisma/client";
 import { injectable, inject } from "tsyringe";
 import { PrismaClientToken } from "../../di/tokens";
+import { CacheService, CacheHit, cacheKeys, hashQuery } from "../../lib/cache";
 import { ServiceError } from "../../lib/service-error";
 import { paginate, toFoodPayload, type FoodWithData } from "./nutrition.utils";
 import { NutritionBaseService } from "./base.service";
@@ -53,11 +54,17 @@ type PlanDetailResponse = PlanResponse & {
 
 export interface INutritionPlanService {
   createPlanFromTemplate(userId: string, templateId: string, input: AssignPlanInput): Promise<PlanResponse>;
-  listClientPlans(userId: string, query: ListClientPlansQuery): Promise<{
-    plans: PlanResponse[];
-    pagination: { page: number; pageSize: number; total: number; totalPages: number };
-  }>;
-  getClientPlan(userId: string, planId: string, lang?: string): Promise<PlanDetailResponse>;
+  listClientPlans(userId: string, query: ListClientPlansQuery): Promise<
+    CacheHit<{
+      plans: PlanResponse[];
+      pagination: { page: number; pageSize: number; total: number; totalPages: number };
+    }>
+  >;
+  getClientPlan(
+    userId: string,
+    planId: string,
+    lang?: string,
+  ): Promise<CacheHit<PlanDetailResponse>>;
   deletePlan(userId: string, planId: string): Promise<{ messageKey: string }>;
   addMealToPlan(userId: string, planId: string, input: CreateMealInput, lang?: string): Promise<{
     meal: PlanMealResponse;
@@ -117,6 +124,81 @@ export class NutritionPlanService extends NutritionBaseService implements INutri
       where: { coach_client_id: coachClientId, is_active: true },
       data: { is_active: false },
     });
+  }
+
+  private normalizeLang(lang?: string): string {
+    const l = (lang || "").trim().toLowerCase();
+    return l || "en";
+  }
+
+  /**
+   * Post-commit sync for plan mutations. Item + client-detail keys exist per
+   * lang (payloads embed localized food names) — drop all variants, then
+   * repopulate the request's lang via the GET loader. List pages + the
+   * client's active-plan summary are dropped.
+   */
+  private async syncPlanCaches(
+    coachId: string,
+    planId: string,
+    lang?: string,
+    clientId?: string,
+  ): Promise<void> {
+    const l = this.normalizeLang(lang);
+    const cid = clientId ?? (await this.planClientId(planId));
+    await this.dropPlanKeys(coachId, planId, cid ?? undefined);
+    if (cid) {
+      await CacheService.del(cacheKeys.nutritionPlanMine(cid));
+      await CacheService.delByPrefix(cacheKeys.coachClientItemPrefix(cid));
+      await this.delClientProfile(cid);
+    }
+    await CacheService.refresh(
+      cacheKeys.nutritionPlanItem(coachId, planId, l),
+      config.cache.ttlSec.nutritionPlanItem,
+      () => this.loadClientPlan(coachId, planId, l),
+    );
+  }
+
+  /**
+   * Drop-only variant for lang-less deletes (deletePlanMeal/removeFood) and
+   * deactivating deletes: no single lang to warm, so remove everything and
+   * let the next GET repopulate.
+   */
+  private async dropPlanCaches(coachId: string, planId: string, clientId?: string): Promise<void> {
+    const cid = clientId ?? (await this.planClientId(planId));
+    await this.dropPlanKeys(coachId, planId, cid ?? undefined);
+    if (cid) {
+      await CacheService.del(cacheKeys.nutritionPlanMine(cid));
+      await CacheService.delByPrefix(cacheKeys.coachClientItemPrefix(cid));
+      await this.delClientProfile(cid);
+    }
+  }
+
+  /** Drop the client's profile snapshot (embeds active-plan summaries). */
+  private async delClientProfile(clientId: string): Promise<void> {
+    const profile = await this.prisma.client_profiles
+      .findUnique({ where: { id: clientId }, select: { user_id: true } })
+      .catch(() => null);
+    if (profile) await CacheService.del(cacheKeys.profile(profile.user_id));
+  }
+
+  /** Drop every cached coach-side view of a plan (item langs + list pages). */
+  private async dropPlanKeys(coachId: string, planId: string, clientId?: string): Promise<void> {
+    await CacheService.delByPrefix(cacheKeys.nutritionPlanItemPrefix(coachId, planId));
+    if (clientId) {
+      await CacheService.delByPrefix(cacheKeys.nutritionPlanDetailPrefix(clientId, planId));
+    }
+    await CacheService.delByPrefix(cacheKeys.nutritionPlanListPrefix(coachId));
+  }
+
+  /** Resolve the client behind a plan (for client-scoped keys). */
+  private async planClientId(planId: string): Promise<string | null> {
+    const plan = await this.prisma.nutrition_plans
+      .findUnique({
+        where: { id: planId },
+        select: { coach_client: { select: { client_id: true } } },
+      })
+      .catch(() => null);
+    return plan?.coach_client?.client_id ?? null;
   }
 
   /** Best-effort inbox + push. Never throws. */
@@ -229,6 +311,13 @@ export class NutritionPlanService extends NutritionBaseService implements INutri
       throw new ServiceError("template_has_no_meals", 400);
     }
 
+    // Capture previously-active plans: deactivation flips their detail views
+    // (is_active), so their keys must be dropped after assignment.
+    const deactivated = await this.prisma.nutrition_plans.findMany({
+      where: { coach_client_id: coachClient.id, is_active: true },
+      select: { id: true },
+    });
+
     // Create plan with copied meals and foods in a transaction
     const plan = await this.prisma.$transaction(async (tx) => {
       // Deactivate any existing active plan for this client — only one active
@@ -283,14 +372,45 @@ export class NutritionPlanService extends NutritionBaseService implements INutri
         plan.id,
         input.title.trim(),
       );
+      for (const prev of deactivated) {
+        if (prev.id !== plan.id) {
+          await CacheService.delByPrefix(cacheKeys.nutritionPlanItemPrefix(coachId, prev.id));
+          await CacheService.delByPrefix(
+            cacheKeys.nutritionPlanDetailPrefix(coachClient.client_id, prev.id),
+          );
+        }
+      }
     }
 
+    await this.syncPlanCaches(coachId, plan!.id, undefined, coachClient.client_id);
     return this.toPlanResponse(plan!);
   }
 
-  async listClientPlans(userId: string, query: ListClientPlansQuery) {
+  async listClientPlans(
+    userId: string,
+    query: ListClientPlansQuery,
+  ): Promise<
+    CacheHit<{
+      plans: PlanResponse[];
+      pagination: { page: number; pageSize: number; total: number; totalPages: number };
+    }>
+  > {
     const coachId = await this.getCoachProfileId(userId);
+    const key = cacheKeys.nutritionPlanList(
+      coachId,
+      hashQuery({
+        clientId: query.clientId,
+        isActive: query.isActive,
+        page: query.page,
+        pageSize: query.pageSize,
+      }),
+    );
+    return CacheService.getOrSet(key, config.cache.ttlSec.nutritionPlanList, () =>
+      this.loadClientPlans(coachId, query),
+    );
+  }
 
+  private async loadClientPlans(coachId: string, query: ListClientPlansQuery) {
     const where: Prisma.nutrition_plansWhereInput = {
       coach_client: {
         coach_id: coachId,
@@ -317,9 +437,21 @@ export class NutritionPlanService extends NutritionBaseService implements INutri
     };
   }
 
-  async getClientPlan(userId: string, planId: string, lang?: string) {
+  async getClientPlan(
+    userId: string,
+    planId: string,
+    lang?: string,
+  ): Promise<CacheHit<PlanDetailResponse>> {
     const coachId = await this.getCoachProfileId(userId);
+    const l = this.normalizeLang(lang);
+    return CacheService.getOrSet(
+      cacheKeys.nutritionPlanItem(coachId, planId, l),
+      config.cache.ttlSec.nutritionPlanItem,
+      () => this.loadClientPlan(coachId, planId, l),
+    );
+  }
 
+  private async loadClientPlan(coachId: string, planId: string, lang: string): Promise<PlanDetailResponse> {
     const plan = await this.prisma.nutrition_plans.findFirst({
       where: { id: planId, coach_client: { coach_id: coachId }, is_active: true },
       include: {
@@ -356,6 +488,10 @@ export class NutritionPlanService extends NutritionBaseService implements INutri
         data: { is_active: false },
       });
     });
+
+    // Deactivated (not deleted): the GET loader filters is_active, so drop —
+    // a refresh would just 404 inside the loader.
+    await this.dropPlanCaches(coachId, planId);
 
     return { messageKey: "plan_deleted" };
   }
@@ -409,6 +545,7 @@ export class NutritionPlanService extends NutritionBaseService implements INutri
     const mealCount = await this.prisma.nutrition_meals.count({
       where: { nutrition_plan_id: planId },
     });
+    await this.syncPlanCaches(coachId, planId, lang);
     return {
       meal: this.toPlanMealResponse(meal!, lang),
       plan: { id: planId, meal_count: mealCount },
@@ -468,6 +605,7 @@ export class NutritionPlanService extends NutritionBaseService implements INutri
         include: { nutrition_meal_foods: { include: { food: { include: { category: true } } } } },
       });
     });
+    await this.syncPlanCaches(coachId, planId, lang);
     return { meal: this.toPlanMealResponse(meal, lang) };
   }
 
@@ -486,6 +624,8 @@ export class NutritionPlanService extends NutritionBaseService implements INutri
     const mealCount = await this.prisma.nutrition_meals.count({
       where: { nutrition_plan_id: planId },
     });
+    // No lang context — drop everything, skip the "en"-only warm.
+    await this.dropPlanCaches(coachId, planId);
     return {
       messageKey: "meal_deleted",
       plan: { id: planId, meal_count: mealCount },
@@ -541,6 +681,7 @@ export class NutritionPlanService extends NutritionBaseService implements INutri
       orderBy: { meal_order: "asc" },
       include: { nutrition_meal_foods: { include: { food: { include: { category: true } } } } },
     });
+    await this.syncPlanCaches(coachId, planId, lang);
     return { meals: meals.map((m) => this.toPlanMealResponse(m, lang)) };
   }
 
@@ -588,6 +729,7 @@ export class NutritionPlanService extends NutritionBaseService implements INutri
     const foodCount = await this.prisma.nutrition_meal_foods.count({
       where: { nutrition_meal_id: mealId },
     });
+    await this.syncPlanCaches(coachId, planId, lang);
     return {
       food: toFoodPayload(food, lang),
       meal: { id: mealId, food_count: foodCount },
@@ -612,6 +754,7 @@ export class NutritionPlanService extends NutritionBaseService implements INutri
       data: { quantity: input.quantity },
       include: { food: { include: { category: true } } },
     });
+    await this.syncPlanCaches(coachId, planId, lang);
     return { food: toFoodPayload(food, lang) };
   }
 
@@ -630,6 +773,8 @@ export class NutritionPlanService extends NutritionBaseService implements INutri
     const foodCount = await this.prisma.nutrition_meal_foods.count({
       where: { nutrition_meal_id: mealId },
     });
+    // No lang context — drop everything, skip the "en"-only warm.
+    await this.dropPlanCaches(coachId, planId);
     return { messageKey: "plan_food_deleted", meal: { id: mealId, food_count: foodCount } };
   }
 }

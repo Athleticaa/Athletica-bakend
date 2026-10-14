@@ -93,7 +93,10 @@ describe("inbox writes on request accept", () => {
           status: "pending",
         }),
       },
-      client_profiles: { findFirst: jest.fn().mockResolvedValue({ user_id: "client-u1" }) },
+      client_profiles: {
+        findFirst: jest.fn().mockResolvedValue({ user_id: "client-u1" }),
+        findUnique: jest.fn().mockResolvedValue(null),
+      },
       users: { findUnique: jest.fn().mockResolvedValue({ username: "CoachUser" }) },
       $transaction: jest.fn().mockImplementation((cb: (t: unknown) => unknown) => cb(tx)),
     };
@@ -139,6 +142,7 @@ describe("inbox writes on plan assignment", () => {
         }),
       },
       workout_plans: {
+        findMany: jest.fn().mockResolvedValue([]),
         updateMany: jest.fn().mockResolvedValue({ count: 0 }),
         create: jest.fn().mockResolvedValue({
           id: "wp-1",
@@ -156,6 +160,9 @@ describe("inbox writes on plan assignment", () => {
       },
       coach_profiles: {
         findUnique: jest.fn().mockResolvedValue({ user: { username: "CoachUser" } }),
+      },
+      client_profiles: {
+        findUnique: jest.fn().mockResolvedValue(null),
       },
     };
     const push = makePush();
@@ -196,6 +203,7 @@ describe("inbox writes on plan assignment", () => {
         }),
       },
       nutrition_plans: {
+        findMany: jest.fn().mockResolvedValue([]),
         updateMany: jest.fn().mockResolvedValue({ count: 0 }),
         create: jest.fn().mockResolvedValue({ id: "np-1" }),
         findUnique: jest.fn().mockResolvedValue({
@@ -209,7 +217,10 @@ describe("inbox writes on plan assignment", () => {
       },
       nutrition_meals: { create: jest.fn().mockResolvedValue({ id: "meal-1" }) },
       users: { findUnique: jest.fn().mockResolvedValue({ username: "CoachUser" }) },
-      client_profiles: { findFirst: jest.fn().mockResolvedValue({ user_id: "client-u1" }) },
+      client_profiles: {
+        findFirst: jest.fn().mockResolvedValue({ user_id: "client-u1" }),
+        findUnique: jest.fn().mockResolvedValue(null),
+      },
       $transaction: jest.fn().mockImplementation((cb: (t: unknown) => unknown) =>
         cb({
           nutrition_plans: {

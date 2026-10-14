@@ -2,6 +2,7 @@ import "reflect-metadata";
 import { Prisma } from "@prisma/client";
 import { CoachAssignmentService } from "../../src/modules/coach-assignment/coach-assignment.service";
 import { ServiceError } from "../../src/lib/service-error";
+import { CacheService, cacheKeys } from "../../src/lib/cache";
 
 const mockPrisma = {
   coach_profiles: {
@@ -22,9 +23,11 @@ const mockPrisma = {
   },
   nutrition_plans: {
     findFirst: jest.fn(),
+    findMany: jest.fn(),
   },
   workout_plans: {
     findFirst: jest.fn(),
+    findMany: jest.fn(),
   },
   coach_requests: {
     findUnique: jest.fn(),
@@ -75,6 +78,10 @@ function expectServiceError(promise: Promise<unknown>, key: string, statusCode: 
 
 beforeEach(() => {
   jest.clearAllMocks();
+});
+
+afterEach(() => {
+  jest.restoreAllMocks();
 });
 
 describe("CoachAssignmentService.generateInvite", () => {
@@ -289,6 +296,7 @@ describe("CoachAssignmentService.acceptRequest", () => {
       coach_id: "coach-1",
       client_id: "client-1",
     });
+    mockPrisma.client_profiles.findUnique.mockResolvedValue(null);
 
     const service = getService();
     const result = await service.acceptRequest("coach-user", "req-1");
@@ -399,8 +407,12 @@ describe("CoachAssignmentService.leaveCoach workout cascade", () => {
       workout_logs: { deleteMany: jest.fn().mockResolvedValue({}) },
     };
     mockPrisma.client_profiles.findFirst.mockResolvedValue({ id: "client-1" });
+    mockPrisma.coach_clients.findFirst.mockResolvedValue({ id: "cc-1", coach_id: "coach-1" });
+    mockPrisma.workout_plans.findMany.mockResolvedValue([{ id: "plan-1" }]);
+    mockPrisma.nutrition_plans.findMany.mockResolvedValue([]);
     mockPrisma.$transaction.mockImplementation((cb: (tx: any) => unknown) => cb(tx));
 
+    jest.spyOn(CacheService, "delByPrefix").mockResolvedValue(undefined);
     const service = getService();
     const result = await service.leaveCoach("user-1");
 
@@ -408,6 +420,9 @@ describe("CoachAssignmentService.leaveCoach workout cascade", () => {
       where: { workout_day_id: { in: ["day-1"] } },
     });
     expect(order).toEqual(["exercise_logs", "day_exercises"]);
+    expect(CacheService.delByPrefix).toHaveBeenCalledWith(
+      cacheKeys.checkinCoachSubmissionDetailPrefix("coach-1", "cc-1"),
+    );
     expect(result.message).toBe("Successfully left coach");
   });
 });
@@ -448,7 +463,7 @@ describe("CoachAssignmentService.getClientProfileForCoach", () => {
 
   it("returns both plans and no streak fields", async () => {
     const service = getService();
-    const result = await service.getClientProfileForCoach("coach-user", "client-1");
+    const { value: result } = await service.getClientProfileForCoach("coach-user", "client-1");
 
     expect(result.nutrition_plan).toMatchObject({ id: "nutri-1" });
     expect(result.workout_plan).toMatchObject({ id: "workout-1", cycle_days: 7 });
@@ -467,7 +482,7 @@ describe("CoachAssignmentService.getClientProfileForCoach", () => {
     mockPrisma.workout_plans.findFirst.mockResolvedValue(null);
 
     const service = getService();
-    const result = await service.getClientProfileForCoach("coach-user", "client-1");
+    const { value: result } = await service.getClientProfileForCoach("coach-user", "client-1");
 
     expect(result.workout_plan).toBeNull();
     expect(result.nutrition_plan).toMatchObject({ id: "nutri-1" });
@@ -506,7 +521,7 @@ describe("CoachAssignmentService.getClientProfileForCoach", () => {
       ]);
 
     const service = getService();
-    const result = await service.getClientProfileForCoach("coach-user", "client-1", "en");
+    const { value: result } = await service.getClientProfileForCoach("coach-user", "client-1", "en");
 
     expect(result.questions_answers).toHaveLength(3);
     expect(result.total_answers).toBe(2);
@@ -522,7 +537,7 @@ describe("CoachAssignmentService.getClientProfileForCoach", () => {
       .mockResolvedValueOnce([]);
 
     const service = getService();
-    const result = await service.getClientProfileForCoach("coach-user", "client-1", "en");
+    const { value: result } = await service.getClientProfileForCoach("coach-user", "client-1", "en");
 
     expect(result.questions_answers).toHaveLength(1);
     expect(result.questions_answers[0].question).toBeNull();
@@ -542,7 +557,7 @@ describe("CoachAssignmentService.getClientProfileForCoach", () => {
     });
 
     const service = getService();
-    const result = await service.getClientProfileForCoach("coach-user", "client-1");
+    const { value: result } = await service.getClientProfileForCoach("coach-user", "client-1");
 
     expect(result.client.goal).toBe("muscle building");
   });
