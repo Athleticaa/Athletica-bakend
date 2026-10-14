@@ -11,6 +11,7 @@ import { NotificationsService } from "../notifications/notifications.service";
 import { withActorData } from "../notifications/notification-actor";
 import i18next from "../../lib/i18n";
 import { config } from "../../config";
+import { CacheService, CacheHit, cacheKeys, hashQuery } from "../../lib/cache";
 import { withTimeout } from "../../lib/with-timeout";
 
 @injectable()
@@ -101,6 +102,55 @@ export class WorkoutPlanService extends WorkoutBaseService {
     }
   }
 
+  /**
+   * Post-commit sync: the mutation returns the full fresh plan (same
+   * `toPlanResponse` shape as the coach GET), so warm the item key directly.
+   * The client detail view has its own shape → drop it. List pages + the
+   * client's active-plan summary are dropped (counts/membership changed).
+   */
+  private async syncPlanCaches(
+    coachId: string,
+    planId: string,
+    plan: unknown,
+    coachClientId?: string,
+  ): Promise<void> {
+    await CacheService.setJson(
+      cacheKeys.workoutPlanItem(coachId, planId),
+      plan,
+      config.cache.ttlSec.workoutPlanItem,
+    );
+    await CacheService.delByPrefix(cacheKeys.workoutPlanListPrefix(coachId));
+    await this.delClientPlanKeys(planId, coachClientId);
+  }
+
+  /** Delete-variant: drop the item key too (deletes return pre-delete snapshots). */
+  private async dropPlanCaches(coachId: string, planId: string, coachClientId?: string): Promise<void> {
+    await CacheService.del(cacheKeys.workoutPlanItem(coachId, planId));
+    await CacheService.delByPrefix(cacheKeys.workoutPlanListPrefix(coachId));
+    await this.delClientPlanKeys(planId, coachClientId);
+  }
+
+  /**
+   * Drop the client-scoped keys (summary + detail view). Needs the client
+   * behind the assignment row — one indexed lookup, best-effort. Also drops
+   * the coach's cached client view (embeds plan summaries) and the client's
+   * profile snapshot (embeds active plans).
+   */
+  private async delClientPlanKeys(planId: string, coachClientId?: string): Promise<void> {
+    if (!coachClientId) return;
+    const cc = await this.prisma.coach_clients
+      .findUnique({ where: { id: coachClientId }, select: { client_id: true } })
+      .catch(() => null);
+    if (!cc) return;
+    await CacheService.del(cacheKeys.workoutPlanMine(cc.client_id));
+    await CacheService.del(cacheKeys.workoutPlanDetail(cc.client_id, planId));
+    await CacheService.delByPrefix(cacheKeys.coachClientItemPrefix(cc.client_id));
+    const profile = await this.prisma.client_profiles
+      .findUnique({ where: { id: cc.client_id }, select: { user_id: true } })
+      .catch(() => null);
+    if (profile) await CacheService.del(cacheKeys.profile(profile.user_id));
+  }
+
   async assignPlan(input: {
     coachId: string;
     coachClientId: string;
@@ -130,6 +180,13 @@ export class WorkoutPlanService extends WorkoutBaseService {
     // Server-generated start date: always today (UTC midnight for `@db.Date`).
     // Never taken from body/request.
     const effectiveStartDate = todayDateOnly();
+
+    // Capture previously-active plans: deactivating them flips their detail
+    // views (is_active), so their keys must be dropped too.
+    const deactivated = await this.prisma.workout_plans.findMany({
+      where: { coach_client_id: coachClientId, is_active: true, deleted_at: null },
+      select: { id: true },
+    });
 
     await this.prisma.workout_plans.updateMany({
       where: { coach_client_id: coachClientId, is_active: true, deleted_at: null },
@@ -179,10 +236,51 @@ export class WorkoutPlanService extends WorkoutBaseService {
 
     await this.notifyClientOfPlan(coachId, coachClientId, plan.id, plan.title);
 
-    return toPlanResponse(plan);
+    const response = toPlanResponse(plan);
+    await this.syncPlanCaches(coachId, plan.id, response, coachClientId);
+    // Deactivated predecessors share the same client — drop their detail views.
+    const ccRow = await this.prisma.coach_clients
+      .findUnique({ where: { id: coachClientId }, select: { client_id: true } })
+      .catch(() => null);
+    if (ccRow) {
+      for (const prev of deactivated) {
+        if (prev.id !== plan.id) {
+          await CacheService.del(cacheKeys.workoutPlanDetail(ccRow.client_id, prev.id));
+        }
+      }
+    }
+    return response;
   }
 
-  async listClientPlans(query: { coachId: string; clientId?: string; isActive?: boolean; page?: number; pageSize?: number }) {
+  async listClientPlans(query: {
+    coachId: string;
+    clientId?: string;
+    isActive?: boolean;
+    page?: number;
+    pageSize?: number;
+  }): Promise<
+    CacheHit<{
+      items: ReturnType<typeof toPlanSummaryResponse>[];
+      pagination: { page: number; pageSize: number; total: number; totalPages: number };
+    }>
+  > {
+    const { coachId, clientId, isActive = true, page = 1, pageSize = 10 } = query;
+    const key = cacheKeys.workoutPlanList(
+      coachId,
+      hashQuery({ clientId, isActive, page, pageSize }),
+    );
+    return CacheService.getOrSet(key, config.cache.ttlSec.workoutPlanList, () =>
+      this.loadClientPlans(query),
+    );
+  }
+
+  private async loadClientPlans(query: {
+    coachId: string;
+    clientId?: string;
+    isActive?: boolean;
+    page?: number;
+    pageSize?: number;
+  }) {
     const { coachId, clientId, isActive = true, page = 1, pageSize = 10 } = query;
 
     const where: Prisma.workout_plansWhereInput = {
@@ -224,10 +322,12 @@ export class WorkoutPlanService extends WorkoutBaseService {
     };
   }
 
-  async getClientPlan(planId: string, coachId: string) {
-    const plan = await this.getOwnedPlan(coachId, planId);
-
-    return toPlanResponse(plan);
+  async getClientPlan(planId: string, coachId: string): Promise<CacheHit<ReturnType<typeof toPlanResponse>>> {
+    return CacheService.getOrSet(
+      cacheKeys.workoutPlanItem(coachId, planId),
+      config.cache.ttlSec.workoutPlanItem,
+      async () => toPlanResponse(await this.getOwnedPlan(coachId, planId)),
+    );
   }
 
   async updatePlan(planId: string, coachId: string, input: { title?: string; description?: string }) {
@@ -252,7 +352,9 @@ export class WorkoutPlanService extends WorkoutBaseService {
       },
     });
 
-    return toPlanResponse(plan);
+    const response = toPlanResponse(plan);
+    await this.syncPlanCaches(coachId, planId, response, existing.coach_client_id);
+    return response;
   }
 
   async deletePlan(planId: string, coachId: string) {
@@ -263,6 +365,7 @@ export class WorkoutPlanService extends WorkoutBaseService {
       data: { deleted_at: new Date(), is_active: false },
     });
 
+    await this.dropPlanCaches(coachId, planId, existing.coach_client_id);
     return toPlanResponse(existing);
   }
 
@@ -299,7 +402,9 @@ export class WorkoutPlanService extends WorkoutBaseService {
     }
 
     const updated = await this.getOwnedPlan(coachId, planId);
-    return toPlanResponse(updated);
+    const updatedResponse = toPlanResponse(updated);
+    await this.syncPlanCaches(coachId, planId, updatedResponse, updated.coach_client_id);
+    return updatedResponse;
   }
 
   async updatePlanDay(planId: string, coachId: string, dayId: string, input: { title?: string; day_number?: number; is_rest?: boolean; note?: string }) {
@@ -338,7 +443,9 @@ export class WorkoutPlanService extends WorkoutBaseService {
     }
 
     const updated = await this.getOwnedPlan(coachId, planId);
-    return toPlanResponse(updated);
+    const updatedResponse = toPlanResponse(updated);
+    await this.syncPlanCaches(coachId, planId, updatedResponse, updated.coach_client_id);
+    return updatedResponse;
   }
 
   async deletePlanDay(planId: string, coachId: string, dayId: string) {
@@ -365,7 +472,9 @@ export class WorkoutPlanService extends WorkoutBaseService {
     });
 
     const updated = await this.getOwnedPlan(coachId, planId);
-    return toPlanResponse(updated);
+    const updatedResponse = toPlanResponse(updated);
+    await this.syncPlanCaches(coachId, planId, updatedResponse, updated.coach_client_id);
+    return updatedResponse;
   }
 
   async reorderPlanDays(planId: string, coachId: string, dayIds: string[]) {
@@ -404,7 +513,9 @@ export class WorkoutPlanService extends WorkoutBaseService {
     });
 
     const updated = await this.getOwnedPlan(coachId, planId);
-    return toPlanResponse(updated);
+    const updatedResponse = toPlanResponse(updated);
+    await this.syncPlanCaches(coachId, planId, updatedResponse, updated.coach_client_id);
+    return updatedResponse;
   }
 
   // =========================================================================
@@ -449,7 +560,9 @@ export class WorkoutPlanService extends WorkoutBaseService {
     }
 
     const updated = await this.getOwnedPlan(coachId, planId);
-    return toPlanResponse(updated);
+    const updatedResponse = toPlanResponse(updated);
+    await this.syncPlanCaches(coachId, planId, updatedResponse, updated.coach_client_id);
+    return updatedResponse;
   }
 
   async updatePlanDayExercise(planId: string, coachId: string, dayId: string, exerciseId: string, input: { order_number?: number; sets?: number | null; reps?: number | null; rest_time?: number | null; notes?: string }) {
@@ -476,7 +589,9 @@ export class WorkoutPlanService extends WorkoutBaseService {
     }
 
     const updated = await this.getOwnedPlan(coachId, planId);
-    return toPlanResponse(updated);
+    const updatedResponse = toPlanResponse(updated);
+    await this.syncPlanCaches(coachId, planId, updatedResponse, updated.coach_client_id);
+    return updatedResponse;
   }
 
   async removeExerciseFromPlanDay(planId: string, coachId: string, dayId: string, exerciseId: string) {
@@ -503,6 +618,8 @@ export class WorkoutPlanService extends WorkoutBaseService {
     });
 
     const updated = await this.getOwnedPlan(coachId, planId);
-    return toPlanResponse(updated);
+    const updatedResponse = toPlanResponse(updated);
+    await this.syncPlanCaches(coachId, planId, updatedResponse, updated.coach_client_id);
+    return updatedResponse;
   }
 }

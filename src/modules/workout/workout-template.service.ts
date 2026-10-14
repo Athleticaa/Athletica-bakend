@@ -1,6 +1,8 @@
 import { injectable, inject } from "tsyringe";
 import { PrismaClientToken } from "../../di/tokens";
 import { PrismaClient } from "@prisma/client";
+import { config } from "../../config";
+import { CacheService, CacheHit, cacheKeys, hashQuery } from "../../lib/cache";
 import { ServiceError } from "../../lib/service-error";
 import { WorkoutBaseService } from "./workout.base.service";
 import { toTemplateResponse, toTemplateSummaryResponse } from "./workout-template.response-mappers";
@@ -13,6 +15,29 @@ export class WorkoutTemplateService extends WorkoutBaseService {
 
   public async getCoachIdFromUser(userId: string): Promise<string> {
     return this.getCoachProfileId(userId);
+  }
+
+  /**
+   * Post-commit sync: the mutation already returns the full fresh template
+   * (same `toTemplateResponse` shape as the GET), so warm the item key
+   * directly — zero extra reads — and drop list pages (counts/order changed).
+   */
+  private async syncTemplateCaches(coachId: string, templateId: string, template: unknown): Promise<void> {
+    await CacheService.setJson(
+      cacheKeys.workoutTemplateItem(coachId, templateId),
+      template,
+      config.cache.ttlSec.workoutTemplateItem,
+    );
+    await CacheService.delByPrefix(cacheKeys.workoutTemplateListPrefix(coachId));
+  }
+
+  /**
+   * Post-commit sync for deletes: delete paths return a PRE-delete snapshot —
+   * never cache it. Drop the item key and list pages instead.
+   */
+  private async dropTemplateCaches(coachId: string, templateId: string): Promise<void> {
+    await CacheService.del(cacheKeys.workoutTemplateItem(coachId, templateId));
+    await CacheService.delByPrefix(cacheKeys.workoutTemplateListPrefix(coachId));
   }
 
   async createTemplate(input: { title: string; description: string; coachId: string }) {
@@ -37,10 +62,25 @@ export class WorkoutTemplateService extends WorkoutBaseService {
       },
     });
 
-    return toTemplateResponse(template);
+    const response = toTemplateResponse(template);
+    await this.syncTemplateCaches(coachId, template.id, response);
+    return response;
   }
 
-  async listTemplates(query: { coachId: string; page?: number; pageSize?: number }) {
+  async listTemplates(query: { coachId: string; page?: number; pageSize?: number }): Promise<
+    CacheHit<{
+      items: ReturnType<typeof toTemplateSummaryResponse>[];
+      pagination: { page: number; pageSize: number; total: number; totalPages: number };
+    }>
+  > {
+    const { coachId, page = 1, pageSize = 10 } = query;
+    const key = cacheKeys.workoutTemplateList(coachId, hashQuery({ page, pageSize }));
+    return CacheService.getOrSet(key, config.cache.ttlSec.workoutTemplateList, () =>
+      this.loadTemplates(query),
+    );
+  }
+
+  private async loadTemplates(query: { coachId: string; page?: number; pageSize?: number }) {
     const { coachId, page = 1, pageSize = 10 } = query;
 
     const [items, total] = await Promise.all([
@@ -76,10 +116,12 @@ export class WorkoutTemplateService extends WorkoutBaseService {
     };
   }
 
-  async getTemplate(id: string, coachId: string) {
-    const template = await this.getOwnedTemplate(coachId, id);
-
-    return toTemplateResponse(template);
+  async getTemplate(id: string, coachId: string): Promise<CacheHit<ReturnType<typeof toTemplateResponse>>> {
+    return CacheService.getOrSet(
+      cacheKeys.workoutTemplateItem(coachId, id),
+      config.cache.ttlSec.workoutTemplateItem,
+      async () => toTemplateResponse(await this.getOwnedTemplate(coachId, id)),
+    );
   }
 
   async updateTemplate(id: string, coachId: string, input: { title?: string; description?: string }) {
@@ -104,7 +146,9 @@ export class WorkoutTemplateService extends WorkoutBaseService {
       },
     });
 
-    return toTemplateResponse(template);
+    const response = toTemplateResponse(template);
+    await this.syncTemplateCaches(coachId, id, response);
+    return response;
   }
 
   async deleteTemplate(id: string, coachId: string) {
@@ -125,6 +169,7 @@ export class WorkoutTemplateService extends WorkoutBaseService {
       data: { deleted_at: new Date() },
     });
 
+    await this.dropTemplateCaches(coachId, id);
     return toTemplateResponse(existing);
   }
 
@@ -161,7 +206,9 @@ export class WorkoutTemplateService extends WorkoutBaseService {
     }
 
     const updated = await this.getOwnedTemplate(coachId, templateId);
-    return toTemplateResponse(updated);
+    const response = toTemplateResponse(updated);
+    await this.syncTemplateCaches(coachId, templateId, response);
+    return response;
   }
 
   async updateTemplateDay(templateId: string, coachId: string, dayId: string, input: { title?: string; day_number?: number; is_rest?: boolean; note?: string }) {
@@ -197,7 +244,9 @@ export class WorkoutTemplateService extends WorkoutBaseService {
     }
 
     const updated = await this.getOwnedTemplate(coachId, templateId);
-    return toTemplateResponse(updated);
+    const response = toTemplateResponse(updated);
+    await this.syncTemplateCaches(coachId, templateId, response);
+    return response;
   }
 
   async deleteTemplateDay(templateId: string, coachId: string, dayId: string) {
@@ -222,7 +271,9 @@ export class WorkoutTemplateService extends WorkoutBaseService {
     });
 
     const updated = await this.getOwnedTemplate(coachId, templateId);
-    return toTemplateResponse(updated);
+    const response = toTemplateResponse(updated);
+    await this.syncTemplateCaches(coachId, templateId, response);
+    return response;
   }
 
   async reorderTemplateDays(templateId: string, coachId: string, dayIds: string[]) {
@@ -262,7 +313,9 @@ export class WorkoutTemplateService extends WorkoutBaseService {
     });
 
     const updated = await this.getOwnedTemplate(coachId, templateId);
-    return toTemplateResponse(updated);
+    const response = toTemplateResponse(updated);
+    await this.syncTemplateCaches(coachId, templateId, response);
+    return response;
   }
 
   // =========================================================================
@@ -306,7 +359,9 @@ export class WorkoutTemplateService extends WorkoutBaseService {
     }
 
     const updated = await this.getOwnedTemplate(coachId, templateId);
-    return toTemplateResponse(updated);
+    const response = toTemplateResponse(updated);
+    await this.syncTemplateCaches(coachId, templateId, response);
+    return response;
   }
 
   async updateTemplateDayExercise(templateId: string, coachId: string, dayId: string, exerciseId: string, input: { exercise_order?: number; notes?: string }) {
@@ -330,7 +385,9 @@ export class WorkoutTemplateService extends WorkoutBaseService {
     }
 
     const updated = await this.getOwnedTemplate(coachId, templateId);
-    return toTemplateResponse(updated);
+    const response = toTemplateResponse(updated);
+    await this.syncTemplateCaches(coachId, templateId, response);
+    return response;
   }
 
   async removeExerciseFromTemplateDay(templateId: string, coachId: string, dayId: string, exerciseId: string) {
@@ -356,6 +413,8 @@ export class WorkoutTemplateService extends WorkoutBaseService {
     });
 
     const updated = await this.getOwnedTemplate(coachId, templateId);
-    return toTemplateResponse(updated);
+    const response = toTemplateResponse(updated);
+    await this.syncTemplateCaches(coachId, templateId, response);
+    return response;
   }
 }

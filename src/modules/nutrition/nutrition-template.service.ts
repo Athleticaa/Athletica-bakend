@@ -1,6 +1,8 @@
 import { Prisma, PrismaClient } from "@prisma/client";
 import { injectable, inject } from "tsyringe";
 import { PrismaClientToken } from "../../di/tokens";
+import { config } from "../../config";
+import { CacheService, CacheHit, cacheKeys, hashQuery } from "../../lib/cache";
 import { ServiceError } from "../../lib/service-error";
 import { paginate, toFoodPayload, type FoodWithData } from "./nutrition.utils";
 import { NutritionBaseService } from "./base.service";
@@ -81,11 +83,17 @@ type FoodResponse = ReturnType<typeof toFoodPayload>;
 
 export interface INutritionTemplateService {
   createTemplate(userId: string, input: CreateTemplateInput): Promise<TemplateResponse>;
-  listTemplates(userId: string, query: PaginatedQuery): Promise<{
-    templates: TemplateResponse[];
-    pagination: { page: number; pageSize: number; total: number; totalPages: number };
-  }>;
-  getTemplate(userId: string, id: string, lang?: string): Promise<TemplateResponse & { meals: MealResponse[] }>;
+  listTemplates(userId: string, query: PaginatedQuery): Promise<
+    CacheHit<{
+      templates: TemplateResponse[];
+      pagination: { page: number; pageSize: number; total: number; totalPages: number };
+    }>
+  >;
+  getTemplate(
+    userId: string,
+    id: string,
+    lang?: string,
+  ): Promise<CacheHit<TemplateResponse & { meals: MealResponse[] }>>;
   updateTemplate(userId: string, id: string, input: UpdateTemplateInput): Promise<TemplateResponse>;
   deleteTemplate(userId: string, id: string): Promise<{ messageKey: string }>;
   addMealToTemplate(userId: string, templateId: string, input: CreateMealInput, lang?: string): Promise<{
@@ -121,6 +129,40 @@ export class NutritionTemplateService extends NutritionBaseService implements IN
     super(prisma);
   }
 
+  private normalizeLang(lang?: string): string {
+    const l = (lang || "").trim().toLowerCase();
+    return l || "en";
+  }
+
+  /**
+   * Drop all cached views of a template: every language's item key (lang set
+   * is open-ended) + the coach's list pages. Mutations return fragments or
+   * summaries — never the full GET shape — so deletion, not refresh.
+   */
+  private async dropTemplateCaches(coachId: string, templateId: string): Promise<void> {
+    await CacheService.delByPrefix(cacheKeys.nutritionTemplateItemPrefix(coachId, templateId));
+    await CacheService.delByPrefix(cacheKeys.nutritionTemplateListPrefix(coachId));
+  }
+
+  /**
+   * Refresh-through for mutations that carry a lang: clear everything first
+   * (other langs), then repopulate the request's lang via the GET loader.
+   */
+  private async refreshTemplateCaches(
+    userId: string,
+    coachId: string,
+    templateId: string,
+    lang?: string,
+  ): Promise<void> {
+    const l = this.normalizeLang(lang);
+    await this.dropTemplateCaches(coachId, templateId);
+    await CacheService.refresh(
+      cacheKeys.nutritionTemplateItem(coachId, templateId, l),
+      config.cache.ttlSec.nutritionTemplateItem,
+      () => this.loadTemplate(coachId, templateId, l),
+    );
+  }
+
   // ==========================================================================
   // Template CRUD (US1)
   // ==========================================================================
@@ -135,11 +177,31 @@ export class NutritionTemplateService extends NutritionBaseService implements IN
       },
       include: { _count: { select: { nutrition_template_meals: true } } },
     });
+    // Summary return (no meals) — only the list pages need dropping.
+    await CacheService.delByPrefix(cacheKeys.nutritionTemplateListPrefix(coachId));
     return toTemplateResponse(template);
   }
 
-  async listTemplates(userId: string, query: PaginatedQuery) {
+  async listTemplates(
+    userId: string,
+    query: PaginatedQuery,
+  ): Promise<
+    CacheHit<{
+      templates: TemplateResponse[];
+      pagination: { page: number; pageSize: number; total: number; totalPages: number };
+    }>
+  > {
     const coachId = await this.getCoachProfileId(userId);
+    const key = cacheKeys.nutritionTemplateList(
+      coachId,
+      hashQuery({ page: query.page, pageSize: query.pageSize }),
+    );
+    return CacheService.getOrSet(key, config.cache.ttlSec.nutritionTemplateList, () =>
+      this.loadTemplates(coachId, query),
+    );
+  }
+
+  private async loadTemplates(coachId: string, query: PaginatedQuery) {
     const where: Prisma.nutrition_templatesWhereInput = {
       coach_id: coachId,
       is_deleted: false,
@@ -163,8 +225,21 @@ export class NutritionTemplateService extends NutritionBaseService implements IN
     };
   }
 
-  async getTemplate(userId: string, id: string, lang?: string) {
+  async getTemplate(
+    userId: string,
+    id: string,
+    lang?: string,
+  ): Promise<CacheHit<TemplateResponse & { meals: MealResponse[] }>> {
     const coachId = await this.getCoachProfileId(userId);
+    const l = this.normalizeLang(lang);
+    return CacheService.getOrSet(
+      cacheKeys.nutritionTemplateItem(coachId, id, l),
+      config.cache.ttlSec.nutritionTemplateItem,
+      () => this.loadTemplate(coachId, id, l),
+    );
+  }
+
+  private async loadTemplate(coachId: string, id: string, lang: string) {
     const template = await this.prisma.nutrition_templates.findFirst({
       where: { id, coach_id: coachId, is_deleted: false },
       include: {
@@ -198,6 +273,8 @@ export class NutritionTemplateService extends NutritionBaseService implements IN
       },
       include: { _count: { select: { nutrition_template_meals: true } } },
     });
+    // Summary return (no meals) — drop all cached views, don't refresh.
+    await this.dropTemplateCaches(coachId, id);
     return toTemplateResponse(template);
   }
 
@@ -217,6 +294,7 @@ export class NutritionTemplateService extends NutritionBaseService implements IN
       });
     });
 
+    await this.dropTemplateCaches(coachId, id);
     return { messageKey: "template_deleted" };
   }
 
@@ -269,6 +347,7 @@ export class NutritionTemplateService extends NutritionBaseService implements IN
     const mealCount = await this.prisma.nutrition_template_meals.count({
       where: { nutrition_template_id: templateId },
     });
+    await this.refreshTemplateCaches(userId, coachId, templateId, lang);
     return {
       meal: toMealResponse(meal!, lang),
       template: { id: templateId, meal_count: mealCount },
@@ -328,6 +407,7 @@ export class NutritionTemplateService extends NutritionBaseService implements IN
         include: { nutrition_template_foods: { include: { food: { include: { category: true } } } } },
       });
     });
+    await this.refreshTemplateCaches(userId, coachId, templateId, lang);
     return { meal: toMealResponse(meal, lang) };
   }
 
@@ -345,6 +425,7 @@ export class NutritionTemplateService extends NutritionBaseService implements IN
     const mealCount = await this.prisma.nutrition_template_meals.count({
       where: { nutrition_template_id: templateId },
     });
+    await this.dropTemplateCaches(coachId, templateId);
     return {
       messageKey: "meal_deleted",
       template: { id: templateId, meal_count: mealCount },
@@ -401,6 +482,7 @@ export class NutritionTemplateService extends NutritionBaseService implements IN
       orderBy: { meal_order: "asc" },
       include: { nutrition_template_foods: { include: { food: { include: { category: true } } } } },
     });
+    await this.refreshTemplateCaches(userId, coachId, templateId, lang);
     return { meals: meals.map((m) => toMealResponse(m, lang)) };
   }
 
@@ -450,6 +532,7 @@ export class NutritionTemplateService extends NutritionBaseService implements IN
     const foodCount = await this.prisma.nutrition_template_foods.count({
       where: { nutrition_template_meal_id: mealId },
     });
+    await this.refreshTemplateCaches(userId, coachId, templateId, lang);
     return {
       food: toFoodPayload(food, lang),
       meal: { id: mealId, food_count: foodCount },
@@ -474,6 +557,7 @@ export class NutritionTemplateService extends NutritionBaseService implements IN
       data: { quantity: input.quantity },
       include: { food: { include: { category: true } } },
     });
+    await this.refreshTemplateCaches(userId, coachId, templateId, lang);
     return { food: toFoodPayload(food, lang) };
   }
 
@@ -492,6 +576,7 @@ export class NutritionTemplateService extends NutritionBaseService implements IN
     const foodCount = await this.prisma.nutrition_template_foods.count({
       where: { nutrition_template_meal_id: mealId },
     });
+    await this.dropTemplateCaches(coachId, templateId);
     return { messageKey: "template_food_deleted", meal: { id: mealId, food_count: foodCount } };
   }
 }

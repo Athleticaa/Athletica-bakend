@@ -1,6 +1,8 @@
 import { injectable, inject } from "tsyringe";
 import { PrismaClientToken } from "../../di/tokens";
 import { PrismaClient } from "@prisma/client";
+import { config } from "../../config";
+import { CacheService, cacheKeys } from "../../lib/cache";
 import { ServiceError } from "../../lib/service-error";
 import { WorkoutBaseService } from "./workout.base.service";
 import { todayDateOnly, daysBetween, formatDateOnly, toDateOnly, toCairoDateOnly, addDays, calcStreak } from "../nutrition/nutrition.utils";
@@ -132,7 +134,14 @@ export class WorkoutClientService extends WorkoutBaseService {
 
   async getMyActivePlan(userId: string) {
     const clientId = await this.getClientProfileId(userId);
+    return CacheService.getOrSet(
+      cacheKeys.workoutPlanMine(clientId),
+      config.cache.ttlSec.workoutPlanMine,
+      () => this.loadMyActivePlan(clientId),
+    );
+  }
 
+  private async loadMyActivePlan(clientId: string) {
     const plan = await this.prisma.workout_plans.findFirst({
       where: { coach_client: { client_id: clientId }, is_active: true, deleted_at: null },
       orderBy: { created_at: "desc" },
@@ -157,7 +166,14 @@ export class WorkoutClientService extends WorkoutBaseService {
 
   async getPlanDetails(userId: string, planId: string) {
     const clientId = await this.getClientProfileId(userId);
+    return CacheService.getOrSet(
+      cacheKeys.workoutPlanDetail(clientId, planId),
+      config.cache.ttlSec.workoutPlanDetail,
+      () => this.loadPlanDetails(clientId, planId),
+    );
+  }
 
+  private async loadPlanDetails(clientId: string, planId: string) {
     const plan = await this.prisma.workout_plans.findFirst({
       where: { id: planId, coach_client: { client_id: clientId }, deleted_at: null },
       include: {
@@ -255,9 +271,11 @@ export class WorkoutClientService extends WorkoutBaseService {
       throw new ServiceError("workout_today_only", 400);
     }
 
-    // Already completed — return as-is (preserve original completed_at)
+    // Already completed — return as-is (preserve original completed_at).
+    // Still drop the detail key: it may predate the original completion.
     if (log.completed) {
       const day_completed = await this.checkDayCompletion(clientId, log.workout_plan_id, log.workout_day_id, log.workout_date);
+      await CacheService.del(cacheKeys.workoutPlanDetail(clientId, log.workout_plan_id));
       return { exercise_log: this.toExerciseLogResponse(log), day_completed };
     }
 
@@ -269,6 +287,7 @@ export class WorkoutClientService extends WorkoutBaseService {
 
     const day_completed = await this.checkDayCompletion(clientId, log.workout_plan_id, log.workout_day_id, log.workout_date);
 
+    await CacheService.del(cacheKeys.workoutPlanDetail(clientId, log.workout_plan_id));
     return { exercise_log: this.toExerciseLogResponse(updated), day_completed };
   }
 
@@ -301,6 +320,7 @@ export class WorkoutClientService extends WorkoutBaseService {
 
     const day_completed = await this.checkDayCompletion(clientId, log.workout_plan_id, log.workout_day_id, log.workout_date);
 
+    await CacheService.del(cacheKeys.workoutPlanDetail(clientId, log.workout_plan_id));
     return { exercise_log: this.toExerciseLogResponse(updated), day_completed };
   }
 

@@ -25,6 +25,9 @@ describe("WorkoutPlanService.assignPlan push", () => {
           client: { user_id: "client-u1" },
         }),
       },
+      client_profiles: {
+        findUnique: jest.fn().mockResolvedValue(null),
+      },
       workout_templates: {
         findFirst: jest.fn().mockResolvedValue({
           id: "wt-1",
@@ -34,6 +37,7 @@ describe("WorkoutPlanService.assignPlan push", () => {
         }),
       },
       workout_plans: {
+        findMany: jest.fn().mockResolvedValue([]),
         updateMany: jest.fn().mockResolvedValue({ count: 0 }),
         create: jest.fn().mockResolvedValue({
           id: "wp-1",
@@ -98,6 +102,7 @@ describe("NutritionPlanService.createPlanFromTemplate push", () => {
         }),
       },
       nutrition_plans: {
+        findMany: jest.fn().mockResolvedValue([]),
         updateMany: jest.fn().mockResolvedValue({ count: 0 }),
         create: jest.fn().mockResolvedValue({ id: "np-1" }),
         findUnique: jest.fn().mockResolvedValue({
@@ -117,6 +122,7 @@ describe("NutritionPlanService.createPlanFromTemplate push", () => {
       },
       client_profiles: {
         findFirst: jest.fn().mockResolvedValue({ user_id: "client-u1" }),
+        findUnique: jest.fn().mockResolvedValue(null),
       },
       $transaction: jest.fn().mockImplementation((cb: (t: unknown) => unknown) =>
         cb({

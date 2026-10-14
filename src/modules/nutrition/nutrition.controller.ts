@@ -7,6 +7,7 @@ import { INutritionPlanService, NutritionPlanService } from "./nutrition-plan.se
 import { INutritionClientService, NutritionClientService } from "./nutrition-client.service";
 import { addDays, formatDateOnly, todayDateOnly } from "./nutrition.utils";
 import { ServiceError } from "../../lib/service-error";
+import { cacheHeader } from "../../lib/cache";
 import {
   parseListFoodsQuery,
   validateCreateTemplate,
@@ -75,13 +76,15 @@ export class NutritionController {
   listFoods = async (req: Request, res: Response) => {
     const { result, errors } = parseListFoodsQuery(req.query, req.t);
     if (!result) {
+      res.set("X-Cache", "BYPASS");
       res.status(400).json({ error: req.t("validation_failed"), details: errors });
       return;
     }
 
     try {
-      const data = await this.foodService.listFoods(result);
-      res.status(200).json(data);
+      const { value, hit } = await this.foodService.listFoods(result);
+      res.set("X-Cache", cacheHeader(hit));
+      res.status(200).json(value);
     } catch (err) {
       this.handleError(res, err);
     }
@@ -91,11 +94,13 @@ export class NutritionController {
     try {
       const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
       if (!isValidUuid(id)) {
+        res.set("X-Cache", "BYPASS");
         res.status(400).json({ error: req.t("invalid_uuid") });
         return;
       }
-      const food = await this.foodService.getFood(id);
-      res.status(200).json({ food });
+      const { value, hit } = await this.foodService.getFood(id);
+      res.set("X-Cache", cacheHeader(hit));
+      res.status(200).json({ food: value });
     } catch (err) {
       this.handleError(res, err);
     }
@@ -103,8 +108,9 @@ export class NutritionController {
 
   listFoodCategories = async (_req: Request, res: Response) => {
     try {
-      const categories = await this.foodService.listFoodCategories();
-      res.status(200).json({ categories });
+      const { value, hit } = await this.foodService.listFoodCategories();
+      res.set("X-Cache", cacheHeader(hit));
+      res.status(200).json({ categories: value });
     } catch (err) {
       this.handleError(res, err);
     }
@@ -132,13 +138,15 @@ export class NutritionController {
   listTemplates = async (req: Request, res: Response) => {
     const { result, errors } = parsePaginatedQuery(req.query, req.t);
     if (!result) {
+      res.set("X-Cache", "BYPASS");
       res.status(400).json({ error: req.t("validation_failed"), details: errors });
       return;
     }
 
     try {
-      const data = await this.templateService.listTemplates(this.userId(req), result);
-      res.status(200).json(data);
+      const { value, hit } = await this.templateService.listTemplates(this.userId(req), result);
+      res.set("X-Cache", cacheHeader(hit));
+      res.status(200).json(value);
     } catch (err) {
       this.handleError(res, err);
     }
@@ -148,11 +156,13 @@ export class NutritionController {
     try {
       const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
       if (!isValidUuid(id)) {
+        res.set("X-Cache", "BYPASS");
         res.status(400).json({ error: req.t("invalid_uuid") });
         return;
       }
-      const template = await this.templateService.getTemplate(this.userId(req), id, req.language);
-      res.status(200).json({ template });
+      const { value, hit } = await this.templateService.getTemplate(this.userId(req), id, req.language);
+      res.set("X-Cache", cacheHeader(hit));
+      res.status(200).json({ template: value });
     } catch (err) {
       this.handleError(res, err);
     }
@@ -365,13 +375,15 @@ export class NutritionController {
   listClientPlans = async (req: Request, res: Response) => {
     const { result, errors } = parseListClientPlansQuery(req.query, req.t);
     if (!result) {
+      res.set("X-Cache", "BYPASS");
       res.status(400).json({ error: req.t("validation_failed"), details: errors });
       return;
     }
 
     try {
-      const data = await this.planService.listClientPlans(this.userId(req), result);
-      res.status(200).json(data);
+      const { value, hit } = await this.planService.listClientPlans(this.userId(req), result);
+      res.set("X-Cache", cacheHeader(hit));
+      res.status(200).json(value);
     } catch (err) {
       this.handleError(res, err);
     }
@@ -381,11 +393,13 @@ export class NutritionController {
     try {
       const planId = Array.isArray(req.params.pid) ? req.params.pid[0] : req.params.pid;
       if (!isValidUuid(planId)) {
+        res.set("X-Cache", "BYPASS");
         res.status(400).json({ error: req.t("invalid_uuid") });
         return;
       }
-      const plan = await this.planService.getClientPlan(this.userId(req), planId, req.language);
-      res.status(200).json({ plan });
+      const { value, hit } = await this.planService.getClientPlan(this.userId(req), planId, req.language);
+      res.set("X-Cache", cacheHeader(hit));
+      res.status(200).json({ plan: value });
     } catch (err) {
       this.handleError(res, err);
     }
@@ -566,8 +580,9 @@ export class NutritionController {
 
   getMyPlan = async (req: Request, res: Response) => {
     try {
-      const data = await this.clientService.getMyActivePlan(this.userId(req));
-      res.status(200).json(data);
+      const { value, hit } = await this.clientService.getMyActivePlan(this.userId(req));
+      res.set("X-Cache", cacheHeader(hit));
+      res.status(200).json(value);
     } catch (err) {
       this.handleError(res, err);
     }
@@ -577,11 +592,13 @@ export class NutritionController {
     try {
       const planId = Array.isArray(req.params.pid) ? req.params.pid[0] : req.params.pid;
       if (!isValidUuid(planId)) {
+        res.set("X-Cache", "BYPASS");
         res.status(400).json({ error: req.t("invalid_uuid") });
         return;
       }
-      const data = await this.clientService.getPlanDetails(this.userId(req), planId, req.language);
-      res.status(200).json(data);
+      const { value, hit } = await this.clientService.getPlanDetails(this.userId(req), planId, req.language);
+      res.set("X-Cache", cacheHeader(hit));
+      res.status(200).json(value);
     } catch (err) {
       this.handleError(res, err);
     }
