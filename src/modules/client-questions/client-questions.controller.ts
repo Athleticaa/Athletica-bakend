@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { injectable, container } from "tsyringe";
 import { ClientQuestionsService, ServiceError } from "./client-questions.service";
+import { cacheHeader } from "../../lib/cache";
 import * as validation from "./client-questions.validation";
 
 @injectable()
@@ -24,8 +25,9 @@ export class ClientQuestionsController {
 
   getQuestions = async (req: Request, res: Response) => {
     try {
-      const questions = await this.service.getQuestions(req.language);
-      res.status(200).json({ questions, total: questions.length });
+      const { value, hit } = await this.service.getQuestions(req.language);
+      res.set("X-Cache", cacheHeader(hit));
+      res.status(200).json({ questions: value, total: value.length });
     } catch (err) {
       this.handleError(res, err);
     }
@@ -34,10 +36,11 @@ export class ClientQuestionsController {
   getAnswers = async (req: Request, res: Response) => {
     try {
       const clientId = await this.service.getClientProfileId(req.user!.sub);
-      const [{ answers, total }, total_questions] = await Promise.all([
+      const [{ value: { answers, total }, hit }, { value: total_questions }] = await Promise.all([
         this.service.getAnswers(clientId, req.language),
         this.service.getTotalQuestions(req.language),
       ]);
+      res.set("X-Cache", cacheHeader(hit));
       res.status(200).json({ answers, total, total_questions });
     } catch (err) {
       this.handleError(res, err);

@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import { v2 as cloudinary } from "cloudinary";
 import { injectable, inject } from "tsyringe";
 import { PrismaClientToken } from "../../di/tokens";
@@ -9,6 +9,7 @@ import { NotificationsService } from "../notifications/notifications.service";
 import { withActorData } from "../notifications/notification-actor";
 import i18next from "../../lib/i18n";
 import { config } from "../../config";
+import { CacheService, CacheHit, cacheKeys } from "../../lib/cache";
 import { withTimeout } from "../../lib/with-timeout";
 
 cloudinary.config({
@@ -16,6 +17,8 @@ cloudinary.config({
   api_key:    process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
+
+type CheckinQuestion = Prisma.checkin_questionsGetPayload<Record<string, never>>;
 
 @injectable()
 export class CheckInService {
@@ -201,11 +204,25 @@ export class CheckInService {
 
   // ── Coach: question management ────────────────────────────────────────────
 
-  async getMyQuestions(coachProfileId: string) {
+  async getMyQuestions(coachProfileId: string): Promise<CacheHit<CheckinQuestion[]>> {
+    return CacheService.getOrSet(
+      cacheKeys.checkinQuestions(coachProfileId),
+      config.cache.ttlSec.checkinQuestions,
+      () => this.loadCoachQuestions(coachProfileId),
+    );
+  }
+
+  private loadCoachQuestions(coachProfileId: string): Promise<CheckinQuestion[]> {
     return this.prisma.checkin_questions.findMany({
       where:   { coach_id: coachProfileId },
       orderBy: { order: "asc" },
     });
+  }
+
+  /** Drop the coach set + all client views after any question mutation. */
+  private async invalidateQuestionCaches(coachProfileId: string): Promise<void> {
+    await CacheService.del(cacheKeys.checkinQuestions(coachProfileId));
+    await CacheService.delByPrefix(cacheKeys.checkinClientQuestionsPrefix());
   }
 
   async createQuestion(coachProfileId: string, input: CreateQuestionInput) {
@@ -219,7 +236,7 @@ export class CheckInService {
       nextOrder = (agg._max.order ?? 0) + 1;
     }
 
-    return this.prisma.checkin_questions.create({
+    const created = await this.prisma.checkin_questions.create({
       data: {
         coach_id: coachProfileId,
         question: input.question.trim(),
@@ -229,6 +246,8 @@ export class CheckInService {
         order:    nextOrder,
       },
     });
+    await this.invalidateQuestionCaches(coachProfileId);
+    return created;
   }
 
   async updateQuestion(coachProfileId: string, questionId: string, input: UpdateQuestionInput) {
@@ -237,7 +256,7 @@ export class CheckInService {
     });
     if (!existing) throw new ServiceError("checkin_question_not_found", 404);
 
-    return this.prisma.checkin_questions.update({
+    const updated = await this.prisma.checkin_questions.update({
       where: { id: questionId },
       data: {
         ...(input.question !== undefined && { question: input.question.trim() }),
@@ -247,6 +266,8 @@ export class CheckInService {
         ...(input.order    !== undefined && { order:    input.order }),
       },
     });
+    await this.invalidateQuestionCaches(coachProfileId);
+    return updated;
   }
 
   async deleteQuestion(coachProfileId: string, questionId: string) {
@@ -262,6 +283,7 @@ export class CheckInService {
     if (count <= 1) throw new ServiceError("checkin_cannot_delete_last_question", 400);
 
     await this.prisma.checkin_questions.delete({ where: { id: questionId } });
+    await this.invalidateQuestionCaches(coachProfileId);
     return { deleted: true };
   }
 
@@ -290,12 +312,29 @@ export class CheckInService {
       )
     );
 
-    return this.getMyQuestions(coachProfileId);
+    // Refresh-through: the response IS the full set — repopulate the coach key
+    // directly and drop client views (their gating may reference new order).
+    const fresh = await this.loadCoachQuestions(coachProfileId);
+    await CacheService.setJson(
+      cacheKeys.checkinQuestions(coachProfileId),
+      fresh,
+      config.cache.ttlSec.checkinQuestions,
+    );
+    await CacheService.delByPrefix(cacheKeys.checkinClientQuestionsPrefix());
+    return fresh;
   }
 
   // ── Coach: view client submissions ────────────────────────────────────────
 
   async getClientSubmissions(coachProfileId: string, coachClientId: string) {
+    return CacheService.getOrSet(
+      cacheKeys.checkinCoachSubmissions(coachProfileId, coachClientId),
+      config.cache.ttlSec.checkinSubmissions,
+      () => this.loadClientSubmissions(coachProfileId, coachClientId),
+    );
+  }
+
+  private async loadClientSubmissions(coachProfileId: string, coachClientId: string) {
     const cc = await this.prisma.coach_clients.findFirst({
       where: { id: coachClientId, coach_id: coachProfileId },
     });
@@ -353,16 +392,30 @@ export class CheckInService {
   async getSubmissionDetail(coachProfileId: string, coachClientId: string, submissionId: string) {
     const cc = await this.prisma.coach_clients.findFirst({
       where: { id: coachClientId, coach_id: coachProfileId },
+      select: { client_id: true },
     });
     if (!cc) throw new ServiceError("client_not_assigned_to_coach", 404);
 
+    return CacheService.getOrSet(
+      cacheKeys.checkinCoachSubmissionDetail(coachProfileId, coachClientId, submissionId),
+      config.cache.ttlSec.checkinSubmissionDetail,
+      () => this.loadSubmissionDetail(coachProfileId, coachClientId, cc.client_id, submissionId),
+    );
+  }
+
+  private async loadSubmissionDetail(
+    coachProfileId: string,
+    coachClientId: string,
+    clientProfileId: string,
+    submissionId: string,
+  ) {
     const submission = await this.prisma.checkin_submissions.findFirst({
       where: {
         id: submissionId,
         // OR-branch keeps pre-backfill rows (coach_client_id NULL) visible
         OR: [
           { coach_client_id: coachClientId },
-          { coach_id: coachProfileId, client_id: cc.client_id },
+          { coach_id: coachProfileId, client_id: clientProfileId },
         ],
       },
       include: {
@@ -387,7 +440,15 @@ export class CheckInService {
   // ── Client: get coach's active questions ──────────────────────────────────
   // Gated on a pending assignment: returns [] when there is nothing to answer.
 
-  async getCoachQuestionsForClient(clientProfileId: string) {
+  async getCoachQuestionsForClient(clientProfileId: string): Promise<CacheHit<CheckinQuestion[]>> {
+    return CacheService.getOrSet(
+      cacheKeys.checkinClientQuestions(clientProfileId),
+      config.cache.ttlSec.checkinClientQuestions,
+      () => this.loadCoachQuestionsForClient(clientProfileId),
+    );
+  }
+
+  private async loadCoachQuestionsForClient(clientProfileId: string): Promise<CheckinQuestion[]> {
     const coachId = await this.getClientCoachId(clientProfileId);
 
     const cc = await this.prisma.coach_clients.findFirst({
@@ -549,6 +610,13 @@ export class CheckInService {
 
     await this.notifyCoachOfSubmission(coachId, clientProfileId, submission.id);
 
+    // Submission consumes the pending assignment → gated view flips back to [].
+    // A new submission row also changes both submission lists.
+    await CacheService.del(cacheKeys.checkinClientQuestions(clientProfileId));
+    await CacheService.del(cacheKeys.hasassign(clientProfileId));
+    await CacheService.del(cacheKeys.checkinSubmissions(clientProfileId));
+    await CacheService.delByPrefix(cacheKeys.checkinCoachSubmissionsPrefix(coachId));
+
     return submission;
   }
 
@@ -585,6 +653,14 @@ export class CheckInService {
   // ── Client: view own submissions ──────────────────────────────────────────
 
   async getMySubmissions(clientProfileId: string) {
+    return CacheService.getOrSet(
+      cacheKeys.checkinSubmissions(clientProfileId),
+      config.cache.ttlSec.checkinSubmissions,
+      () => this.loadMySubmissions(clientProfileId),
+    );
+  }
+
+  private async loadMySubmissions(clientProfileId: string) {
     return this.prisma.checkin_submissions.findMany({
       where:   { client_id: clientProfileId },
       orderBy: { submitted_at: "desc" },
@@ -593,6 +669,14 @@ export class CheckInService {
   }
 
   async getMySubmissionDetail(clientProfileId: string, submissionId: string) {
+    return CacheService.getOrSet(
+      cacheKeys.checkinSubmissionDetail(clientProfileId, submissionId),
+      config.cache.ttlSec.checkinSubmissionDetail,
+      () => this.loadMySubmissionDetail(clientProfileId, submissionId),
+    );
+  }
+
+  private async loadMySubmissionDetail(clientProfileId: string, submissionId: string) {
     const submission = await this.prisma.checkin_submissions.findFirst({
       where: { id: submissionId, client_id: clientProfileId },
       include: {
@@ -627,10 +711,22 @@ export class CheckInService {
 
     await this.notifyClientOfAssignment(coachProfileId, cc.client_id, assignment.id);
 
+    // A (new) pending assignment flips the client's gated question view.
+    await CacheService.del(cacheKeys.checkinClientQuestions(cc.client_id));
+    await CacheService.del(cacheKeys.hasassign(cc.client_id));
+
     return assignment;
   }
 
-  async hasPendingAssignment(clientProfileId: string): Promise<boolean> {
+  async hasPendingAssignment(clientProfileId: string): Promise<CacheHit<boolean>> {
+    return CacheService.getOrSet(
+      cacheKeys.hasassign(clientProfileId),
+      config.cache.ttlSec.hasassign,
+      () => this.loadHasPendingAssignment(clientProfileId),
+    );
+  }
+
+  private async loadHasPendingAssignment(clientProfileId: string): Promise<boolean> {
     const cc = await this.prisma.coach_clients.findFirst({
       where:  { client_id: clientProfileId },
       select: { id: true, coach_id: true },
