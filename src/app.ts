@@ -48,7 +48,12 @@ app.use("/api/v1/internal/outbox", outboxRoutes);
 app.use("/api/v1/coach/achievements", coachAchievementsRouter);
 app.use("/api/v1/client/coach/achievements", clientAchievementsRouter);
 
-app.get("/api/v1/health", (_req, res) => {
+app.get("/api/v1/health", async (_req, res) => {
+  if (_req.query.cache !== undefined) {
+    const { CacheService } = await import("./lib/cache");
+    res.json({ status: "ok", cache: await CacheService.ping() });
+    return;
+  }
   res.json({ status: "ok" });
 });
 
@@ -60,6 +65,7 @@ if (process.env.VERCEL === "1") {
     jwt_secret: Boolean(process.env.JWT_SECRET),
     ably_api_key: Boolean(process.env.ABLY_API_KEY),
     outbox_cron_secret: Boolean(process.env.OUTBOX_CRON_SECRET),
+    redis_url: Boolean(process.env.REDIS_URL),
   });
 }
 

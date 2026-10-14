@@ -70,4 +70,50 @@ export const config = {
   },
   timezone: "Africa/Cairo",
   appUrl: process.env.APP_URL || "http://localhost:3000",
+  cache: {
+    // Upstash Redis (RESP over TLS). Disabled-clean: unset REDIS_URL or
+    // CACHE_ENABLED=false short-circuits every cache call to the DB loader.
+    redisUrl: process.env.REDIS_URL || "",
+    enabled: process.env.CACHE_ENABLED !== "false" && Boolean(process.env.REDIS_URL),
+    // Upper bound per Redis command. Fail-open: on timeout the DB loader runs.
+    commandTimeoutMs: 400,
+    // First-use (cold) TLS handshake budget. Warm commands stay at
+    // commandTimeoutMs; only the initial connect may take this long
+    // (important on serverless cold starts far from the Redis region).
+    connectTimeoutMs: 3000,
+    ttlSec: {
+      exerciseList: 600,
+      exerciseItem: 3600,
+      foodList: 300,
+      foodItem: 3600,
+      foodCategories: 1800,
+      questions: 3600,
+      answers: 180,
+      checkinQuestions: 300,
+      checkinClientQuestions: 60,
+      workoutTemplateList: 300,
+      workoutTemplateItem: 600,
+      workoutPlanList: 180,
+      workoutPlanItem: 300,
+      workoutPlanMine: 90,
+      workoutPlanDetail: 90,
+      nutritionTemplateList: 300,
+      nutritionTemplateItem: 600,
+      nutritionPlanList: 180,
+      nutritionPlanItem: 300,
+      nutritionPlanMine: 90,
+      nutritionPlanDetail: 90,
+      coachRequests: 45,
+      coachClients: 45,
+      coachClientItem: 45,
+      myCoach: 60,
+      hasassign: 30,
+      checkinSubmissions: 60,
+      checkinSubmissionDetail: 3600,
+      notificationList: 30,
+      notificationCount: 30,
+      achievements: 300,
+      profile: 60,
+    },
+  },
 } as const;
